@@ -34,27 +34,33 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response) {
       // 服务器返回错误状态码
-      switch (error.response.status) {
+      const status = error.response.status;
+      const message = error.response.data?.message || '';
+      
+      switch (status) {
         case 401:
-          // 未授权，清除 token 并跳转到登录页
+          // 未授权，清除 token 并跳转到错误页
           localStorage.removeItem('authToken');
-          window.location.href = '/login';
+          window.location.href = '/error?status=401';
           break;
         case 403:
-          console.error('没有权限访问此资源');
+          window.location.href = `/error?status=403&message=${encodeURIComponent(message || '没有权限访问此资源')}`;
           break;
         case 404:
-          console.error('请求的资源不存在');
+          window.location.href = `/error?status=404&message=${encodeURIComponent(message || '请求的资源不存在')}`;
           break;
         case 500:
-          console.error('服务器内部错误');
+          window.location.href = `/error?status=500&message=${encodeURIComponent(message || '服务器内部错误')}`;
+          break;
+        case 503:
+          window.location.href = `/error?status=503&message=${encodeURIComponent(message || '服务暂时不可用')}`;
           break;
         default:
           console.error('请求失败:', error.response.data);
       }
     } else if (error.request) {
-      // 请求已发出但没有收到响应
-      console.error('网络错误，请检查网络连接');
+      // 请求已发出但没有收到响应 - 网络错误
+      window.location.href = '/error?status=network&message=' + encodeURIComponent('网络错误，请检查网络连接');
     } else {
       // 其他错误
       console.error('请求配置错误:', error.message);

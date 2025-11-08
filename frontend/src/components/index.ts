@@ -35,6 +35,7 @@ export {
   DialogTitle,
   DialogDescription,
 } from "./ui/dialog"
+export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription } from "./ui/drawer"
 export { Input } from "./ui/input"
 export { Label } from "./ui/label"
 export { Popover, PopoverTrigger, PopoverContent } from "./ui/popover"
