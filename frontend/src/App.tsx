@@ -1,12 +1,21 @@
-import { Routes, Route } from 'react-router-dom';
+import { useRoutes } from 'react-router-dom';
+import { routes } from './routes';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./components/ui/card";
 
 const App = () => {
+  const element = useRoutes(routes);
+  
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Routes>
-        <Route path="/" element={<h1 className="text-center py-10">首页</h1>} />
-        <Route path="/login" element={<h1 className="text-center py-10">登录页</h1>} />
-      </Routes>
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-950 dark:to-slate-900">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold">欢迎</CardTitle>
+          <CardDescription>知序</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {element}
+        </CardContent>
+      </Card>
     </div>
   );
 };
