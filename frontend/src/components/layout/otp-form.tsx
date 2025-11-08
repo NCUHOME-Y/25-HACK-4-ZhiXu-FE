@@ -18,18 +18,23 @@ import {
   InputOTPSlot,
 } from "../ui/input-otp"
 
-export function OTPForm({ ...props }: React.ComponentProps<typeof Card>) {
+interface OTPFormProps extends React.ComponentProps<typeof Card> {
+  onSwitchToLogin?: () => void
+  onVerificationSuccess?: () => void
+}
+
+export function OTPForm({ onSwitchToLogin, onVerificationSuccess, ...props }: OTPFormProps) {
   return (
     <Card {...props}>
       <CardHeader>
-        <CardTitle>Enter verification code</CardTitle>
-        <CardDescription>We sent a 6-digit code to your email.</CardDescription>
+        <CardTitle>输入验证码</CardTitle>
+        <CardDescription>我们已向您的手机发送了 6 位验证码。</CardDescription>
       </CardHeader>
       <CardContent>
         <form>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="otp">Verification code</FieldLabel>
+              <FieldLabel htmlFor="otp">验证码</FieldLabel>
               <InputOTP maxLength={6} id="otp" required>
                 <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
                   <InputOTPSlot index={0} />
@@ -41,13 +46,21 @@ export function OTPForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </InputOTPGroup>
               </InputOTP>
               <FieldDescription>
-                Enter the 6-digit code sent to your email.
+                请输入发送到您手机的 6 位验证码。
               </FieldDescription>
             </Field>
             <FieldGroup>
-              <Button type="submit">Verify</Button>
+              <Button type="button" onClick={onVerificationSuccess}>验证</Button>
               <FieldDescription className="text-center">
-                Didn&apos;t receive the code? <a href="#">Resend</a>
+                没有收到验证码？ <a href="#">重新发送</a>
+                {" | "}
+                <button
+                  type="button"
+                  onClick={onSwitchToLogin}
+                  className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-50"
+                >
+                  返回登录
+                </button>
               </FieldDescription>
             </FieldGroup>
           </FieldGroup>

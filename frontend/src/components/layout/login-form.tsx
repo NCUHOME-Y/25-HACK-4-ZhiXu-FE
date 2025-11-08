@@ -10,55 +10,71 @@ import {
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
 
+interface LoginFormProps extends React.ComponentPropsWithoutRef<"div"> {
+  onSwitchToSignup?: () => void
+  onSwitchToOTP?: () => void
+}
+
 export function LoginForm({
   className,
+  onSwitchToSignup,
+  onSwitchToOTP,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: LoginFormProps) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">登录</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            输入您的手机号以登录您的账户
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="phone">手机号</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
+                  id="phone"
+                  type="tel"
+                  placeholder="请输入手机号"
                   required
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">密码</Label>
                   <a
                     href="#"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
+                    忘记密码？
                   </a>
                 </div>
                 <Input id="password" type="password" required />
               </div>
               <Button type="submit" className="w-full">
-                Login
+                登录
               </Button>
-              <Button variant="outline" className="w-full">
-                Login with QQ
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                type="button"
+                onClick={onSwitchToOTP}
+              >
+                验证码登录
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{""}
-              <a href="/signup" className="underline underline-offset-4">
-                Sign up
-              </a>
+              还没有账户？{" "}
+              <button
+                type="button"
+                onClick={onSwitchToSignup}
+                className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-50"
+              >
+                注册
+              </button>
             </div>
           </form>
         </CardContent>

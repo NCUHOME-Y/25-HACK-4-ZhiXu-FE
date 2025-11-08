@@ -3,15 +3,15 @@
 import * as React from "react"
 import { ChevronDownIcon } from "lucide-react"
 
-import { Button } from "./button"
-import { Calendar } from "./calendar"
-import { Input } from "./input"
-import { Label } from "./label"
+import { Button } from "../ui/button"
+import { Calendar } from "../ui/calendar"
+import { Input } from "../ui/input"
+import { Label } from "../ui/label"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "./popover"
+} from "../ui/popover"
 
 export default function Calendar26() {
   const [openFrom, setOpenFrom] = React.useState(false)
@@ -55,7 +55,7 @@ export default function Calendar26() {
                 mode="single"
                 selected={dateFrom}
                 captionLayout="dropdown"
-                onSelect={(date) => {
+                onSelect={(date: Date | undefined) => {
                   setDateFrom(date)
                   setOpenFrom(false)
                 }}
@@ -106,7 +106,7 @@ export default function Calendar26() {
                 mode="single"
                 selected={dateTo}
                 captionLayout="dropdown"
-                onSelect={(date) => {
+                onSelect={(date: Date | undefined) => {
                   setDateTo(date)
                   setOpenTo(false)
                 }}
