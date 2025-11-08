@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
-import { LoginForm } from "../components/ui/login-form"
-import { SignupForm } from "../components/ui/signup-form"
+import { LoginForm } from "../components/layout/login-form"
+import { SignupForm } from "../components/layout/signup-form"
 
 export default function Page() {
   const [mode, setMode] = useState<"login" | "signup">("login")

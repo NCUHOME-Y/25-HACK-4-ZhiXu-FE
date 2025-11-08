@@ -1,18 +1,18 @@
-import { Button } from "./button"
+import { Button } from "../ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./card"
+} from "../ui/card"
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "./field"
-import { Input } from "./input"
+} from "../ui/field"
+import { Input } from "../ui/input"
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   return (

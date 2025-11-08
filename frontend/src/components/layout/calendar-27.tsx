@@ -5,8 +5,8 @@ import { CalendarIcon } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
-import { Button } from "./button"
-import { Calendar } from "./calendar"
+import { Button } from "../ui/button"
+import { Calendar } from "../ui/calendar"
 import {
   Card,
   CardContent,
@@ -14,14 +14,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./card"
-import type { ChartConfig } from "./chart"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "./chart"
+} from "../ui/card"
+import type { ChartConfig } from "../ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "./popover"
+} from "../ui/popover"
 
 const chartData = [
   { date: "2025-06-01", visitors: 178 },

@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
 
-import { Calendar, CalendarDayButton } from "./calendar"
+import { Calendar, CalendarDayButton } from "../ui/calendar"
 
 export default function Calendar21() {
   const [range, setRange] = React.useState<DateRange | undefined>({
