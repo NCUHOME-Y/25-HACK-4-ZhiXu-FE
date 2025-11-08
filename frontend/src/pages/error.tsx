@@ -1,7 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "../components/ui/card";
-import { Home, RefreshCw, AlertCircle, ServerCrash, ShieldAlert, Wifi } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter, Button } from "../components/index";
+import { AlertCircle, ServerCrash, ShieldAlert, Wifi, RefreshCw, Home } from "lucide-react";
 
 // 简化的错误类型配置 - 只保留常用的
 const ERROR_CONFIG = {

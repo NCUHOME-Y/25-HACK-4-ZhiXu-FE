@@ -1,50 +1,29 @@
-//导出所有组件，方便统一导入
-export { Alert, AlertTitle, AlertDescription } from "./ui/alert"
-export {
-  AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "./ui/alert-dialog"
-export { Button, buttonVariants } from "./ui/button"
-export {
-  ButtonGroup,
-  ButtonGroupSeparator,
-  ButtonGroupText,
-  buttonGroupVariants,
-} from "./ui/button-group"
-export { Calendar, CalendarDayButton } from "./ui/calendar"
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./ui/card"
-export { Checkbox } from "./ui/checkbox"
-export {
-  Dialog,
-  DialogPortal,
-  DialogOverlay,
-  DialogClose,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog"
-export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription } from "./ui/drawer"
-export { Input } from "./ui/input"
-export { Label } from "./ui/label"
-export { Popover, PopoverTrigger, PopoverContent } from "./ui/popover"
-export { Progress } from "./ui/progress"
-export { Separator } from "./ui/separator"
-export { Skeleton } from "./ui/skeleton"
-export { Spinner } from "./ui/spinner"
-export { Toaster as Sonner } from "./ui/sonner"
-export { Textarea } from "./ui/textarea"
-export { Toggle, toggleVariants } from "./ui/toggle"
-export { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
-export { MobileBottomNav } from "./layout/bottomnav"
+// 统一导出所有 UI 组件
+export * from "./ui/alert"
+export * from "./ui/alert-dialog"
+export * from "./ui/button"
+export * from "./ui/button-group"
+export * from "./ui/calendar"
+export * from "./ui/card"
+export * from "./ui/checkbox"
+export * from "./ui/dialog"
+export * from "./ui/drawer"
+export * from "./ui/input"
+export * from "./ui/label"
+export * from "./ui/popover"
+export * from "./ui/progress"
+export * from "./ui/separator"
+export * from "./ui/skeleton"
+export * from "./ui/spinner"
+export * from "./ui/sonner"
+export * from "./ui/textarea"
+export * from "./ui/toggle"
+export * from "./ui/toggle-group"
+
+// 导出布局组件
+export * from "./layout/bottomnav"
+
+// 导出功能组件
+export * from "./feature/login-form"
+export * from "./feature/signup-form"
+export * from "./feature/otp-form"

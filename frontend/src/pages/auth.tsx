@@ -1,7 +1,5 @@
 import { useState } from "react"
-import { LoginForm } from "../components/layout/login-form"
-import { SignupForm } from "../components/layout/signup-form"
-import { OTPForm } from "../components/layout/otp-form"
+import { LoginForm, SignupForm, OTPForm } from "../components/index"
 
 type AuthMode = "login" | "signup" | "otp"
 type OTPContext = "login" | "signup"

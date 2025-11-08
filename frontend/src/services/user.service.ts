@@ -1,29 +1,20 @@
 import apiClient from './apiClient';
-import type { User, ApiResponse } from '../lib/types';
+import type { User } from '../lib/types';
 
 /**
- * 用户服务 - 处理所有用户相关的 API 请求
+ * 用户服务
+ * 提供用户资料相关功能
  */
 export const userService = {
-  /**
-   * 获取用户信息
-   */
+  // 获取用户资料
   getProfile: async (): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<User>>('/user/profile');
-    if (response.data.success && response.data.data) {
-      return response.data.data;
-    }
-    throw new Error(response.data.message || '获取用户信息失败');
+    const response = await apiClient.get<User>('/user/profile');
+    return response.data;
   },
 
-  /**
-   * 更新用户信息
-   */
+  // 更新用户资料
   updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await apiClient.put<ApiResponse<User>>('/user/profile', data);
-    if (response.data.success && response.data.data) {
-      return response.data.data;
-    }
-    throw new Error(response.data.message || '更新用户信息失败');
+    const response = await apiClient.put<User>('/user/profile', data);
+    return response.data;
   },
 };

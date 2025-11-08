@@ -1,4 +1,4 @@
-// 导出所有服务模块，方便统一导入
-export { default as apiClient } from './apiClient';
+//统一导出所有服务，方便导入使用
+export * from './apiClient';
 export * from './auth.service';
 export * from './user.service';

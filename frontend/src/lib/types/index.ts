@@ -1,11 +1,30 @@
 // 用户相关类型
 export interface User {
   id: string;
-  username: string;
-  email: string;
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  phone: string;
+}
+
+// 认证相关类型
+export interface LoginCredentials {
+  phone: string;
+  password: string;
+}
+
+export interface RegisterData {
+  name: string;
+  phone: string;
+  password: string;
+}
+
+export interface OTPVerifyData {
+  phone: string;
+  code: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
 }
 
 // API 响应类型
