@@ -1,6 +1,11 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { LoginForm, SignupForm, OTPForm } from "../components/index"
+import { Button } from "../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { Spinner } from "../components/ui/spinner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog"
 
-type AuthMode = "login" | "signup" | "otp"
+type AuthMode = "login" | "signup" | "otp" | "otp-input"
 
 export default function AuthPage() {
   const navigate = useNavigate()
@@ -18,6 +23,15 @@ export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login")
   // 当前手机号（用于跨步骤保留）
   const [phone, setPhone] = useState("")
+  // OTP 手机号输入（验证码登录专用）
+  const [otpPhone, setOtpPhone] = useState("")
+  // 是否已发送验证码
+  const [otpSent, setOtpSent] = useState(false)
+  
+  // 加载状态
+  const [sendingOTP, setSendingOTP] = useState(false)
+  const [verifyingOTP, setVerifyingOTP] = useState(false)
+  const [loggingIn, setLoggingIn] = useState(false)
   
   // 控制提示对话框
   const [showAlertDialog, setShowAlertDialog] = useState(false)
@@ -25,10 +39,17 @@ export default function AuthPage() {
 
   // 切换到验证码页面(从登录)
   const switchToOTPFromLogin = () => {
-    // 检查手机号是否已输入
-    const phoneInput = document.getElementById("phone") as HTMLInputElement
-    const value = phoneInput?.value?.trim() ?? ""
+    // 直接进入验证码登录的手机号输入页
+    setMode("otp")
+    setOtpPhone("")
+    setOtpSent(false)
+  }
+
+  // 发送验证码
+  const handleSendOTP = async () => {
+    const value = otpPhone.trim()
     const isValidPhone = /^\d{11}$/.test(value)
+    
     if (!value) {
       setAlertMessage("请先输入手机号")
       setShowAlertDialog(true)
@@ -39,8 +60,19 @@ export default function AuthPage() {
       setShowAlertDialog(true)
       return
     }
-    setPhone(value)
-    setMode("otp")
+    
+    setSendingOTP(true)
+    try {
+      // TODO: 调用后端发送验证码接口
+      await new Promise(resolve => setTimeout(resolve, 2000)) // 模拟API调用
+      setPhone(value)
+      setOtpSent(true)
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      setAlertMessage("发送验证码失败，请重试")
+      setShowAlertDialog(true)
+    } finally {
+      setSendingOTP(false)
+    }
   }
 
   // 切换到验证码页面（从注册）
@@ -83,10 +115,36 @@ export default function AuthPage() {
     setMode("otp")
   }
 
+  // 处理登录
+  const handleLogin = async () => {
+    setLoggingIn(true)
+    try {
+      // TODO: 调用后端登录接口
+      await new Promise(resolve => setTimeout(resolve, 2000)) // 模拟API调用
+      // 登录成功后跳转到打卡页面
+      navigate("/flag")
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      setAlertMessage("登录失败，请检查账号密码")
+      setShowAlertDialog(true)
+    } finally {
+      setLoggingIn(false)
+    }
+  }
+
   // 验证码验证成功后的处理
-  const handleOTPVerificationSuccess = () => {
-    // 登录/注册成功后跳转到打卡页面
-    navigate("/flag")
+  const handleOTPVerificationSuccess = async () => {
+    setVerifyingOTP(true)
+    try {
+      // TODO: 调用后端验证验证码接口
+      await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟API调用
+      // 登录/注册成功后跳转到打卡页面
+      navigate("/flag")
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      setAlertMessage("验证码验证失败，请重试")
+      setShowAlertDialog(true)
+    } finally {
+      setVerifyingOTP(false)
+    }
   }
 
   return (
@@ -94,10 +152,21 @@ export default function AuthPage() {
       <div className="w-full max-w-sm">
         {/* 登录表单 */}
         {mode === "login" && (
-          <LoginForm
-            onSwitchToSignup={() => setMode("signup")}
-            onSwitchToOTP={switchToOTPFromLogin}
-          />
+          <div className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+              <LoginForm
+                onSwitchToSignup={() => setMode("signup")}
+                onSwitchToOTP={switchToOTPFromLogin}
+              />
+            </form>
+            {/* 登录按钮的loading状态覆盖 */}
+            {loggingIn && (
+              <div className="flex items-center justify-center p-4">
+                <Spinner className="mr-2" />
+                <span className="text-sm">登录中...</span>
+              </div>
+            )}
+          </div>
         )}
 
         {/* 注册表单 */}
@@ -109,7 +178,52 @@ export default function AuthPage() {
         )}
 
         {/* 验证码表单 */}
-        {mode === "otp" && (
+        {mode === "otp" && !otpSent && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">验证码登录</CardTitle>
+              <CardDescription>
+                输入您的手机号以接收验证码
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="otp-phone">手机号</Label>
+                  <Input
+                    id="otp-phone"
+                    type="tel"
+                    placeholder="请输入手机号"
+                    value={otpPhone}
+                    onChange={(e) => setOtpPhone(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  type="button"
+                  disabled={sendingOTP}
+                  onClick={handleSendOTP}
+                >
+                  {sendingOTP && <Spinner className="mr-2" />}
+                  {sendingOTP ? "发送中..." : "发送验证码"}
+                </Button>
+                <div className="text-center text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-50"
+                  >
+                    返回登录
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 验证码输入表单 */}
+        {mode === "otp" && otpSent && (
           <div className="space-y-3">
             {/* 显示当前手机号 */}
             {phone && (
@@ -118,9 +232,21 @@ export default function AuthPage() {
               </p>
             )}
             <OTPForm
-              onSwitchToLogin={() => setMode("login")}
+              onSwitchToLogin={() => {
+                setMode("login")
+                setOtpSent(false)
+                setOtpPhone("")
+                setVerifyingOTP(false)
+              }}
               onVerificationSuccess={handleOTPVerificationSuccess}
             />
+            {/* 验证按钮的loading状态覆盖 */}
+            {verifyingOTP && (
+              <div className="flex items-center justify-center p-4">
+                <Spinner className="mr-2" />
+                <span className="text-sm">验证中...</span>
+              </div>
+            )}
           </div>
         )}
       </div>
