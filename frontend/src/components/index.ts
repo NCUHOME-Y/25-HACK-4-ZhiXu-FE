@@ -21,7 +21,7 @@ export * from "./ui/toggle"
 export * from "./ui/toggle-group"
 
 // 导出布局组件
-export * from "./layout/bottomnav"
+export * from "./layout"
 
 // 导出功能组件
 export * from "./feature/login-form"
