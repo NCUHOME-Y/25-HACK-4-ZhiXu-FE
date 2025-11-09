@@ -4,12 +4,8 @@ import { BottomNav, Search } from "../components";
 export default function ContactPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background/95 shadow-sm backdrop-blur-sm">
-        <div className="p-3">
-          <Search />
-        </div>
-      </header>
-      <div className="flex-1 pb-20">
+      <Search />
+      <div className="flex-1 pb-20 pt-16">
         {/* 页面内容区域 */}
         聊天
       </div>
