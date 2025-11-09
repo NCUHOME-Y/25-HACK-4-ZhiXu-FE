@@ -1,5 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import type { CalendarDay, Modifiers } from "react-day-picker";
 import {
   BottomNav,
   Card,
@@ -18,11 +17,23 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../components";
-import { CircleProgress, TaskRing } from "../components/common/ProgressCircle";
+import { EasyRadial } from "../components/feature/easyradial";
 import { useTaskStore } from "../lib/stores/stores";
 import { formatDateYMD, calculateStreak, formatElapsedTime } from "../lib/helpers";
 import { useStudyTimer } from "../lib/hooks";
 import { Plus, Pencil, Check } from "lucide-react";
+
+// ==================== 页面常量 ====================
+const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
+
+// ==================== 页面级组件 ====================
+/**
+ * 任务进度环组件 - 基于 EasyRadial
+ */
+const TaskRing = ({ count = 0, total = 1 }: { count?: number; total?: number }) => {
+  const pct = Math.min(100, Math.round((count / Math.max(total, 1)) * 100));
+  return <EasyRadial value={pct} />;
+};
 
 // 打卡页面
 export default function FlagPage() {
@@ -64,21 +75,26 @@ export default function FlagPage() {
   // ======= 计算属性 =======
   const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
   const { minutes, seconds } = formatElapsedTime(elapsed);
+  const todayStr = useMemo(() => formatDateYMD(new Date()), []);
+  const isPunchedToday = punchedDates.includes(todayStr);
   
   // 任务排序：未完成在前，完成的灰化并在后
   const orderedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => Number(a.completed) - Number(b.completed));
   }, [tasks]);
 
+  // 任务完成统计
+  const completedCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
+
   // ======= 事件处理器 =======
   // 任务记次
-  const handleTickTask = async (taskId: string) => {
+  const handleTickTask = (taskId: string) => {
     tickTaskInStore(taskId);
     // TODO: 接入后端 await tickTask(taskId)
   };
 
   // 保存任务（新建或编辑）
-  const handleSaveTask = async () => {
+  const handleSaveTask = () => {
     if (!newTask.title.trim()) {
       setShowError(true);
       return;
@@ -86,18 +102,22 @@ export default function FlagPage() {
     setShowError(false);
     
     if (editingTaskId) {
-      // 编辑模式
       updateTaskInStore(editingTaskId, newTask);
       // TODO: 接入后端 await updateTask(editingTaskId, newTask)
     } else {
-      // 新建模式
       const created = { id: String(Date.now()), ...newTask, count: 0, completed: false };
       addTask(created);
       // TODO: 接入后端 await createTask(newTask)
     }
     
+    closeDrawer();
+  };
+
+  // 关闭抽屉并重置状态
+  const closeDrawer = () => {
     setNewTask({ title: "", detail: "", total: 1 });
     setEditingTaskId(null);
+    setShowError(false);
     setOpenDrawer(false);
   };
 
@@ -134,17 +154,12 @@ export default function FlagPage() {
             captionLayout="dropdown"
             className="w-full rounded-none border-0 border-y border-slate-200 shadow-none dark:border-slate-800"
             formatters={{
-              formatMonthDropdown: (date) => {
-                return date.toLocaleString("zh-CN", { month: "long" })
-              },
+              formatMonthDropdown: (date) => date.toLocaleString("zh-CN", { month: "long" }),
               formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString("zh-CN", { month: "long" })}`,
-              formatWeekdayName: (date) => {
-                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-                return weekdays[date.getDay()];
-              },
+              formatWeekdayName: (date) => WEEKDAY_NAMES[date.getDay()],
             }}
             components={{
-              DayButton: ({ children, modifiers, day, ...props }: { children?: React.ReactNode; modifiers: Modifiers; day: CalendarDay } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
+              DayButton: ({ children, modifiers, day, ...props }) => {
                 const dateObj = day.date;
                 const dateStr = formatDateYMD(dateObj);
                 const today = new Date();
@@ -174,19 +189,19 @@ export default function FlagPage() {
           {/* 模块1：打卡天数 + 环形图 */}
           <Card 
             className={`p-3 flex items-center gap-3 transition ${
-              punchedDates.includes(formatDateYMD(new Date())) 
-                ? 'opacity-60' 
-                : 'active:scale-[0.98]'
+              isPunchedToday ? '' : 'active:scale-[0.98]'
             }`}
-            onClick={punchedDates.includes(formatDateYMD(new Date())) ? undefined : togglePunchToday}
+            onClick={isPunchedToday ? undefined : togglePunchToday}
+            style={{ opacity: isPunchedToday ? 0.6 : 1 }}
           >
             <div className="flex-1">
               <div className="text-sm text-muted-foreground">每日打卡</div>
               <div className="text-xl font-semibold">
-                {punchedDates.includes(formatDateYMD(new Date())) ? '今日已打卡' : `坚持第 ${streak} 天`}
+                {isPunchedToday ? '今日已打卡' : `坚持第 ${streak} 天`}
               </div>
             </div>
-            <CircleProgress value={Math.min(100, (streak / 30) * 100)} />
+            {/* 将 EasyRadial 从受 opacity 影响的 div 中移出 */}
+            <EasyRadial value={Math.min(100, (streak / 30) * 100)} />
           </Card>
 
           {/* 模块2：学习计时 */}
@@ -213,7 +228,7 @@ export default function FlagPage() {
         <div className="flex items-center justify-between pt-2">
           <h2 className="text-base font-semibold">今日任务</h2>
           <div className="text-sm text-muted-foreground">
-            {tasks.filter((t) => t.completed).length}/{tasks.length} 完成
+            {completedCount}/{tasks.length} 完成
           </div>
         </div>
 
@@ -266,7 +281,7 @@ export default function FlagPage() {
       </Button>
 
       {/* Drawer：新建任务 */}
-      <Drawer open={openDrawer} onOpenChange={(o) => { if (!o) { setEditingTaskId(null); setShowError(false); } setOpenDrawer(o); }}>
+      <Drawer open={openDrawer} onOpenChange={(isOpen) => !isOpen && closeDrawer()}>
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>{editingTaskId ? "编辑任务" : "新建任务"}</DrawerTitle>

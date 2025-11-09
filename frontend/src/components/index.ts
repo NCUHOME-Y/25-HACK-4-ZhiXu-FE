@@ -30,6 +30,5 @@ export * from "./feature/signup-form"
 export * from "./feature/otp-form"
 
 // 导出功能日历组件（统一从 index 导入）
-export { default as Calendar18 } from "./feature/calendar-18"
 export { default as Calendar21 } from "./feature/calendar-21"
 export { default as Calendar23 } from "./feature/calendar-23"
