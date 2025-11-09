@@ -1,5 +1,12 @@
 import { useMemo, useState, useEffect } from "react";
 import {
+  Label,
+  PolarGrid,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+} from "recharts";
+import {
   BottomNav,
   Card,
   Button,
@@ -17,22 +24,153 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../components";
-import { EasyRadial } from "../components/feature/easyradial";
+import { ChartContainer } from "../components/ui/chart";
 import { useTaskStore } from "../lib/stores/stores";
-import { formatDateYMD, calculateStreak, formatElapsedTime } from "../lib/helpers";
-import { useStudyTimer } from "../lib/hooks";
+import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from "../lib/helpers/helpers";
+import { useStudyTimer } from "../lib/hooks/hooks";
 import { Plus, Pencil, Check } from "lucide-react";
+import type { PunchChartProps, TaskRingProps } from "../lib/types/types";
 
 // ==================== 页面常量 ====================
 const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
 // ==================== 页面级组件 ====================
 /**
- * 任务进度环组件 - 基于 EasyRadial
+ * 打卡进度环形图组件 - 显示本月打卡进度
  */
-const TaskRing = ({ count = 0, total = 1 }: { count?: number; total?: number }) => {
-  const pct = Math.min(100, Math.round((count / Math.max(total, 1)) * 100));
-  return <EasyRadial value={pct} />;
+const PunchChart = ({ monthlyPunches }: PunchChartProps) => {
+  // 获取当前月份的总天数
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  
+  // 计算实际进度角度
+  const progressPercentage = Math.min(100, (monthlyPunches / daysInMonth) * 100);
+  const progressAngle = (progressPercentage / 100) * 360;
+  
+  // Recharts数据格式
+  const chartData = [{ 
+    month: "current",
+    punches: monthlyPunches,
+    fill: "hsl(var(--chart-2))"
+  }];
+  
+  const chartConfig = {
+    punches: {
+      label: "打卡天数",
+      color: "hsl(var(--chart-2))",
+    },
+  };
+
+  return (
+    <div className="w-14 h-14">
+      <ChartContainer
+        config={chartConfig}
+        className="mx-auto aspect-square"
+      >
+        <RadialBarChart
+          data={chartData}
+          startAngle={90}
+          endAngle={90 + progressAngle}
+          innerRadius={20}
+          outerRadius={28}
+        >
+          <PolarGrid
+            gridType="circle"
+            radialLines={false}
+            stroke="none"
+            className="first:fill-muted last:fill-background"
+            polarRadius={[24, 20]}
+          />
+          <RadialBar 
+            dataKey="punches"
+            background
+            cornerRadius={5}
+            fill="hsl(var(--chart-2))"
+          />
+          <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+            <Label
+              content={({ viewBox }) => {
+                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                  return (
+                    <text
+                      x={viewBox.cx}
+                      y={viewBox.cy}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      <tspan
+                        x={viewBox.cx}
+                        y={viewBox.cy}
+                        className="fill-foreground text-lg font-bold"
+                      >
+                        {monthlyPunches}
+                      </tspan>
+                      <tspan
+                        x={viewBox.cx}
+                        y={(viewBox.cy || 0) + 12}
+                        className="fill-muted-foreground text-xs"
+                      >
+                        本月
+                      </tspan>
+                    </text>
+                  )
+                }
+              }}
+            />
+          </PolarRadiusAxis>
+        </RadialBarChart>
+      </ChartContainer>
+    </div>
+  );
+};
+
+/**
+ * 任务进度环组件 - 显示任务完成进度
+ */
+const TaskRing = ({ count = 0, total = 1 }: TaskRingProps) => {
+  // 计算实际进度角度
+  const progressPercentage = Math.min(100, (count / Math.max(total, 1)) * 100);
+  const progressAngle = (progressPercentage / 100) * 360;
+  
+  const chartData = [{ 
+    task: "current",
+    progress: count,
+    fill: "hsl(var(--chart-1))"
+  }];
+  
+  const chartConfig = {
+    progress: {
+      label: "Progress",
+      color: "hsl(var(--chart-1))",
+    },
+  };
+
+  const size = 32;
+  const innerRadius = Math.round(size * 0.4);
+  const outerRadius = Math.round(size * 0.5);
+
+  return (
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-square shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <RadialBarChart
+        data={chartData}
+        startAngle={90}
+        endAngle={90 + progressAngle}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius}
+      >
+        <RadialBar 
+          dataKey="progress" 
+          background
+          cornerRadius={3}
+          fill="hsl(var(--chart-1))"
+        />
+      </RadialBarChart>
+    </ChartContainer>
+  );
 };
 
 // 打卡页面
@@ -74,6 +212,7 @@ export default function FlagPage() {
 
   // ======= 计算属性 =======
   const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
+  const monthlyPunches = useMemo(() => calculateMonthlyPunches(punchedDates), [punchedDates]);
   const { minutes, seconds } = formatElapsedTime(elapsed);
   const todayStr = useMemo(() => formatDateYMD(new Date()), []);
   const isPunchedToday = punchedDates.includes(todayStr);
@@ -200,8 +339,8 @@ export default function FlagPage() {
                 {isPunchedToday ? '今日已打卡' : `坚持第 ${streak} 天`}
               </div>
             </div>
-            {/* 将 EasyRadial 从受 opacity 影响的 div 中移出 */}
-            <EasyRadial value={Math.min(100, (streak / 30) * 100)} />
+            {/* 将 PunchChart 从受 opacity 影响的 div 中移出 */}
+            <PunchChart monthlyPunches={monthlyPunches} />
           </Card>
 
           {/* 模块2：学习计时 */}

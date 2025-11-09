@@ -37,23 +37,16 @@ const EasyRadial = ({ value }: { value: number }) => {
       <RadialBarChart
         data={chartData}
         startAngle={90}
-        endAngle={450} // 背景圈画满360度 (90 + 360)
+        endAngle={endAngle}
         innerRadius={innerRadius}
         outerRadius={outerRadius}
       >
-        {/* 背景轨道 */}
-        <RadialBar
-          background
-          dataKey="progress"
-          className="fill-muted"
-          cornerRadius={10}
-        />
-        {/* 前景进度条 */}
+        {/* 进度条 */}
         <RadialBar
           dataKey="progress"
-          className="fill-primary" // 直接使用主色，不受父级 opacity 影响
+          background={{ fill: "hsl(var(--muted))" }}
+          className="fill-primary"
           cornerRadius={10}
-          endAngle={endAngle} // 动态设置前景的结束角度
         />
         <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
           <Label

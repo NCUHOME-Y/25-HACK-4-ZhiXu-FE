@@ -21,3 +21,14 @@ export interface Task {
   count?: number
   completed?: boolean
 }
+
+// 打卡相关类型
+export interface PunchChartProps {
+  monthlyPunches: number
+}
+
+export interface TaskRingProps {
+  count?: number
+  total?: number
+}
+
