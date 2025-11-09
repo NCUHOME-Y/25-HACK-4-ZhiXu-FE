@@ -216,11 +216,8 @@ export default function FlagPage() {
         <section className="grid grid-cols-2 gap-3">
           {/* 模块1：打卡天数 + 环形图 */}
           <Card 
-            className={`p-3 flex items-center gap-3 transition ${
-              isPunchedToday ? '' : 'active:scale-[0.98]'
-            }`}
+            className={`p-3 flex items-center gap-3 ${isPunchedToday ? 'opacity-60' : 'active:scale-[0.98]'} transition-transform`}
             onClick={isPunchedToday ? undefined : togglePunchToday}
-            style={{ opacity: isPunchedToday ? 0.6 : 1 }}
           >
             <div className="flex-1">
               <div className="text-sm text-muted-foreground">每日打卡</div>
@@ -228,8 +225,9 @@ export default function FlagPage() {
                 {isPunchedToday ? '今日已打卡' : `坚持第 ${streak} 天`}
               </div>
             </div>
-            {/* 将 PunchChart 从受 opacity 影响的 div 中移出 */}
-            <PunchChart monthlyPunches={monthlyPunches} />
+            <div className={isPunchedToday ? 'opacity-100' : ''}>
+              <PunchChart monthlyPunches={monthlyPunches} />
+            </div>
           </Card>
 
           {/* 模块2：学习计时 */}
