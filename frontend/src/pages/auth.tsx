@@ -1,18 +1,24 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { LoginForm, SignupForm, OTPForm } from "../components/index"
-import { Button } from "../components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import { Spinner } from "../components/ui/spinner"
 import {
+  LoginForm,
+  SignupForm,
+  OTPForm,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Spinner,
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogTitle,
-} from "../components/ui/alert-dialog"
+} from "../components"
 
 type AuthMode = "login" | "signup" | "otp" | "otp-input"
 

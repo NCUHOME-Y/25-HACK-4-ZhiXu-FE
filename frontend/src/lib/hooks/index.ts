@@ -63,3 +63,18 @@ export function useAsync<T>(asyncFunction: () => Promise<T>, immediate = true) {
 
   return { execute, status, data, error };
 }
+
+/**
+ * 自定义 Hook - 学习计时管理
+ * 封装计时器逻辑，自动清理
+ */
+export function useStudyTimer(
+  studying: boolean,
+  onTick: () => void
+) {
+  useEffect(() => {
+    if (!studying) return;
+    const id = window.setInterval(onTick, 1000);
+    return () => window.clearInterval(id);
+  }, [studying, onTick]);
+}

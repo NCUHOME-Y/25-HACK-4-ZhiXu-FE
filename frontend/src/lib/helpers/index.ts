@@ -76,3 +76,42 @@ export const deepClone = <T>(obj: T): T => {
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 };
+
+/**
+ * 格式化日期为 YYYY-MM-DD 格式（避免时区问题）
+ * 用于打卡日期等业务场景
+ */
+export const formatDateYMD = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+/**
+ * 计算连续打卡天数（从今天往前）
+ * @param punchedDates 已打卡日期数组（YYYY-MM-DD）
+ */
+export const calculateStreak = (punchedDates: string[]): number => {
+  let n = 0;
+  const cursor = new Date();
+  while (true) {
+    const curStr = formatDateYMD(cursor);
+    if (punchedDates.includes(curStr)) {
+      n++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else break;
+  }
+  return n;
+};
+
+/**
+ * 格式化学习计时（秒转 MM:SS）
+ */
+export const formatElapsedTime = (seconds: number): { minutes: string; seconds: string } => {
+  const m = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (seconds % 60).toString().padStart(2, "0");
+  return { minutes: m, seconds: s };
+};

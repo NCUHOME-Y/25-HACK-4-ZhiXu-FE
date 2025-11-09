@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import type { User } from '../lib/types';
+import type { User } from '../lib/types/types';
 
 /**
  * 用户服务

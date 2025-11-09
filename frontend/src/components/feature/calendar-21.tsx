@@ -22,8 +22,9 @@ export default function Calendar21() {
       className="rounded-lg border border-slate-200 shadow-sm [--cell-size:2.75rem] md:[--cell-size:3rem] dark:border-slate-800"
       formatters={{
         formatMonthDropdown: (date) => {
-          return date.toLocaleString("default", { month: "long" })
+          return date.toLocaleString("zh-CN", { month: "long" })
         },
+        formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString("zh-CN", { month: "long" })}`,
       }}
       components={{
         DayButton: ({ children, modifiers, day, ...props }) => {

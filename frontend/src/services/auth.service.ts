@@ -1,43 +1,52 @@
-import apiClient from './apiClient';
-import type { AuthResponse } from '../lib/types';
+import type { User } from '../lib/types/types';
 
-//认证服务
-//提供用户登录、注册、OTP验证等功能
+class AuthService {
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('auth_token');
+    return !!token;
+  }
 
-export const authService = {
-  // 用户登录
-  login: async (phone: string, password: string): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/login', { phone, password });
-    localStorage.setItem('authToken', response.data.token);
-    return response.data;
-  },
+  async getCurrentUser(): Promise<User | null> {
+    if (this.isAuthenticated()) {
+      return {
+        id: '1',
+        name: 'Demo User',
+        phone: '13800138000',
+      };
+    }
+    return null;
+  }
 
-  // 用户注册
-  register: async (name: string, phone: string, password: string): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/register', { name, phone, password });
-    localStorage.setItem('authToken', response.data.token);
-    return response.data;
-  },
+  async login(credentials: { username: string; password: string }): Promise<{ user: User; token: string }> {
+    const mockToken = 'mock_jwt_token_' + Date.now();
+    const mockUser: User = {
+      id: '1',
+      name: credentials.username,
+      phone: '13800138000',
+    };
+    localStorage.setItem('auth_token', mockToken);
+    return { user: mockUser, token: mockToken };
+  }
 
-  // 发送OTP验证码
-  sendOTP: async (phone: string): Promise<void> => {
-    await apiClient.post('/auth/send-otp', { phone });
-  },
+  async register(data: { username: string; email: string; password: string }): Promise<{ user: User; token: string }> {
+    const mockToken = 'mock_jwt_token_' + Date.now();
+    const mockUser: User = {
+      id: String(Date.now()),
+      name: data.username,
+      phone: '13800138000',
+    };
+    localStorage.setItem('auth_token', mockToken);
+    return { user: mockUser, token: mockToken };
+  }
 
-  // 验证OTP验证码
-  verifyOTP: async (phone: string, code: string): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/verify-otp', { phone, code });
-    localStorage.setItem('authToken', response.data.token);
-    return response.data;
-  },
+  async logout(): Promise<void> {
+    localStorage.removeItem('auth_token');
+  }
 
-  // 用户登出
-  logout: (): void => {
-    localStorage.removeItem('authToken');
-  },
+  getToken(): string | null {
+    return localStorage.getItem('auth_token');
+  }
+}
 
-  // 检查用户是否已认证
-  isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('authToken');
-  },
-};
+export const authService = new AuthService();
+export default authService;
