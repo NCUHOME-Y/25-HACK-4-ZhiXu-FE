@@ -1,37 +1,13 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter, Button } from "../components/index";
-import { AlertCircle, ServerCrash, ShieldAlert, Wifi, RefreshCw, Home } from "lucide-react";
+import { RefreshCw, Home } from "lucide-react";
+import { ERROR_CONFIG, type ErrorType } from "../lib/constants";
 
-// 简化的错误类型配置 - 只保留常用的
-const ERROR_CONFIG = {
-  401: {
-    icon: ShieldAlert,
-    title: "未授权",
-    description: "您需要登录才能访问",
-    color: "text-yellow-500",
-    actionText: "去登录",
-    actionPath: "/auth",
-  },
-  404: {
-    icon: AlertCircle,
-    title: "页面未找到",
-    description: "抱歉，您访问的页面不存在",
-    color: "text-blue-500",
-  },
-  500: {
-    icon: ServerCrash,
-    title: "服务器错误",
-    description: "服务器遇到了问题，请稍后再试",
-    color: "text-red-600",
-  },
-  network: {
-    icon: Wifi,
-    title: "网络错误",
-    description: "无法连接到服务器，请检查网络连接",
-    color: "text-slate-500",
-  },
-} as const;
-
+/**
+ * 错误页面
+ * 显示各种错误状态（401、404、500、网络错误等）
+ * 使用查询参数传递错误信息：?status=404&message=自定义消息
+ */
 export default function ErrorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -39,10 +15,12 @@ export default function ErrorPage() {
   const statusParam = searchParams.get('status') || '404';
   const messageParam = searchParams.get('message');
   
-  const status = statusParam === 'network' ? 'network' : Number(statusParam);
-  const config = ERROR_CONFIG[status as keyof typeof ERROR_CONFIG] || ERROR_CONFIG[404];
+  // 解析错误类型
+  const status: ErrorType = statusParam === 'network' ? 'network' : (Number(statusParam) as ErrorType);
+  const config = ERROR_CONFIG[status] || ERROR_CONFIG[404];
   const Icon = config.icon;
   
+  // 优先使用 URL 传递的消息，否则使用默认描述
   const message = messageParam ? decodeURIComponent(messageParam) : config.description;
 
   const handleAction = () => {
@@ -54,7 +32,7 @@ export default function ErrorPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-950 dark:to-slate-900">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-950 dark:to-slate-900">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center space-y-6">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">

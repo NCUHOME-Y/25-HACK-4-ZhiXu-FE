@@ -32,3 +32,20 @@ export interface TaskRingProps {
   total?: number
 }
 
+// 打卡记录
+export interface PunchRecord {
+  id: string
+  userId: string
+  date: string // YYYY-MM-DD
+  createdAt: string
+}
+
+// 学习记录
+export interface StudyRecord {
+  id: string
+  userId: string
+  startTime: string
+  endTime?: string
+  duration: number // 秒
+}
+
