@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { authService } from '../services';
+import { authService } from '../services/auth.service';
 
 /**
  * 路由保护组件

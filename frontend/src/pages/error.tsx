@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter, Button } from "../components/index";
 import { RefreshCw, Home } from "lucide-react";
-import { ERROR_CONFIG, type ErrorType } from "../lib/constants";
+import { ERROR_CONFIG, type ErrorType } from "../lib/constants/constants";
 
 /**
  * 错误页面

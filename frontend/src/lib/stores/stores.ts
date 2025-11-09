@@ -47,13 +47,13 @@ export const useTaskStore = create<TaskState>(
 	studying: false,
 	addTask: (task: Task) => set({ tasks: [task, ...get().tasks] }),
 		updateTask: (id: string, partial: Partial<Task>) => set({ tasks: get().tasks.map((t: Task) => (t.id === id ? { ...t, ...partial } : t)) }),
-		tickTask: (id: string) => set({
-			tasks: get().tasks.map((t: Task) => {
+	tickTask: (id: string) => set({
+		tasks: get().tasks.map((t: Task) => {
 			if (t.id !== id) return t;
 			const total = t.total ?? 1;
 			const next = (t.count ?? 0) + 1;
 			const done = next >= total;
-			return { ...t, count: Math.min(next, total), completed: done };
+			return { ...t, count: next, completed: done };
 		}),
 	}),
 	togglePunchToday: () => {
