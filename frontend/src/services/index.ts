@@ -5,3 +5,5 @@ export * from './error.service';
 export * from './mine.service';
 export * from './ai.service';
 export * from './contact.service';
+export * from './chat.service';
+export * from './private-chat.service';
