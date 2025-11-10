@@ -55,7 +55,7 @@ const TaskRing = ({ count = 0, total = 1 }: TaskRingProps) => {
     <ProgressRing
       current={count}
       total={total}
-      size={32}
+      size={44} // 放大任务模块的环形进度条
       color="hsl(var(--chart-1))"
       showLabel={true}
     />

@@ -20,61 +20,78 @@ import {
 
 export const description = "A multiple bar chart"
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
+interface ChartBarData {
+  category: string
+  value1: number
+  value2: number
+}
+
+interface ChartBarMultipleProps {
+  data: ChartBarData[]
+  title?: string
+  description?: string
+  value1Label?: string
+  value2Label?: string
+  showFooter?: boolean
+}
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "var(--chart-1)",
+  value1: {
+    label: "数据1",
+    color: "hsl(var(--chart-1))",
   },
-  mobile: {
-    label: "Mobile",
-    color: "var(--chart-2)",
+  value2: {
+    label: "数据2",
+    color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
 
-export function ChartBarMultiple() {
+export function ChartBarMultiple({ 
+  data, 
+  title = "对比图表",
+  description = "数据对比",
+  value1Label = "类型1",
+  value2Label = "类型2",
+  showFooter = false
+}: ChartBarMultipleProps) {
+  const total1 = data.reduce((sum, item) => sum + item.value1, 0)
+  const total2 = data.reduce((sum, item) => sum + item.value2, 0)
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bar Chart - Multiple</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={chartData}>
+          <BarChart accessibilityLayer data={data}>
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="category"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
             />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator="dashed" />}
             />
-            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-            <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
+            <Bar dataKey="value1" fill="var(--color-value1)" radius={4} />
+            <Bar dataKey="value2" fill="var(--color-value2)" radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 leading-none font-medium">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="text-muted-foreground leading-none">
-          Showing total visitors for the last 6 months
-        </div>
-      </CardFooter>
+      {showFooter && (
+        <CardFooter className="flex-col items-start gap-2 text-sm">
+          <div className="flex gap-2 leading-none font-medium">
+            {value1Label}: {total1} 次 | {value2Label}: {total2} 次 <TrendingUp className="h-4 w-4" />
+          </div>
+          <div className="text-muted-foreground leading-none">
+            总计 {total1 + total2} 次
+          </div>
+        </CardFooter>
+      )}
     </Card>
   )
 }

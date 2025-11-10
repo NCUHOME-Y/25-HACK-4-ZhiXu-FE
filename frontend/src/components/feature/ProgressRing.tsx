@@ -1,10 +1,6 @@
-import {
-  Label,
-  PolarRadiusAxis,
-  RadialBar,
-  RadialBarChart,
-} from "recharts";
-import { ChartContainer } from "../ui/chart";
+import * as React from "react";
+
+// React is imported for JSX runtime and types; keep the import to satisfy TSX usage
 
 interface ProgressRingProps {
   current: number;
@@ -18,95 +14,97 @@ interface ProgressRingProps {
 }
 
 /**
- * 通用环形进度图组件
- * 支持百分比显示和自定义标签
+ * 更可靠的环形进度条实现（SVG）
+ * - 直接用 SVG circle 控制 stroke-dashoffset，避免 Recharts 在数据缩放上的歧义
+ * - 当后端或 store 更新 current 时，环会正确反映实时进度
  */
-export function ProgressRing({ 
-  current, 
-  total, 
-  size = 56, 
+export const ProgressRing: React.FC<ProgressRingProps> = ({
+  current,
+  total,
+  size = 56,
   color = "hsl(var(--chart-1))",
   showLabel = true,
   labelTop,
   labelBottom,
-  className = ""
-}: ProgressRingProps) {
-  const progressPercentage = Math.min(100, (current / Math.max(total, 1)) * 100);
-  const innerRadius = Math.round(size * 0.35);
-  const outerRadius = Math.round(size * 0.5);
+  className = "",
+}) => {
+  const progress = Math.max(0, Math.min(1, current / Math.max(total, 1)));
 
-  // 文本尺寸与显示策略
-  const showCompactLabel = size <= 40;
-  const mainFontPx = showCompactLabel ? Math.max(10, Math.round(size * 0.28)) : Math.max(12, Math.round(size * 0.32));
-  const subFontPx = showCompactLabel ? Math.max(8, Math.round(size * 0.14)) : Math.max(10, Math.round(size * 0.16));
-  const compactTop = labelTop ?? `${current}/${total}`;
-  const defaultTop = labelTop ?? `${Math.round(progressPercentage)}%`;
+  const strokeWidth = Math.max(4, Math.round(size * 0.12));
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - progress);
 
-  const chartData = [{ value: progressPercentage }];
-  
-  const chartConfig = {
-    value: {
-      label: "进度",
-      color: color,
-    },
-  };
+  const showCompactLabel = size < 50;
+  const mainFontPx = showCompactLabel ? Math.max(8, Math.round(size * 0.19)) : Math.max(11, Math.round(size * 0.24));
+  const subFontPx = showCompactLabel ? Math.max(6, Math.round(size * 0.10)) : Math.max(9, Math.round(size * 0.13));
+
+  const topText = labelTop ?? (showCompactLabel ? `${current}/${total}` : `${Math.round(progress * 100)}%`);
 
   return (
-    <div className={className} style={{ width: size, height: size }}>
-      <ChartContainer config={chartConfig} className="mx-auto aspect-square">
-        <RadialBarChart
-          data={chartData}
-          startAngle={90}
-          endAngle={90 + 360}
-          innerRadius={innerRadius}
-          outerRadius={outerRadius}
+    <div
+      className={className}
+      style={{ width: size, height: size, position: "relative", display: "inline-block" }}
+      aria-hidden={false}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={color} stopOpacity="1" />
+            <stop offset="100%" stopColor={color} stopOpacity="1" />
+          </linearGradient>
+        </defs>
+        {/* 背景圆环 */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          stroke="var(--muted)"
+          fill="none"
+        />
+
+        {/* 进度圆环 */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          stroke="url(#progressGradient)"
+          fill="none"
+          strokeLinecap={size > 40 ? "round" : "butt"}
+          style={{
+            transform: `rotate(-90deg)`,
+            transformOrigin: "50% 50%",
+            strokeDasharray: `${circumference} ${circumference}`,
+            strokeDashoffset: dashOffset,
+            transition: "stroke-dashoffset 200ms linear",
+          }}
+        />
+      </svg>
+
+      {showLabel && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            pointerEvents: "none",
+            textAlign: "center",
+          }}
         >
-          <RadialBar
-            dataKey="value"
-            background={true}
-            fill={color}
-            cornerRadius={size > 40 ? 6 : 3}
-            isAnimationActive={false}
-          />
-          {showLabel && (
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    const cx = viewBox.cx as number;
-                    const cy = viewBox.cy as number;
-
-                    if (showCompactLabel) {
-                      // 小尺寸：单行紧凑文本（count/total）
-                      return (
-                        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
-                          <tspan x={cx} y={cy} fill="var(--foreground)" fontWeight={600} fontSize={mainFontPx}>
-                            {compactTop}
-                          </tspan>
-                        </text>
-                      );
-                    }
-
-                    // 大尺寸：主文本 +（可选）子文本
-                    return (
-                      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
-                        <tspan x={cx} y={cy} fill="var(--foreground)" fontWeight={700} fontSize={mainFontPx}>
-                          {defaultTop}
-                        </tspan>
-                        {labelBottom && (
-                          <tspan x={cx} y={cy + Math.round(size * 0.24)} fill="var(--muted-foreground)" fontSize={subFontPx}>
-                            {labelBottom}
-                          </tspan>
-                        )}
-                      </text>
-                    );
-                  }
-                }}
-              />
-            </PolarRadiusAxis>
+          <div style={{ fontWeight: 700, fontSize: mainFontPx, lineHeight: 1, color: "var(--foreground)" }}>{topText}</div>
+          {!showCompactLabel && labelBottom && (
+            <div style={{ fontSize: subFontPx, color: "var(--muted-foreground)", marginTop: Math.round(size * 0.06) }}>{labelBottom}</div>
           )}
-        </RadialBarChart>
-      </ChartContainer>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,10 @@
 ﻿import axios from 'axios';
+import { handleApiError } from './error.service';
 
-//API 客户端配置,包含请求拦截器和响应拦截器
+/**
+ * API 客户端配置
+ * 包含请求拦截器和响应拦截器
+ */
 const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api',
   timeout: 10000,
@@ -14,28 +18,11 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器 - 处理各种错误
+// 响应拦截器 - 使用error.service处理错误
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 网络错误
-    if (!error.response) {
-      window.location.href = '/error?status=network&message=网络连接失败';
-      return Promise.reject(error);
-    }
-
-    const status = error.response.status;
-
-    // 根据状态码跳转到对应错误页面
-    if (status === 401) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/error?status=401';
-    } else if (status === 404) {
-      window.location.href = '/error?status=404';
-    } else if (status >= 500) {
-      window.location.href = '/error?status=500';
-    }
-
+    handleApiError(error);
     return Promise.reject(error);
   }
 );

@@ -19,6 +19,7 @@ export * from "./ui/sonner"
 export * from "./ui/textarea"
 export * from "./ui/toggle"
 export * from "./ui/toggle-group"
+export * from "./ui/tabs"
 
 // 导出布局组件
 export * from "./layout/bottomnav"
@@ -28,7 +29,10 @@ export * from "./layout/search"
 export * from "./feature/login-form"
 export * from "./feature/signup-form"
 export * from "./feature/otp-form"
+export { ChartRadialText } from "./feature/chart-radial-text"
+export { ChartAreaDefault } from "./feature/chart-area-default"
+export { ChartBarMultiple } from "./feature/chart-bar-multiple"
 
-// 导出功能日历组件（统一从 index 导入）
+// 导出功能日历组件(统一从 index 导入)
 export { default as Calendar21 } from "./feature/calendar-21"
 export { default as Calendar23 } from "./feature/calendar-23"
