@@ -7,5 +7,4 @@ export * from './ai.service';
 export * from './contact.service';
 export * from './error.service';
 export * from './mine.service';
-export * from './private.service';
-export * from './pubilc.service';
+export * from './chat.service';

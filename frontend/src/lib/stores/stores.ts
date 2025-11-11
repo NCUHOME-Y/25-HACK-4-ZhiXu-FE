@@ -20,15 +20,17 @@ export const useAuthStore = create<AuthState>((set: (partial: Partial<AuthState>
 interface TaskState {
 	tasks: Task[];
 	punchedDates: string[]; // YYYY-MM-DD
-	elapsed: number; // 学习计时秒数
+	dailyElapsed: number; // 每日累计学习时长（秒）
+	sessionElapsed: number; // 本次学习时长（秒）
 	studying: boolean;
 	addTask: (task: Task) => void;
 	updateTask: (id: string, partial: Partial<Task>) => void;
+	deleteTask: (id: string) => void;
 	tickTask: (id: string) => void;
 	togglePunchToday: () => void;
 	startStudy: () => void;
 	stopStudy: () => void;
-	increaseElapsed: () => void;
+	increaseDailyElapsed: () => void;
 }
 const fmt = (d: Date) => {
 	const y = d.getFullYear();
@@ -43,10 +45,12 @@ export const useTaskStore = create<TaskState>(
 	) => ({
 	tasks: [],
 	punchedDates: [],
-	elapsed: 0,
+	dailyElapsed: 0,
+	sessionElapsed: 0,
 	studying: false,
 	addTask: (task: Task) => set({ tasks: [task, ...get().tasks] }),
 		updateTask: (id: string, partial: Partial<Task>) => set({ tasks: get().tasks.map((t: Task) => (t.id === id ? { ...t, ...partial } : t)) }),
+	deleteTask: (id: string) => set({ tasks: get().tasks.filter((t: Task) => t.id !== id) }),
 	tickTask: (id: string) => set({
 		tasks: get().tasks.map((t: Task) => {
 			if (t.id !== id) return t;
@@ -61,8 +65,17 @@ export const useTaskStore = create<TaskState>(
 		const cur = get().punchedDates;
 			set({ punchedDates: cur.includes(today) ? cur.filter((d: string) => d !== today) : [...cur, today] });
 	},
-	startStudy: () => set({ studying: true }),
-	stopStudy: () => set({ studying: false }),
-	increaseElapsed: () => set({ elapsed: get().elapsed + 1 }),
+	startStudy: () => set({ studying: true, sessionElapsed: 0 }),
+	stopStudy: () => {
+		const session = get().sessionElapsed;
+		set({ 
+			studying: false,
+			dailyElapsed: get().dailyElapsed + session
+		});
+	},
+	increaseDailyElapsed: () => set({ 
+		dailyElapsed: get().dailyElapsed + 1,
+		sessionElapsed: get().sessionElapsed + 1
+	}),
 	})
 	);

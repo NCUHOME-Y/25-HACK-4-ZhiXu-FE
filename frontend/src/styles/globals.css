@@ -1,45 +1,350 @@
 @import "tailwindcss";
 
 @layer base {
+  /* ===========================================
+     全局基础样式设置
+     =========================================== */
+
+  /* 全局过渡效果 - 为所有元素添加平滑过渡 */
   * {
     transition: all 0.3s;
   }
 
-  /* 隐藏滚动条 */
+  /* ===========================================
+     滚动条隐藏设置
+     =========================================== */
+
+  /* 隐藏Webkit浏览器滚动条 (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     display: none;
   }
 
+  /* Firefox滚动条隐藏 */
   html {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  /* 移动端滚动条隐藏 */
-  html, body {
     -webkit-overflow-scrolling: touch; /* iOS 流畅滚动 */
     overscroll-behavior: none; /* 防止滚动溢出 */
   }
 
-  /* 确保在所有设备上隐藏滚动条 */
+  /* 确保所有元素都没有滚动条 - 兜底设置 */
   * {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
-  }
+  /* ===========================================
+     文本光标设置
+     =========================================== */
 
-  /* 隐藏所有元素的文本光标，除了输入框 */
+  /* 隐藏所有元素的文本光标 - 提供更简洁的UI体验 */
   * {
     caret-color: transparent;
   }
 
-  /* 输入框显示正常的光标 */
+  /* 输入框显示正常的光标 - 保持可编辑性 */
   input, textarea, [contenteditable] {
     caret-color: auto;
   }
+
+  /* ===========================================
+     自定义动画关键帧定义
+     =========================================== */
+
+  /* 弹入动画 - 从小到大向上弹跳进入 */
+  @keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.3) translateY(20px); }
+    50% { opacity: 0.9; transform: scale(1.05) translateY(-5px); }
+    70% { opacity: 1; transform: scale(0.95) translateY(2px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* 弹出动画 - 缩小并向上淡出 */
+  @keyframes bounceOut {
+    0% { opacity: 1; transform: scale(1) translateY(0); }
+    100% { opacity: 0; transform: scale(0.8) translateY(-10px); }
+  }
+
+  /* 滑动弹入动画 - 从右侧滑入并弹跳 */
+  @keyframes slideInBounce {
+    0% { opacity: 0; transform: translateX(100%) scale(0.8); }
+    60% { opacity: 0.8; transform: translateX(-5%) scale(1.02); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+  }
+
+  /* 滑动弹出动画 - 向左侧滑出 */
+  @keyframes slideOutBounce {
+    0% { opacity: 1; transform: translateX(0) scale(1); }
+    100% { opacity: 0; transform: translateX(-100%) scale(0.9); }
+  }
+
+  /* 缩放弹入动画 - 旋转缩放进入 */
+  @keyframes scaleInBounce {
+    0% { opacity: 0; transform: scale(0.5) rotate(10deg); }
+    50% { opacity: 0.8; transform: scale(1.1) rotate(-2deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+
+  /* 缩放弹出动画 - 旋转缩放退出 */
+  @keyframes scaleOutBounce {
+    0% { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(0.7) rotate(-5deg); }
+  }
+
+  /* 淡入动画 - 简单透明度变化 */
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  /* 翻页动画 - 3D旋转进入效果 */
+  @keyframes pageFlip {
+    0% {
+      opacity: 0;
+      transform: rotateY(-90deg) scale(0.8);
+    }
+    50% {
+      opacity: 0.7;
+      transform: rotateY(-45deg) scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: rotateY(0deg) scale(1);
+    }
+  }
+
+  /* 向上翻立动画 - 从屏幕下方飞到上方，边飞边翻页边变透明 */
+  @keyframes flipUp {
+    0% {
+      opacity: 0;
+      transform: rotateX(120deg) scale(0.9) translateY(-100px);
+      transform-origin: bottom center;
+    }
+    15% {
+      opacity: 0;
+      transform: rotateX(110deg) scale(0.92) translateY(-80px);
+      transform-origin: bottom center;
+    }
+    40% {
+      opacity: 0.1;
+      transform: rotateX(60deg) scale(0.95) translateY(-32px);
+      transform-origin: bottom center;
+    }
+    70% {
+      opacity: 0.7;
+      transform: rotateX(20deg) scale(0.98) translateY(-4px);
+      transform-origin: bottom center;
+    }
+    90% {
+      opacity: 1;
+      transform: rotateX(0deg) scale(1.006) translateY(3px);
+      transform-origin: bottom center;
+    }
+
+    100% {
+      opacity: 1;
+      transform: rotateX(0deg) scale(1) translateY(0px);
+      transform-origin: bottom center;
+    }
+  }
+
+
+  /* 向上飞消失动画 - 从当前位置向上飞走，边飞边翻页边变透明 */
+  @keyframes flipDown {
+    0% {
+      opacity: 1;
+      transform: rotateX(0deg) scale(1) translateY(0px);
+      transform-origin: bottom center;
+    }
+    30% {
+      opacity: 0.7;
+      transform: rotateX(20deg) scale(0.98) translateY(-4px);
+      transform-origin: bottom center;
+    }
+    80% {
+      opacity: 0;
+      transform: rotateX(60deg) scale(0.95) translateY(-32px);
+      transform-origin: bottom center;
+    }
+    85% {
+      opacity: 0;
+      transform: rotateX(110deg) scale(0.92) translateY(-80px);
+      transform-origin: bottom center;
+    }
+    100% {
+      opacity: 0;
+      transform: rotateX(120deg) scale(0.9) translateY(-100px);
+      transform-origin: bottom center;
+    }
+  }
+
+  /* 保存原有更强烈的向上翻立动画 */
+  @keyframes flipUpStrong {
+    0% {
+      opacity: 0;
+      transform: rotateX(110deg) scale(0.92) translateY(80px);
+      transform-origin: bottom center;
+    }
+    30% {
+      opacity: 0.5;
+      transform: rotateX(60deg) scale(0.98) translateY(32px);
+      transform-origin: bottom center;
+    }
+    60% {
+      opacity: 0.85;
+      transform: rotateX(20deg) scale(1.02) translateY(4px);
+      transform-origin: bottom center;
+    }
+    85% {
+      opacity: 1;
+      transform: rotateX(2deg) scale(1.01) translateY(-2px);
+      transform-origin: bottom center;
+    }
+    100% {
+      opacity: 1;
+      transform: rotateX(0deg) scale(1) translateY(0px);
+      transform-origin: bottom center;
+    }
+  }
+
+  /* ===========================================
+     CSS变量定义
+     =========================================== */
+
+  /* 统一弹性缓动函数 - 提供Q弹效果 */
+  :root {
+    --bounce-easing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* ===========================================
+     动画类定义 - 可在组件中直接使用
+     =========================================== */
+
+  /* 弹入动画类 - 用法: className="animate-bounce-in" */
+  .animate-bounce-in { animation: bounceIn 0.6s var(--bounce-easing) forwards; }
+
+  /* 弹出动画类 - 用法: className="animate-bounce-out" */
+  .animate-bounce-out { animation: bounceOut 0.4s var(--bounce-easing) forwards; }
+
+  /* 滑动弹入动画类 - 用法: className="animate-slide-in-bounce" */
+  .animate-slide-in-bounce { animation: slideInBounce 0.5s var(--bounce-easing) forwards; }
+
+  /* 滑动弹出动画类 - 用法: className="animate-slide-out-bounce" */
+  .animate-slide-out-bounce { animation: slideOutBounce 0.4s var(--bounce-easing) forwards; }
+
+  /* 缩放弹入动画类 - 用法: className="animate-scale-in-bounce" */
+  .animate-scale-in-bounce { animation: scaleInBounce 0.5s var(--bounce-easing) forwards; }
+
+  /* 缩放弹出动画类 - 用法: className="animate-scale-out-bounce" */
+  .animate-scale-out-bounce { animation: scaleOutBounce 0.3s var(--bounce-easing) forwards; }
+
+  /* 日历弹出动画类 - 用法: className="animate-calendar-pop" */
+  .animate-calendar-pop { animation: calendarPopBounce 0.28s var(--bounce-easing) both; }
+
+  /* ===========================================
+     UI组件自动动画应用 - 无需修改组件源码
+     =========================================== */
+
+  /* Toast平滑进入动画 */
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-100%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Toast平滑退出动画 */
+  @keyframes toastSlideOut {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-100%) scale(0.95);
+    }
+  }
+
+  /* Toast消息动画 - Sonner库toast自动应用平滑进入效果 */
+  [data-sonner-toaster] [data-sonner-toast] {
+    animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+  }
+
+  /* Toast消失动画 */
+  [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+    animation: toastSlideOut 0.3s cubic-bezier(0.06, 0.71, 0.55, 1) forwards;
+  }
+
+  /* Toast按钮悬停效果 */
+  [data-sonner-toaster] [data-sonner-toast] button:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+  }
+
+  /* Alert组件动画 - 自动应用向上翻立效果 */
+
+  [role="alert"] {
+    animation: flipUp 0.2s ease-out forwards;
+    opacity: 0;
+  }
+
+  /* Alert消失动画 - 方向相反的向下翻消失 */
+
+  [role="alert"].alert-hide {
+    animation: flipDown 0.2s ease-in forwards !important;
+  }
+
+  /* Dialog组件动画 - Radix UI Dialog自动应用缩放弹入 */
+  [data-radix-dialog-content] {
+    animation: scaleInBounce 0.5s var(--bounce-easing) forwards;
+  }
+
+  /* Dialog遮罩淡入效果 */
+  [data-radix-dialog-overlay] {
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  /* Dialog按钮悬停效果 */
+  [data-radix-dialog-content] button:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+  }
+
+  /* Drawer组件动画 - Vaul Drawer自动应用滑动弹入 */
+  [data-vaul-drawer-content] {
+    animation: slideInBounce 0.5s var(--bounce-easing) forwards;
+  }
+
+  /* ===========================================
+     通用交互效果
+     =========================================== */
+
+  /* 通用按钮悬停效果 - 所有按钮自动缩放 */
+  button:hover, [role="button"]:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+  }
+
+  /* ===========================================
+     性能优化 - 预提示浏览器动画属性
+     =========================================== */
+
+  /* 动画元素性能优化 - 提前声明将要变化的属性 */
+  [data-sonner-toast],
+  [role="alert"],
+  [data-radix-dialog-content],
+  [data-radix-popover-content],
+  [data-vaul-drawer-content] {
+    will-change: transform, opacity;
+  }
+
+  /* ===========================================
+     Tailwind CSS 主题变量 - 亮色模式
+     =========================================== */
 
   :root {
     --radius: 0.65rem;
@@ -76,6 +381,10 @@
     --sidebar-ring: oklch(0.708 0 0);
   }
 
+  /* ===========================================
+     Tailwind CSS 主题变量 - 暗色模式
+     =========================================== */
+
   .dark {
     --background: oklch(0.141 0.005 285.823);
     --foreground: oklch(0.985 0 0);
@@ -110,3 +419,4 @@
     --sidebar-ring: oklch(0.439 0 0);
   }
 }
+

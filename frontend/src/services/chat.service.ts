@@ -208,18 +208,4 @@ class UnifiedChatService {
 }
 
 // 导出统一的服务实例
-export const unifiedChatService = new UnifiedChatService();
-
-// 为向后兼容保留旧的导出
-export const chatService = {
-  getChatRooms: () => unifiedChatService.getChatRooms(),
-  getChatHistory: (roomId: string, page?: number, limit?: number) =>
-    unifiedChatService.getRoomChatHistory(roomId, page, limit),
-  connectChatRoom: (roomId: string, token: string) =>
-    unifiedChatService.connectToRoom(roomId, token),
-  sendMessage: (content: string) => unifiedChatService.sendMessage(content),
-  deleteMessageHttp: (messageId: string) => unifiedChatService.deleteMessage(messageId),
-  onMessage: (callback: (message: ChatMessage) => void) =>
-    unifiedChatService.onMessage(callback),
-  disconnectChatRoom: () => unifiedChatService.disconnect()
-};
+export const chatService = new UnifiedChatService();

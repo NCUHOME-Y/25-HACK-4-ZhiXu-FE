@@ -21,8 +21,9 @@ import { ProgressRing } from "../components/feature/ProgressRing";
 import { useTaskStore } from "../lib/stores/stores";
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from "../lib/helpers/helpers";
 import { useStudyTimer } from "../lib/hooks/hooks";
-import { Plus, Pencil, Check } from "lucide-react";
+import { Plus, Pencil, Check, CheckCircle2 } from "lucide-react";
 import type { PunchChartProps, TaskRingProps } from "../lib/types/types";
+import { toast } from "sonner";
 
 // ==================== 页面常量 ====================
 const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
@@ -74,10 +75,11 @@ export default function FlagPage() {
   const togglePunchTodayInStore = useTaskStore((s) => s.togglePunchToday);
   
   const studying = useTaskStore((s) => s.studying);
-  const elapsed = useTaskStore((s) => s.elapsed);
+  const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
+  const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
   const startStudy = useTaskStore((s) => s.startStudy);
   const stopStudy = useTaskStore((s) => s.stopStudy);
-  const increaseElapsed = useTaskStore((s) => s.increaseElapsed);
+  const increaseDailyElapsed = useTaskStore((s) => s.increaseDailyElapsed);
 
   // ======= 页面本地状态 =======
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -87,22 +89,72 @@ export default function FlagPage() {
 
   // ======= 自定义 Hooks =======
   // 学习计时器自动管理
-  useStudyTimer(studying, increaseElapsed);
+  useStudyTimer(studying, increaseDailyElapsed);
 
-  // Alert 自动消失
+  // Alert 显示状态管理
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertHiding, setAlertHiding] = useState(false);
+
+  // Alert 自动消失 - 先添加消失动画类，再隐藏
   useEffect(() => {
-    if (showError) {
+    if (showError && !alertVisible) {
+      setAlertVisible(true);
+      setAlertHiding(false);
+    } else if (!showError && alertVisible) {
+      setAlertHiding(true);
+      // 等待动画完成后隐藏
       const timer = setTimeout(() => {
-        setShowError(false);
-      }, 3000);
+        setAlertVisible(false);
+        setAlertHiding(false);
+      }, 300); // 动画时间
       return () => clearTimeout(timer);
     }
-  }, [showError]);
+  }, [showError, alertVisible]);
+
+  // 2秒后开始隐藏Alert
+  useEffect(() => {
+    if (alertVisible && !alertHiding) {
+      const timer = setTimeout(() => {
+        setShowError(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [alertVisible, alertHiding]);
 
   // ======= 计算属性 =======
   const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
   const monthlyPunches = useMemo(() => calculateMonthlyPunches(punchedDates), [punchedDates]);
-  const { minutes, seconds } = formatElapsedTime(elapsed);
+  
+  // 格式化每日累计时长为 HH:MM:SS
+  const formatDailyTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+  
+  // 格式化本次学习时长
+  const formatSessionTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) {
+      // 超过1小时显示 HH:MM:SS 缩小字号
+      return {
+        time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+        isLong: true
+      };
+    } else {
+      // 不足1小时显示 MM:SS
+      return {
+        time: `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+        isLong: false
+      };
+    }
+  };
+  
+  const { minutes, seconds } = formatElapsedTime(sessionElapsed);
   const todayStr = useMemo(() => formatDateYMD(new Date()), []);
   const isPunchedToday = punchedDates.includes(todayStr);
   
@@ -130,11 +182,38 @@ export default function FlagPage() {
     setShowError(false);
     
     if (editingTaskId) {
+      // 编辑模式 - 保存旧值用于撤销
+      const oldTask = tasks.find(t => t.id === editingTaskId);
       updateTaskInStore(editingTaskId, newTask);
+      
+      toast.success("flag已更新", {
+        action: oldTask ? {
+          label: "撤销",
+          onClick: () => {
+            updateTaskInStore(editingTaskId, {
+              title: oldTask.title,
+              detail: oldTask.detail || "",
+              total: oldTask.total || 1
+            });
+            toast.success("已撤销更新");
+          }
+        } : undefined
+      });
       // TODO: 接入后端 await updateTask(editingTaskId, newTask)
     } else {
+      // 新建模式 - 先创建,保存ID用于撤销
       const created = { id: String(Date.now()), ...newTask, count: 0, completed: false };
       addTask(created);
+      
+      toast.success("flag已创建", {
+        action: {
+          label: "撤销",
+          onClick: () => {
+            useTaskStore.getState().deleteTask(created.id);
+            toast.success("已撤销创建");
+          }
+        }
+      });
       // TODO: 接入后端 await createTask(newTask)
     }
     
@@ -164,12 +243,12 @@ export default function FlagPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* 错误提示 - 悬浮在所有内容之上 */}
-      {showError && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-11/12 max-w-md">
-          <Alert variant="destructive">
+      {/* 错误提示 - 从屏幕下方飞到上方 */}
+      {alertVisible && (
+  <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[9999] w-11/12 max-w-md">
+          <Alert variant="destructive" className={alertHiding ? 'alert-hide' : ''}>
             <AlertTitle>错误</AlertTitle>
-            <AlertDescription>任务概述不能为空</AlertDescription>
+            <AlertDescription>flag概述不能为空</AlertDescription>
           </Alert>
         </div>
       )}
@@ -212,53 +291,75 @@ export default function FlagPage() {
           />
         </section>
 
-        {/* 打卡双模块（两列） */}
-        <section className="grid grid-cols-2 gap-3">
-          {/* 模块1：打卡天数 + 环形图 */}
+        {/* 打卡三模块（1/4 + 1/2 + 1/4 布局） - 固定高度 */}
+        <section className="grid grid-cols-4 gap-3 -mx-4 h-24">
+          {/* 模块1：打卡状态 (1/4宽度) */}
           <Card 
-            className={`p-3 flex items-center gap-3 ${isPunchedToday ? 'opacity-60' : 'active:scale-[0.98]'} transition-transform`}
+            className={`col-span-1 px-2 py-3 flex flex-col items-center justify-center gap-1.5 transition-all border-transparent ${
+              isPunchedToday ? 'shadow-none pointer-events-none cursor-default' : 'cursor-pointer active:scale-[0.98]'
+            }`}
             onClick={isPunchedToday ? undefined : togglePunchToday}
           >
-            <div className="flex-1">
-              <div className="text-sm text-muted-foreground">每日打卡</div>
-              <div className="text-xl font-semibold">
-                {isPunchedToday ? '今日已打卡' : `坚持第 ${streak} 天`}
-              </div>
+            <div className="text-xs font-medium text-center">每日打卡</div>
+            <div className="text-sm font-semibold text-center leading-tight">
+              今日<br />{isPunchedToday ? '已打卡' : '未打卡'}
             </div>
-            <div className={isPunchedToday ? 'opacity-100' : ''}>
-              <PunchChart monthlyPunches={monthlyPunches} />
-            </div>
+            {isPunchedToday && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />}
           </Card>
 
-          {/* 模块2：学习计时 */}
-          <Card className="p-3 flex items-center justify-between gap-3 active:scale-[0.98] transition">
-            <div className="flex-1">
-              <div className="text-sm text-muted-foreground">学习计时</div>
-              {studying || elapsed > 0 ? (
-                <div className="text-xl font-semibold tabular-nums">{minutes}:{seconds}</div>
-              ) : (
-                <div className="text-sm text-muted-foreground">点击开始后显示</div>
-              )}
+          {/* 模块2：坚持显示 (1/2宽度) - 透明背景无边框 */}
+          <div className="col-span-2 px-2 py-2 flex flex-col justify-center gap-2 bg-transparent rounded-lg">
+            {/* 第一行：已连续坚持 + 环形进度图 + 今日累计学习时长 */}
+            <div className="w-full flex items-center justify-between">
+              <div className="text-xs text-muted-foreground text-center leading-tight">已连续<br />坚持</div>
+              <div className="flex-shrink-0">
+                <PunchChart monthlyPunches={monthlyPunches} />
+              </div>
+              <div className="text-xs text-muted-foreground text-center leading-tight">今日累计<br />学习时长</div>
             </div>
-            <Button
-              size="sm"
-              onClick={() => (studying ? stopStudy() : startStudy())}
-              className={studying ? "bg-red-500 hover:bg-red-500/90" : ""}
-            >
-              {studying ? "停止" : "开始"}
-            </Button>
+            
+            {/* 第二行：数据展示 */}
+            <div className="w-full flex items-center justify-between px-1">
+              <div className="text-base font-bold">{streak}天</div>
+              <div className="text-base font-bold tabular-nums">
+                {formatDailyTime(dailyElapsed)}
+              </div>
+            </div>
+          </div>
+
+          {/* 模块3：学习计时 (1/4宽度) */}
+          <Card 
+            className={`col-span-1 px-2 py-2 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-[0.98] transition-all border-transparent ${
+              studying ? 'shadow-none' : ''
+            }`}
+            onClick={() => (studying ? stopStudy() : startStudy())}
+          >
+            <div className="text-xs font-medium text-center leading-tight">学习计时</div>
+            {studying ? (
+              <div className="text-xl font-bold tabular-nums leading-tight">{minutes}:{seconds}</div>
+            ) : sessionElapsed > 0 ? (
+              <>
+                <div className="text-xs font-semibold leading-tight">学习中止</div>
+                <div className="text-[10px] text-muted-foreground leading-tight">本次学习时长:</div>
+                <div className={`font-bold tabular-nums leading-tight ${formatSessionTime(sessionElapsed).isLong ? 'text-xs' : 'text-base'}`}>
+                  {formatSessionTime(sessionElapsed).time}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm font-semibold leading-tight">学习开始</div>
+            )}
           </Card>
         </section>
 
-        {/* 今日任务标题与完成数 */}
+        {/* 今日flag标题与完成数 */}
         <div className="flex items-center justify-between pt-2">
-          <h2 className="text-base font-semibold">今日任务</h2>
+          <h2 className="text-base font-semibold">今日flag</h2>
           <div className="text-sm text-muted-foreground">
             {completedCount}/{tasks.length} 完成
           </div>
         </div>
 
-        {/* 任务列表 */}
+        {/* flag列表 */}
         <section className="space-y-2">
           {orderedTasks.map((t) => {
             const isDone = !!t.completed;
@@ -306,20 +407,20 @@ export default function FlagPage() {
         <Plus className="h-6 w-6" />
       </Button>
 
-      {/* Drawer：新建任务 */}
+      {/* Drawer：新建flag */}
       <Drawer open={openDrawer} onOpenChange={(isOpen) => !isOpen && closeDrawer()}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>{editingTaskId ? "编辑任务" : "新建任务"}</DrawerTitle>
+            <DrawerTitle>{editingTaskId ? "编辑flag" : "新建flag"}</DrawerTitle>
           </DrawerHeader>
           <div className="p-4 space-y-3">
             <Input
-              placeholder="任务概述"
+              placeholder="flag概述"
               value={newTask.title}
               onChange={(e) => setNewTask((s) => ({ ...s, title: e.target.value }))}
             />
             <Textarea
-              placeholder="任务详情（可选）"
+              placeholder="flag详情（可选）"
               value={newTask.detail}
               onChange={(e) => setNewTask((s) => ({ ...s, detail: e.target.value }))}
             />
