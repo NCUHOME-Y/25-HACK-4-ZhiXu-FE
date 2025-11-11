@@ -11,7 +11,7 @@ import {
   TabsContent
 } from "../components";
 import { getMonthlyStats, getFlagStats, getStudyTrend, getPunchTypeStats } from "../services";
-import type { MonthlyStats, FlagStats } from "../lib/types/types";
+import type { MonthlyStats, FlagStats, StudyTrendData, PunchTypeStats } from "../lib/types/types";
 import { Calendar, Clock, Flag } from "lucide-react";
 
 /**
@@ -62,7 +62,7 @@ export default function DataPage() {
       try {
         const data = await getStudyTrend(studyTrendPeriod);
         // 转换数据格式以适配ChartAreaDefault
-        const formattedData = data.map(item => ({
+        const formattedData = data.map((item: StudyTrendData) => ({
           label: item.label,
           value: item.duration
         }));
@@ -81,7 +81,7 @@ export default function DataPage() {
       try {
         const data = await getPunchTypeStats();
         // 转换数据格式以适配ChartBarMultiple
-        const formattedData = data.map(item => ({
+        const formattedData = data.map((item: PunchTypeStats) => ({
           category: item.week,
           value1: item.active,
           value2: item.passive

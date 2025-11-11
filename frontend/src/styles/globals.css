@@ -5,6 +5,42 @@
     transition: all 0.3s;
   }
 
+  /* 隐藏滚动条 */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  /* 移动端滚动条隐藏 */
+  html, body {
+    -webkit-overflow-scrolling: touch; /* iOS 流畅滚动 */
+    overscroll-behavior: none; /* 防止滚动溢出 */
+  }
+
+  /* 确保在所有设备上隐藏滚动条 */
+  * {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+  /* 隐藏所有元素的文本光标，除了输入框 */
+  * {
+    caret-color: transparent;
+  }
+
+  /* 输入框显示正常的光标 */
+  input, textarea, [contenteditable] {
+    caret-color: auto;
+  }
+
   :root {
     --radius: 0.65rem;
     --background: oklch(1 0 0);
