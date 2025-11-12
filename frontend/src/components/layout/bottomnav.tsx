@@ -7,11 +7,11 @@ export function BottomNav() {
   const location = useLocation();
 
   const navItems = [
-    { path: '/flag', label: '打卡', icon: Flag },
-    { path: '/ai', label: 'AI', icon: Bot },
-    { path: '/data', label: '数据', icon: BarChart3 },
-    { path: '/contact', label: '联系', icon: MessageSquare },
-    { path: '/mine', label: '我的', icon: User },
+    { path: '/flag', label: '圭表', icon: Flag },
+    { path: '/ai', label: '太傅', icon: Bot },
+    { path: '/data', label: '璇历', icon: BarChart3 },
+    { path: '/contact', label: '翰林院', icon: MessageSquare },
+    { path: '/mine', label: '素札', icon: User },
   ];
 
   return (

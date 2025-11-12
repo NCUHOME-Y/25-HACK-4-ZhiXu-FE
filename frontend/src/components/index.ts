@@ -30,9 +30,11 @@ export * from "./layout/search"
 export * from "./feature/login-form"
 export * from "./feature/signup-form"
 export * from "./feature/otp-form"
-export { ChartRadialText } from "./feature/chart-radial-text"
+// Feature Components
+export { ChartRadialStacked, setChartData } from "./feature/chart-radial-stacked";
 export { ChartAreaDefault } from "./feature/chart-area-default"
 export { ChartBarMultiple } from "./feature/chart-bar-multiple"
+export { ChartPieLabel } from "./feature/chart-pie-label"
 
 // 导出功能日历组件(统一从 index 导入)
 export { default as Calendar21 } from "./feature/calendar-21"

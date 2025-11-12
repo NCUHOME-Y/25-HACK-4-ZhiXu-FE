@@ -72,6 +72,7 @@ export function ChartAreaDefault({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              interval={0}
             />
             <ChartTooltip
               cursor={false}

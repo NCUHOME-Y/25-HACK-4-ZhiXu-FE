@@ -56,10 +56,24 @@ export interface MonthlyStats {
   totalStudyTime: number // 累计学习时长（分钟）
 }
 
+// Flag标签类型
+export type FlagLabel = 1 | 2 | 3 | 4 | 5;
+
+// 标签统计数据
+export interface LabelStats {
+  label: FlagLabel
+  labelName: string
+  completed: number    // 已完成数量
+  total: number       // 总数量
+  percentage: number  // 完成百分比
+  color: string
+}
+
 export interface FlagStats {
   completedCount: number // 已完成flag数量
   uncompletedCount: number // 未完成flag数量
   totalCount: number // 总flag数量
+  labelStats?: LabelStats[] // 按标签统计
 }
 
 // 学习时长趋势数据
