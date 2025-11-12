@@ -19,25 +19,38 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
   Empty,
   EmptyHeader,
   EmptyTitle,
   EmptyDescription,
   EmptyContent,
+  Label,
+  CustomSelect,
 } from '../components';
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
 import { useStudyTimer } from '../lib/hooks/hooks';
-import type { PunchChartProps, TaskRingProps } from '../lib/types/types';
+import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
+import type { PunchChartProps, TaskRingProps, FlagLabel, FlagPriority } from '../lib/types/types';
+
 
 /**
  * 打卡进度环形图组件
+ * @param monthlyPunches 本月打卡天数
  */
 const PunchChart = ({ monthlyPunches }: PunchChartProps) => {
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  
   return (
     <ProgressRing
       current={monthlyPunches}
@@ -52,32 +65,31 @@ const PunchChart = ({ monthlyPunches }: PunchChartProps) => {
 
 /**
  * 任务进度环组件
+ * @param count 当前完成数
+ * @param total 总数
  */
-const TaskRing = ({ count = 0, total = 1 }: TaskRingProps) => {
-  return (
-    <ProgressRing
-      current={count}
-      total={total}
-      size={44}
-      color="hsl(var(--chart-1))"
-      showLabel={true}
-    />
-  );
-};
+const TaskRing = ({ count = 0, total = 1 }: TaskRingProps) => (
+  <ProgressRing
+    current={count}
+    total={total}
+    size={44}
+    color="hsl(var(--chart-1))"
+    showLabel={true}
+  />
+);
+
 
 export default function FlagPage() {
-  // ========== 导航 ==========
+  // ========== 本地状态 ========== 
   const navigate = useNavigate();
-  
-  // ========== Zustand 状态管理 ==========
+  // Zustand 全局 store
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
   const updateTaskInStore = useTaskStore((s) => s.updateTask);
+  const deleteTaskInStore = useTaskStore((s) => s.deleteTask);
   const tickTaskInStore = useTaskStore((s) => s.tickTask);
-  
   const punchedDates = useTaskStore((s) => s.punchedDates);
   const togglePunchTodayInStore = useTaskStore((s) => s.togglePunchToday);
-  
   const studying = useTaskStore((s) => s.studying);
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
   const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
@@ -85,17 +97,27 @@ export default function FlagPage() {
   const stopStudy = useTaskStore((s) => s.stopStudy);
   const increaseDailyElapsed = useTaskStore((s) => s.increaseDailyElapsed);
 
-  // ========== 本地状态 ==========
+  // 本地 UI 状态
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', detail: '', total: 1 });
+  const [newTask, setNewTask] = useState({ 
+    title: '', 
+    detail: '', 
+    total: 1,
+    label: 1 as FlagLabel,
+    priority: 3 as FlagPriority,
+    isPublic: false
+  });
   const [showError, setShowError] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertHiding, setAlertHiding] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // ========== 副作用 ==========
+  // ========== 副作用 ========== 
+  // 学习计时副作用
   useStudyTimer(studying, increaseDailyElapsed);
 
+  // 错误提示动画副作用
   useEffect(() => {
     if (showError && !alertVisible) {
       setAlertVisible(true);
@@ -110,6 +132,7 @@ export default function FlagPage() {
     }
   }, [showError, alertVisible]);
 
+  // 错误提示自动关闭副作用
   useEffect(() => {
     if (alertVisible && !alertHiding) {
       const timer = setTimeout(() => {
@@ -119,19 +142,28 @@ export default function FlagPage() {
     }
   }, [alertVisible, alertHiding]);
 
-  // ========== 计算属性 ==========
+  // ========== 计算属性 ========== 
+  /** 连续打卡天数 */
   const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
+  /** 本月打卡天数 */
   const monthlyPunches = useMemo(() => calculateMonthlyPunches(punchedDates), [punchedDates]);
+  /** 今日日期字符串 */
   const todayStr = useMemo(() => formatDateYMD(new Date()), []);
+  /** 今日是否已打卡 */
   const isPunchedToday = punchedDates.includes(todayStr);
-  
-  const incompleteTasks = useMemo(() => tasks.filter((t) => !t.completed), [tasks]);
+  /** 未完成flag列表，按优先级升序 */
+  const incompleteTasks = useMemo(() =>
+    tasks.filter((t) => !t.completed).sort((a, b) => (a.priority || 3) - (b.priority || 3)),
+    [tasks]
+  );
+  /** 已完成flag列表 */
   const completedTasks = useMemo(() => tasks.filter((t) => t.completed), [tasks]);
+  /** 已完成flag数量 */
   const completedCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
-
+  /** 学习计时格式化 */
   const { minutes, seconds } = formatElapsedTime(sessionElapsed);
-  
-  // ========== 工具函数 ==========
+
+  // ========== 工具函数 ========== 
   /**
    * 格式化每日累计时长为 HH:MM:SS
    */
@@ -141,15 +173,14 @@ export default function FlagPage() {
     const s = seconds % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
-  
+
   /**
-   * 格式化本次学习时长,超过1小时返回长格式
+   * 格式化本次学习时长, 超过1小时返回长格式
    */
   const formatSessionTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    
     if (h > 0) {
       return {
         time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
@@ -163,7 +194,7 @@ export default function FlagPage() {
     }
   };
 
-  // ========== 事件处理器 ==========
+  // ========== 事件处理器 ========== 
   /**
    * 任务记次
    */
@@ -181,11 +212,9 @@ export default function FlagPage() {
       return;
     }
     setShowError(false);
-    
     if (editingTaskId) {
       const oldTask = tasks.find(t => t.id === editingTaskId);
       updateTaskInStore(editingTaskId, newTask);
-      
       toast.success('flag已更新', {
         action: oldTask ? {
           label: '撤销',
@@ -193,17 +222,25 @@ export default function FlagPage() {
             updateTaskInStore(editingTaskId, {
               title: oldTask.title,
               detail: oldTask.detail || '',
-              total: oldTask.total || 1
+              total: oldTask.total || 1,
+              label: oldTask.label,
+              priority: oldTask.priority,
+              isPublic: oldTask.isPublic
             });
             toast.success('已撤销更新');
           }
         } : undefined
       });
       // TODO: 接入后端 await updateTask(editingTaskId, newTask)
+      // TODO: 如果 isPublic 变化，调用发帖/删帖 API
     } else {
-      const created = { id: String(Date.now()), ...newTask, count: 0, completed: false };
+      const created = { 
+        id: String(Date.now()), 
+        ...newTask, 
+        count: 0, 
+        completed: false 
+      };
       addTask(created);
-      
       toast.success('flag已创建', {
         action: {
           label: '撤销',
@@ -214,8 +251,30 @@ export default function FlagPage() {
         }
       });
       // TODO: 接入后端 await createTask(newTask)
+      // TODO: 如果 isPublic 为 true，调用发帖 API
     }
-    
+    closeDrawer();
+  };
+
+  /**
+   * 删除任务
+   */
+  const handleDeleteTask = () => {
+    if (!editingTaskId) return;
+    const taskToDelete = tasks.find(t => t.id === editingTaskId);
+    if (!taskToDelete) return;
+    deleteTaskInStore(editingTaskId);
+    toast.success('flag已删除', {
+      action: {
+        label: '撤销',
+        onClick: () => {
+          addTask(taskToDelete);
+          toast.success('已撤销删除');
+        }
+      }
+    });
+    // TODO: 接入后端 await deleteTask(editingTaskId)
+    setDeleteDialogOpen(false);
     closeDrawer();
   };
 
@@ -223,7 +282,14 @@ export default function FlagPage() {
    * 关闭抽屉并重置状态
    */
   const closeDrawer = () => {
-    setNewTask({ title: '', detail: '', total: 1 });
+    setNewTask({ 
+      title: '', 
+      detail: '', 
+      total: 1,
+      label: 1 as FlagLabel,
+      priority: 3 as FlagPriority,
+      isPublic: false
+    });
     setEditingTaskId(null);
     setShowError(false);
     setOpenDrawer(false);
@@ -234,7 +300,14 @@ export default function FlagPage() {
    */
   const startEditTask = (task: (typeof tasks)[0]) => {
     setEditingTaskId(task.id);
-    setNewTask({ title: task.title, detail: task.detail || '', total: task.total || 1 });
+    setNewTask({ 
+      title: task.title, 
+      detail: task.detail || '', 
+      total: task.total || 1,
+      label: task.label || 1,
+      priority: task.priority || 3,
+      isPublic: task.isPublic || false
+    });
     setOpenDrawer(true);
   };
 
@@ -264,7 +337,7 @@ export default function FlagPage() {
           <Calendar
             mode="single"
             captionLayout="dropdown"
-            className="w-full rounded-none border-0 border-y border-slate-200 shadow-none dark:border-slate-800"
+            className="w-full rounded-xl border-0 border-y border-slate-200 shadow-none dark:border-slate-800"
             formatters={{
               formatMonthDropdown: (date) => date.toLocaleString('zh-CN', { month: 'long' }),
               formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString('zh-CN', { month: 'long' })}`,
@@ -299,7 +372,7 @@ export default function FlagPage() {
         {/* 打卡三模块 */}
         <section className="grid grid-cols-4 gap-3 -mx-4 h-24">
           <Card 
-            className={`col-span-1 px-2 py-3 flex flex-col items-center justify-center gap-1.5 transition-all border-transparent ${
+            className={`col-span-1 px-2 py-3 flex flex-col items-center justify-center gap-1.5 transition-all border-transparent rounded-xl ${
               isPunchedToday ? 'shadow-none pointer-events-none cursor-default' : 'cursor-pointer active:scale-[0.98]'
             }`}
             onClick={isPunchedToday ? undefined : togglePunchToday}
@@ -360,9 +433,9 @@ export default function FlagPage() {
         </div>
 
         {/* 未完成flag列表 */}
-        <section className="space-y-2">
+        <section className="space-y-2 -mx-4">
           {incompleteTasks.length === 0 ? (
-            <Empty className="border-none">
+            <Empty className="border-none mx-4">
               <EmptyHeader>
                 <EmptyTitle>还没有flag</EmptyTitle>
                 <EmptyDescription>
@@ -387,26 +460,63 @@ export default function FlagPage() {
           ) : (
             <>
               {incompleteTasks.map((t) => (
-                <Card key={t.id} className="p-3">
-                  <div className="flex items-center gap-3">
-                    <TaskRing count={t.count} total={t.total} />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-lg font-medium truncate">{t.title}</div>
-                      {t.detail && <div className="text-xs text-muted-foreground truncate">{t.detail}</div>}
-                      <div className="text-xs text-muted-foreground">未完成</div>
+                <Card key={t.id} className="p-3 rounded-xl border-x-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <TaskRing count={t.count} total={t.total} />
+                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400 whitespace-nowrap">
+                        未完成
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-lg font-medium truncate mb-1">{t.title}</div>
+                      {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {t.priority && (
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                            t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
+                            t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                            t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
+                          }`}>
+                            {FLAG_PRIORITIES[t.priority]}
+                          </span>
+                        )}
+                        {t.label && (
+                          <span 
+                            className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                            style={{ 
+                              backgroundColor: `${FLAG_LABELS[t.label].color}20`,
+                              color: FLAG_LABELS[t.label].color
+                            }}
+                          >
+                            {FLAG_LABELS[t.label].name}
+                          </span>
+                        )}
+                        {t.isPublic ? (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                            已分享
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
+                            未分享
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* 同一行竖直居中按钮组 */}
+                    <div className="flex items-center gap-2 self-stretch">
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="h-8 w-8" 
+                        className="h-8 w-8 rounded-lg" 
                         onClick={() => startEditTask(t)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 rounded-lg"
                         onClick={() => handleTickTask(t.id)}
                         title="记一次"
                       >
@@ -417,11 +527,10 @@ export default function FlagPage() {
                 </Card>
               ))}
               
-              <div className="flex justify-center pt-2">
+              <div className="flex justify-center pt-2 px-4">
                 <Button 
                   onClick={() => setOpenDrawer(true)} 
-                  variant="outline"
-                  className="rounded-full px-8"
+                  className="rounded-full px-8 bg-blue-600 text-white hover:bg-blue-700 border-0"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   创建flag
@@ -441,15 +550,51 @@ export default function FlagPage() {
               </div>
             </div>
             
-            <section className="space-y-2">
+            <section className="space-y-2 -mx-4">
               {completedTasks.map((t) => (
-                <Card key={t.id} className="p-3 opacity-60 grayscale">
-                  <div className="flex items-center gap-3">
-                    <TaskRing count={t.count} total={t.total} />
+                <Card key={t.id} className="p-3 opacity-60 grayscale rounded-xl border-x-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <TaskRing count={t.count} total={t.total} />
+                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
+                        已完成
+                      </span>
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-lg font-medium truncate">{t.title}</div>
-                      {t.detail && <div className="text-xs text-muted-foreground truncate">{t.detail}</div>}
-                      <div className="text-xs text-muted-foreground">已完成</div>
+                      <div className="text-lg font-medium truncate mb-1">{t.title}</div>
+                      {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {t.priority && (
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                            t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
+                            t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                            t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
+                          }`}>
+                            {FLAG_PRIORITIES[t.priority]}
+                          </span>
+                        )}
+                        {t.label && (
+                          <span 
+                            className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                            style={{ 
+                              backgroundColor: `${FLAG_LABELS[t.label].color}20`,
+                              color: FLAG_LABELS[t.label].color
+                            }}
+                          >
+                            {FLAG_LABELS[t.label].name}
+                          </span>
+                        )}
+                        {t.isPublic ? (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                            已分享
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
+                            未分享
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button 
@@ -484,32 +629,143 @@ export default function FlagPage() {
             <DrawerTitle>{editingTaskId ? '编辑flag' : '新建flag'}</DrawerTitle>
           </DrawerHeader>
           <div className="p-4 space-y-3">
-            <Input
-              placeholder="flag概述"
-              value={newTask.title}
-              onChange={(e) => setNewTask((s) => ({ ...s, title: e.target.value }))}
-            />
-            <Textarea
-              placeholder="flag详情（可选）"
-              value={newTask.detail}
-              onChange={(e) => setNewTask((s) => ({ ...s, detail: e.target.value }))}
-            />
             <div>
-              <div className="text-sm mb-1">选择日期</div>
-              <Calendar23 />
-            </div>
-            <div>
-              <div className="text-sm mb-1">总需次数</div>
+              <Label htmlFor="flag-title">Flag概述</Label>
               <Input
+                id="flag-title"
+                placeholder="flag概述"
+                value={newTask.title}
+                onChange={(e) => setNewTask((s) => ({ ...s, title: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="flag-detail">Flag详情（可选）</Label>
+              <Textarea
+                id="flag-detail"
+                placeholder="flag详情（可选）"
+                value={newTask.detail}
+                onChange={(e) => setNewTask((s) => ({ ...s, detail: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="flag-label">类型标签</Label>
+              <CustomSelect
+                options={Object.entries(FLAG_LABELS).map(([value, { name }]) => ({
+                  value,
+                  label: name,
+                }))}
+                value={String(newTask.label)}
+                onValueChange={(value) => setNewTask((s) => ({ ...s, label: Number(value) as FlagLabel }))}
+                placeholder="选择类型标签"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="flag-priority">优先级</Label>
+              <CustomSelect
+                options={Object.entries(FLAG_PRIORITIES).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+                value={String(newTask.priority)}
+                onValueChange={(value) => setNewTask((s) => ({ ...s, priority: Number(value) as FlagPriority }))}
+                placeholder="选择优先级"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="flag-date">选择日期</Label>
+              <div className="mt-1">
+                <Calendar23 />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="flag-total">每日完成次数</Label>
+              <Input
+                id="flag-total"
                 type="number"
                 min={1}
                 value={newTask.total}
                 onChange={(e) => setNewTask((s) => ({ ...s, total: Number(e.target.value || 1) }))}
+                className="mt-1 [appearance:auto] [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
               />
+            </div>
+
+            {/* 发布到社交页面 + 寻太傅 + 删除按钮分布一行两端 */}
+            <div className="flex items-center justify-between pt-2 w-full">
+              <div className="flex items-center gap-2">
+                <span className="relative inline-block h-4 w-4 mr-1">
+                  <input
+                    id="flag-public"
+                    type="checkbox"
+                    checked={newTask.isPublic}
+                    onChange={(e) => setNewTask((s) => ({ ...s, isPublic: e.target.checked }))}
+                    className="peer h-4 w-4 rounded border border-gray-300 appearance-none focus:ring-0 focus:outline-none bg-white checked:bg-blue-600 checked:border-blue-600"
+                  />
+                  <span
+                    className="pointer-events-none absolute left-0 top-0 h-4 w-4 flex items-center justify-center"
+                  >
+                    {newTask.isPublic ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="0" width="16" height="16" rx="4" fill="#2563eb" />
+                        <path d="M4 8.5L7 11.5L12 5.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : null}
+                  </span>
+                </span>
+                <Label htmlFor="flag-public" className="cursor-pointer">
+                  发布到社交页面（作为帖子分享）
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* 寻太傅按钮 */}
+                <Button
+                  type="button"
+                  className="h-7 px-6 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-none"
+                  onClick={() => navigate('/ai')}
+                >
+                  寻太傅
+                </Button>
+                {/* 删除按钮（仅编辑时显示） */}
+                {editingTaskId && (
+                  <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 px-4 text-xs text-white bg-red-500 hover:bg-red-600 hover:text-white rounded-full"
+                      >
+                        删除
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          确定要删除这个flag吗？要不再试试坚持一下？
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteTask} className="bg-red-500 hover:bg-red-600 rounded-full px-8">
+                          确认删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </div>
           </div>
           <DrawerFooter>
-            <Button onClick={handleSaveTask}>保存</Button>
+            <Button onClick={handleSaveTask} className="rounded-full px-8">保存</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

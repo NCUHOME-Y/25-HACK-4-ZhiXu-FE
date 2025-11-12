@@ -6,7 +6,6 @@ import { type DateRange } from "react-day-picker"
 
 import { Button } from "../ui/button"
 import { Calendar } from "../ui/calendar"
-import { Label } from "../ui/label"
 import {
   Popover,
   PopoverContent,
@@ -18,9 +17,6 @@ export default function Calendar23() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Label htmlFor="dates" className="px-1">
-        Select your stay
-      </Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -30,7 +26,7 @@ export default function Calendar23() {
           >
             {range?.from && range?.to
               ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
-              : "Select date"}
+              : "选择日期范围"}
             <ChevronDownIcon />
           </Button>
         </PopoverTrigger>

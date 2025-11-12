@@ -53,6 +53,24 @@ export const ROUTES = {
 // 错误配置
 import { AlertCircle, ServerCrash, ShieldAlert, Wifi } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { FlagLabel, FlagPriority } from "../types/types";
+
+// Flag 标签配置
+export const FLAG_LABELS: Record<FlagLabel, { name: string; color: string }> = {
+  1: { name: '学习提升', color: '#2563eb' }, // 蓝色
+  2: { name: '健康运动', color: '#10b981' }, // 绿色
+  3: { name: '工作效率', color: '#f59e0b' }, // 黄色
+  4: { name: '兴趣爱好', color: '#8b5cf6' }, // 紫色
+  5: { name: '生活习惯', color: '#ef4444' }, // 红色
+} as const;
+
+// Flag 优先级配置 (数字越小优先级越高)
+export const FLAG_PRIORITIES: Record<FlagPriority, string> = {
+  4: '不急',
+  3: '一般',
+  2: '较急',
+  1: '急切',
+} as const;
 
 export interface ErrorConfig {
   icon: LucideIcon;

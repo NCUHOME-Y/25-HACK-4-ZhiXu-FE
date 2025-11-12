@@ -13,58 +13,28 @@ import {
   TabsTrigger,
   TabsContent
 } from '../components';
-import { getMonthlyStats, getFlagStats, getStudyTrend, getPunchTypeStats } from '../services';
-import type { MonthlyStats, FlagStats, StudyTrendData, PunchTypeStats } from '../lib/types/types';
+import { getStudyTrend, getPunchTypeStats } from '../services';
+import { useTaskStore } from '../lib/stores/stores';
+import { FLAG_LABELS } from '../lib/constants/constants';
+import type { StudyTrendData, PunchTypeStats, FlagLabel } from '../lib/types/types';
+
 
 /**
  * 数据统计页面
  * 展示打卡、Flag、学习时长等统计信息
  */
 export default function DataPage() {
-  // ========== 本地状态 ==========
-  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
-  const [flagStats, setFlagStats] = useState<FlagStats | null>(null);
-  const [studyTrendPeriod, setStudyTrendPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
-  const [studyTrendData, setStudyTrendData] = useState<Array<{ label: string; value: number }>>([]);
-  const [punchTypeData, setPunchTypeData] = useState<Array<{ category: string; value1: number; value2: number }>>([]);
-  const [loading, setLoading] = useState(true);
+  // ========== 本地状态 ========== 
+  const tasks = useTaskStore((s) => s.tasks); // 任务列表
+  const punchedDates = useTaskStore((s) => s.punchedDates); // 打卡日期
+  const dailyElapsed = useTaskStore((s) => s.dailyElapsed); // 每日学习时长（秒）
+  const [studyTrendPeriod, setStudyTrendPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly'); // 学习趋势周期
+  const [studyTrendData, setStudyTrendData] = useState<Array<{ label: string; value: number }>>([]); // 学习趋势数据
+  const [punchTypeData, setPunchTypeData] = useState<Array<{ category: string; value1: number; value2: number }>>([]); // 打卡类型数据
+  const [loading, setLoading] = useState(true); // 加载状态
 
-  // ========== 副作用 ==========
-  /**
-   * 加载月度统计数据
-   */
-  useEffect(() => {
-    const loadMonthlyStats = async () => {
-      try {
-        const data = await getMonthlyStats();
-        setMonthlyStats(data);
-        // TODO: 接入后端 await getMonthlyStats()
-      } catch (err) {
-        console.error('加载月度统计失败:', err);
-        setMonthlyStats({ punchedDays: 0, missedDays: 0, totalStudyTime: 0 });
-      }
-    };
-    loadMonthlyStats();
-  }, []);
 
-  /**
-   * 加载Flag统计数据
-   */
-  useEffect(() => {
-    const loadFlagStats = async () => {
-      try {
-        const data = await getFlagStats();
-        setFlagStats(data);
-        setChartData(data.completedCount, data.uncompletedCount);
-        // TODO: 接入后端 await getFlagStats()
-      } catch (err) {
-        console.error('加载Flag统计失败:', err);
-        setFlagStats({ completedCount: 0, uncompletedCount: 0, totalCount: 0, labelStats: [] });
-      }
-    };
-    loadFlagStats();
-  }, []);
-
+  // ========== 副作用 ========== 
   /**
    * 加载学习趋势数据（根据选择的周期）
    */
@@ -110,7 +80,60 @@ export default function DataPage() {
     loadPunchTypeStats();
   }, []);
 
-  // ========== 计算属性 ==========
+
+  // ========== 计算属性 ========== 
+  /**
+   * 计算本月打卡统计
+   */
+  const calculatedMonthlyStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    // 本月打卡天数
+    const monthlyPunches = punchedDates.filter(dateStr => {
+      const date = new Date(dateStr);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    }).length;
+    // 本月缺卡天数
+    const missedDays = Math.max(0, now.getDate() - monthlyPunches);
+    return {
+      punchedDays: monthlyPunches,
+      missedDays: missedDays,
+      totalStudyTime: Math.floor(dailyElapsed / 60) // 转分钟
+    };
+  }, [punchedDates, dailyElapsed]);
+
+  /**
+   * 计算 Flag 统计数据
+   */
+  const flagStats = useMemo(() => {
+    const completedCount = tasks.filter(t => t.completed).length;
+    const uncompletedCount = tasks.filter(t => !t.completed).length;
+    const totalCount = tasks.length;
+    // 标签分组统计
+    const labelMap = new Map<FlagLabel, { completed: number; total: number }>();
+    tasks.forEach(task => {
+      if (task.label) {
+        const current = labelMap.get(task.label) || { completed: 0, total: 0 };
+        labelMap.set(task.label, {
+          completed: current.completed + (task.completed ? 1 : 0),
+          total: current.total + 1
+        });
+      }
+    });
+    const labelStats = Array.from(labelMap.entries()).map(([label, stats]) => ({
+      label: FLAG_LABELS[label].name,
+      labelName: FLAG_LABELS[label].name,
+      color: FLAG_LABELS[label].color,
+      completed: stats.completed,
+      total: stats.total,
+      percentage: stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
+    }));
+    // 更新图表数据
+    setChartData(completedCount, uncompletedCount);
+    return { completedCount, uncompletedCount, totalCount, labelStats };
+  }, [tasks]);
+
   /**
    * 格式化学习趋势数据，添加日期标签
    */
@@ -121,11 +144,11 @@ export default function DataPage() {
         const weekdays = ['一', '二', '三', '四', '五', '六', '七'];
         label = weekdays[index] || '';
       } else if (studyTrendPeriod === 'monthly') {
-        if (index === 0 || index === 5 || index === 10 || index === 15 || index === 20 || index === 25 || index === 29) {
+        if ([0, 5, 10, 15, 20, 25, 29].includes(index)) {
           label = String(index);
         }
       } else if (studyTrendPeriod === 'yearly') {
-        if (index === 0 || index === 30 || index === 60 || index === 90 || index === 120 || index === 150 || index === 179) {
+        if ([0, 30, 60, 90, 120, 150, 179].includes(index)) {
           label = String(index);
         }
       }
@@ -145,7 +168,8 @@ export default function DataPage() {
     }));
   }, [flagStats]);
 
-  // ========== 工具函数 ==========
+
+  // ========== 工具函数 ========== 
   /**
    * 格式化学习时长（分钟转小时）
    */
@@ -169,7 +193,7 @@ export default function DataPage() {
     }
   };
 
-  // ========== 渲染 ==========
+  // ========== 渲染 ========== 
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -191,33 +215,31 @@ export default function DataPage() {
         </div>
 
         {/* 打卡概览 */}
-        {monthlyStats && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">打卡概览</h2>
-            <Card className="p-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{monthlyStats.punchedDays}</div>
-                  <div className="text-xs text-muted-foreground mt-1">累计打卡</div>
-                </div>
-                <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50 dark:bg-red-950">
-                  <Calendar className="h-6 w-6 text-red-600 dark:text-red-400 mb-2" />
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{monthlyStats.missedDays}</div>
-                  <div className="text-xs text-muted-foreground mt-1">缺卡天数</div>
-                </div>
-                <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <Clock className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{Math.floor(monthlyStats.totalStudyTime / 60)}</div>
-                  <div className="text-xs text-muted-foreground mt-1">累计时长(h)</div>
-                </div>
+        <section>
+          <h2 className="text-lg font-semibold mb-3">打卡概览</h2>
+          <Card className="p-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{calculatedMonthlyStats.punchedDays}</div>
+                <div className="text-xs text-muted-foreground mt-1">累计打卡</div>
               </div>
-              <div className="mt-4 pt-4 border-t text-center text-sm text-muted-foreground">
-                本月累计学习 {formatStudyTime(monthlyStats.totalStudyTime)}
+              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50 dark:bg-red-950">
+                <Calendar className="h-6 w-6 text-red-600 dark:text-red-400 mb-2" />
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{calculatedMonthlyStats.missedDays}</div>
+                <div className="text-xs text-muted-foreground mt-1">缺卡天数</div>
               </div>
-            </Card>
-          </section>
-        )}
+              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                <Clock className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{Math.floor(calculatedMonthlyStats.totalStudyTime / 60)}</div>
+                <div className="text-xs text-muted-foreground mt-1">累计时长(h)</div>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t text-center text-sm text-muted-foreground">
+              本月累计学习 {formatStudyTime(calculatedMonthlyStats.totalStudyTime)}
+            </div>
+          </Card>
+        </section>
 
         {/* Flag完成度 */}
         {flagStats && (
@@ -246,37 +268,51 @@ export default function DataPage() {
                 <ChartRadialStacked />
               </div>
 
-              {/* 标签分类 */}
-              {flagStats.labelStats && flagStats.labelStats.length > 0 && (
-                <div className="space-y-2 border-t pt-3">
-                  <h3 className="text-sm font-semibold">标签分类</h3>
-                  {flagStats.labelStats.map((stat) => (
-                    <div key={stat.label} className="flex items-center gap-2">
-                      <div 
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: stat.color }}
-                      />
+
+              {/* 标签分类：无数据时显示“无标签 0%” */}
+              <div className="space-y-2 border-t pt-3">
+                <h3 className="text-sm font-semibold">标签分类</h3>
+                {(flagStats.labelStats && flagStats.labelStats.length > 0)
+                  ? flagStats.labelStats.map((stat) => (
+                      <div key={stat.label} className="flex items-center gap-2">
+                        <div 
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: stat.color }}
+                        />
+                        <div className="flex-1 space-y-1">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-medium">{stat.labelName}</span>
+                            <span className="tabular-nums font-semibold" style={{ color: stat.color }}>
+                              {stat.percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div 
+                              className="h-full transition-all"
+                              style={{ 
+                                width: `${stat.percentage}%`,
+                                backgroundColor: stat.color
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-slate-300" />
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-medium">{stat.labelName}</span>
-                          <span className="tabular-nums font-semibold" style={{ color: stat.color }}>
-                            {stat.percentage.toFixed(1)}%
-                          </span>
+                          <span className="font-medium">无标签</span>
+                          <span className="tabular-nums font-semibold text-slate-400">0%</span>
                         </div>
                         <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                          <div 
-                            className="h-full transition-all"
-                            style={{ 
-                              width: `${stat.percentage}%`,
-                              backgroundColor: stat.color
-                            }}
-                          />
+                          <div className="h-full transition-all w-0 bg-slate-400" />
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
+              </div>
 
               {/* 已完成Flag分布饼图 */}
               {pieChartData.length > 0 && (

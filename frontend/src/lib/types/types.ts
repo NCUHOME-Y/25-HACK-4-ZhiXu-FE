@@ -12,14 +12,27 @@ export interface AuthResponse { token: string; user: User }
 // 通用 API 响应（保持轻量）
 export interface ApiResponse<T = unknown> { success: boolean; data?: T; message?: string; error?: string }
 
+// Flag优先级类型
+export type FlagPriority = 4 | 3 | 2 | 1; // 4:不急 3:一般 2:较急 1:急切
+
+// Flag标签类型
+export type FlagLabel = 1 | 2 | 3 | 4 | 5;
+
 // 任务类型（全局使用）
 export interface Task {
   id: string
-  title: string
-  detail?: string
-  total?: number
-  count?: number
-  completed?: boolean
+  title: string // 对应后端 flag
+  detail?: string // 对应后端 plan_content
+  total?: number // 对应后端 plan_done_number
+  count?: number // 对应后端 done_number
+  completed?: boolean // 对应后端 had_done
+  label?: FlagLabel // 类型标签 1-5
+  priority?: FlagPriority // 优先级 4:不急 3:一般 2:较急 1:急切
+  isPublic?: boolean // 对应后端 is_hiden 取反（是否公开到社交页面）
+  agreeNumber?: number // 点赞数
+  createdAt?: string // 创建时间
+  startTime?: string // 计划起始时间
+  endTime?: string // 计划结束时间
 }
 
 // 打卡相关类型
@@ -55,9 +68,6 @@ export interface MonthlyStats {
   missedDays: number // 缺卡天数
   totalStudyTime: number // 累计学习时长（分钟）
 }
-
-// Flag标签类型
-export type FlagLabel = 1 | 2 | 3 | 4 | 5;
 
 // 标签统计数据
 export interface LabelStats {
