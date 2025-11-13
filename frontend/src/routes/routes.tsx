@@ -7,6 +7,9 @@ import DataPage from '../pages/data';
 import ContactPage from '../pages/contact';
 import MinePage from '../pages/mine';
 import SetPage from '../pages/set';
+import RankPage from '../pages/rank';
+import PublicPage from '../pages/public';
+import PrivatePage from '../pages/private';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // 应用路由配置
@@ -64,6 +67,30 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <SetPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/rank',
+    element: (
+      <ProtectedRoute>
+        <RankPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/public',
+    element: (
+      <ProtectedRoute>
+        <PublicPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/private',
+    element: (
+      <ProtectedRoute>
+        <PrivatePage />
       </ProtectedRoute>
     ),
   },

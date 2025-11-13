@@ -39,6 +39,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from '../components';
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
@@ -464,71 +467,139 @@ export default function FlagPage() {
           ) : (
             <>
               {incompleteTasks.map((t) => (
-                <Card key={t.id} className="p-3 rounded-xl border-x-0">
-                  <div className="flex items-start gap-3">
-                    <div className="flex flex-col items-center gap-2">
-                      <TaskRing count={t.count} total={t.total} />
-                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400 whitespace-nowrap">
-                        未完成
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-lg font-medium truncate mb-1">{t.title}</div>
-                      {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {t.priority && (
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                            t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
-                            t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                            t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
-                          }`}>
-                            {FLAG_PRIORITIES[t.priority]}
+                <Popover key={t.id}>
+                  <PopoverTrigger asChild>
+                    <Card className="p-3 rounded-xl border-x-0 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="flex flex-col items-center gap-2">
+                          <TaskRing count={t.count} total={t.total} />
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400 whitespace-nowrap">
+                            未完成
                           </span>
-                        )}
-                        {t.label && (
-                          <span 
-                            className="inline-block px-2 py-0.5 text-xs font-medium rounded"
-                            style={{ 
-                              backgroundColor: `${FLAG_LABELS[t.label].color}20`,
-                              color: FLAG_LABELS[t.label].color
-                            }}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-lg font-medium truncate mb-1">{t.title}</div>
+                          {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {t.priority && (
+                              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                                t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
+                                t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                                t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
+                              }`}>
+                                {FLAG_PRIORITIES[t.priority]}
+                              </span>
+                            )}
+                            {t.label && (
+                              <span 
+                                className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                                style={{ 
+                                  backgroundColor: `${FLAG_LABELS[t.label].color}20`,
+                                  color: FLAG_LABELS[t.label].color
+                                }}
+                              >
+                                {FLAG_LABELS[t.label].name}
+                              </span>
+                            )}
+                            {t.isPublic ? (
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                                已分享
+                              </span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
+                                未分享
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {/* 同一行竖直居中按钮组 */}
+                        <div className="flex items-center gap-2 self-stretch" onClick={(e) => e.stopPropagation()}>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-8 w-8 rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50" 
+                            onClick={() => startEditTask(t)}
                           >
-                            {FLAG_LABELS[t.label].name}
-                          </span>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                            onClick={() => handleTickTask(t.id)}
+                            title="记一次"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">{t.title}</h4>
+                        {t.detail && (
+                          <p className="text-sm text-muted-foreground">{t.detail}</p>
                         )}
-                        {t.isPublic ? (
-                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                            已分享
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">进度</span>
+                          <span className="font-medium">{t.count}/{t.total} 次</span>
+                        </div>
+                        
+                        {t.priority && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">优先级</span>
+                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                              t.priority === 1 ? 'bg-red-100 text-red-700' : 
+                              t.priority === 2 ? 'bg-orange-100 text-orange-700' :
+                              t.priority === 3 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {FLAG_PRIORITIES[t.priority]}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {t.label && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">类型</span>
+                            <span 
+                              className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                              style={{ 
+                                backgroundColor: `${FLAG_LABELS[t.label].color}20`,
+                                color: FLAG_LABELS[t.label].color
+                              }}
+                            >
+                              {FLAG_LABELS[t.label].name}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">分享状态</span>
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                            t.isPublic 
+                              ? 'bg-purple-100 text-purple-700' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {t.isPublic ? '已分享' : '未分享'}
                           </span>
-                        ) : (
-                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
-                            未分享
-                          </span>
+                        </div>
+                        
+                        {t.createdAt && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">创建时间</span>
+                            <span className="text-xs">{new Date(t.createdAt).toLocaleDateString('zh-CN')}</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                    {/* 同一行竖直居中按钮组 */}
-                    <div className="flex items-center gap-2 self-stretch">
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
-                        className="h-8 w-8 rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50" 
-                        onClick={() => startEditTask(t)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                        onClick={() => handleTickTask(t.id)}
-                        title="记一次"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                  </PopoverContent>
+                </Popover>
               ))}
               
               <div className="flex justify-center pt-2 px-4">
@@ -556,70 +627,138 @@ export default function FlagPage() {
             
             <section className="space-y-2 -mx-4">
               {completedTasks.map((t) => (
-                <Card key={t.id} className="p-3 opacity-60 grayscale rounded-xl border-x-0">
-                  <div className="flex items-start gap-3">
-                    <div className="flex flex-col items-center gap-2">
-                      <TaskRing count={t.count} total={t.total} />
-                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
-                        已完成
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-lg font-medium truncate mb-1">{t.title}</div>
-                      {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {t.priority && (
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                            t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
-                            t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                            t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
-                          }`}>
-                            {FLAG_PRIORITIES[t.priority]}
+                <Popover key={t.id}>
+                  <PopoverTrigger asChild>
+                    <Card className="p-3 opacity-60 grayscale rounded-xl border-x-0 cursor-pointer hover:opacity-80 transition-opacity">
+                      <div className="flex items-start gap-3">
+                        <div className="flex flex-col items-center gap-2">
+                          <TaskRing count={t.count} total={t.total} />
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
+                            已完成
                           </span>
-                        )}
-                        {t.label && (
-                          <span 
-                            className="inline-block px-2 py-0.5 text-xs font-medium rounded"
-                            style={{ 
-                              backgroundColor: `${FLAG_LABELS[t.label].color}20`,
-                              color: FLAG_LABELS[t.label].color
-                            }}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-lg font-medium truncate mb-1">{t.title}</div>
+                          {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {t.priority && (
+                              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                                t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
+                                t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                                t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
+                              }`}>
+                                {FLAG_PRIORITIES[t.priority]}
+                              </span>
+                            )}
+                            {t.label && (
+                              <span 
+                                className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                                style={{ 
+                                  backgroundColor: `${FLAG_LABELS[t.label].color}20`,
+                                  color: FLAG_LABELS[t.label].color
+                                }}
+                              >
+                                {FLAG_LABELS[t.label].name}
+                              </span>
+                            )}
+                            {t.isPublic ? (
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                                已分享
+                              </span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
+                                未分享
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-8 w-8 border-blue-200 text-blue-600" 
+                            disabled
                           >
-                            {FLAG_LABELS[t.label].name}
-                          </span>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled
+                            title="记一次"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">{t.title}</h4>
+                        {t.detail && (
+                          <p className="text-sm text-muted-foreground">{t.detail}</p>
                         )}
-                        {t.isPublic ? (
-                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                            已分享
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">进度</span>
+                          <span className="font-medium text-green-600">{t.count}/{t.total} 次 (已完成)</span>
+                        </div>
+                        
+                        {t.priority && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">优先级</span>
+                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                              t.priority === 1 ? 'bg-red-100 text-red-700' : 
+                              t.priority === 2 ? 'bg-orange-100 text-orange-700' :
+                              t.priority === 3 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {FLAG_PRIORITIES[t.priority]}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {t.label && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">类型</span>
+                            <span 
+                              className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                              style={{ 
+                                backgroundColor: `${FLAG_LABELS[t.label].color}20`,
+                                color: FLAG_LABELS[t.label].color
+                              }}
+                            >
+                              {FLAG_LABELS[t.label].name}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">分享状态</span>
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                            t.isPublic 
+                              ? 'bg-purple-100 text-purple-700' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {t.isPublic ? '已分享' : '未分享'}
                           </span>
-                        ) : (
-                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
-                            未分享
-                          </span>
+                        </div>
+                        
+                        {t.createdAt && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">创建时间</span>
+                            <span className="text-xs">{new Date(t.createdAt).toLocaleDateString('zh-CN')}</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
-                        className="h-8 w-8 border-blue-200 text-blue-600" 
-                        disabled
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        className="h-8 w-8"
-                        disabled
-                        title="记一次"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                  </PopoverContent>
+                </Popover>
               ))}
             </section>
           </>
