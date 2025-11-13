@@ -1,9 +1,28 @@
+import { useState } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 
-export function Search() {
+interface SearchProps {
+  onSearch?: (query: string) => void;
+}
+
+export function Search({ onSearch }: SearchProps) {
+  const [query, setQuery] = useState('');
+
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch(query);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white md:hidden">
       <div className="flex h-16 items-center justify-center px-4">
@@ -12,7 +31,15 @@ export function Search() {
             <SearchIcon className="h-5 w-5 text-muted-foreground mr-2" />
             <Input
               type="search"
-              placeholder="搜索任务、笔记..."
+              placeholder="搜索帖子、用户、评论..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (onSearch) {
+                  onSearch(e.target.value);
+                }
+              }}
+              onKeyDown={handleKeyDown}
               className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
             />
           </div>
@@ -21,6 +48,7 @@ export function Search() {
             type="submit"
             variant="default"
             size="sm"
+            onClick={handleSearch}
             className="h-full px-6 rounded-none"
             style={{ borderRadius: 0 }}
           >

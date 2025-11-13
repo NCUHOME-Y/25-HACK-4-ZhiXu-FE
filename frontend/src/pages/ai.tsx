@@ -143,18 +143,18 @@ export default function AIPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <div className="flex-1 pb-24 px-4 space-y-5">
+      <div className="flex-1 pb-24 space-y-5">
         {/* 页面标题 */}
-        <div className="pt-6 pb-1">
+        <div className="pt-6 pb-1 px-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-7 w-7 text-blue-500" />
-            <h1 className="text-2xl font-bold">AI智能推荐</h1>
+            <h1 className="text-2xl font-bold">太傅</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">输入学习目标，AI为你定制专属计划</p>
         </div>
 
         {/* 输入区域 */}
-        <section className="space-y-4">
+        <section className="space-y-4 px-4">
           <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
             <div className="space-y-4">
               {/* 个人背景输入 */}
@@ -272,7 +272,7 @@ export default function AIPage() {
         )}
 
         {/* 已生成学习计划 */}
-        <section className="space-y-4">
+        <section className="space-y-4 px-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Target className="h-5 w-5 text-blue-500" />
             已生成学习计划

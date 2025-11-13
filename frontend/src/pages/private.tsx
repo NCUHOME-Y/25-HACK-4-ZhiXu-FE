@@ -1,19 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BottomNav, Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
-
-// 预设头像列表
-const PRESET_AVATARS = [
-  '/avatars/avatar-1.png',
-  '/avatars/avatar-2.png',
-  '/avatars/avatar-3.png',
-  '/avatars/avatar-4.png',
-  '/avatars/avatar-5.png',
-  '/avatars/avatar-6.png',
-  '/avatars/avatar-7.png',
-  '/avatars/avatar-8.png',
-];
+import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
+import { Separator } from "../components/ui/separator";
 
 // 私聊消息数据
 interface PrivateMessage {
@@ -31,52 +20,78 @@ export default function PrivatePage() {
   const user = location.state?.user || { name: '用户', avatar: '' };
   
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<PrivateMessage[]>([
-    {
-      id: '1',
-      message: '你好！看到你的flag很有意思',
-      time: '10:30',
-      isMe: false,
-      avatar: user.avatar || PRESET_AVATARS[0],
-      userName: user.name,
-    },
-    {
-      id: '2',
-      message: '谢谢！我们可以一起交流学习经验',
-      time: '10:32',
-      isMe: true,
-      avatar: PRESET_AVATARS[4],
-      userName: '我',
-    },
-  ]);
+  const [messages, _setMessages] = useState<PrivateMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 自动滚动到底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // WebSocket连接
+  useEffect(() => {
+    // TODO: 替换为实际的WebSocket URL
+    // const ws = new WebSocket(`ws://your-backend-url/private-chat/${user.id}`);
+
+    // ws.onopen = () => {
+    //   console.log('WebSocket连接已建立');
+    // };
+
+    // ws.onmessage = (event) => {
+    //   const data = JSON.parse(event.data);
+    //   const newMessage: PrivateMessage = {
+    //     id: data.id,
+    //     message: data.message,
+    //     time: data.time,
+    //     isMe: data.userId === 'currentUserId',
+    //     avatar: data.isMe ? undefined : user.avatar,
+    //     userName: data.isMe ? '我' : user.name,
+    //   };
+    //   _setMessages((prev) => [...prev, newMessage]);
+    // };
+
+    // ws.onerror = (error) => {
+    //   console.error('WebSocket错误:', error);
+    // };
+
+    // ws.onclose = () => {
+    //   console.log('WebSocket连接已关闭');
+    // };
+
+    // return () => {
+    //   if (ws.readyState === WebSocket.OPEN) {
+    //     ws.close();
+    //   }
+    // };
+  }, [user.id, user.avatar, user.name]);
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
     
-    const newMessage: PrivateMessage = {
-      id: String(Date.now()),
-      message: message.trim(),
-      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      isMe: true,
-      avatar: PRESET_AVATARS[4],
-      userName: '我',
-    };
+    // TODO: 通过WebSocket发送消息
+    // const messageData = {
+    //   message: message.trim(),
+    //   time: new Date().toISOString(),
+    //   recipientId: user.id,
+    // };
     
-    setMessages([...messages, newMessage]);
+    // if (ws && ws.readyState === WebSocket.OPEN) {
+    //   ws.send(JSON.stringify(messageData));
+    // }
+
     setMessage('');
-    // TODO: 调用后端接口发送消息
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* 顶部导航 */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
-        <div className="flex h-14 items-center px-4 gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-          >
+      <nav className="bg-white sticky top-0 z-10">
+        <div className="px-4 py-4 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <Avatar className="h-8 w-8">
@@ -88,7 +103,7 @@ export default function PrivatePage() {
       </nav>
 
       {/* 聊天消息列表 */}
-      <div className="flex-1 pt-14 pb-24 px-4 overflow-y-auto">
+      <div className="flex-1 pb-24 overflow-y-auto px-4 pt-4">
         <div className="space-y-4">
           {messages.map((msg) => (
             <div
@@ -97,7 +112,7 @@ export default function PrivatePage() {
             >
               <div className="flex flex-col items-center gap-1">
                 <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarImage src={msg.avatar || (msg.isMe ? PRESET_AVATARS[4] : user.avatar)} />
+                  <AvatarImage src={msg.avatar || user.avatar} />
                   <AvatarFallback>{(msg.userName || user.name).slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div className="text-[10px] text-muted-foreground text-center max-w-[60px] truncate">
@@ -119,34 +134,39 @@ export default function PrivatePage() {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* 底部输入框 */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="输入消息..."
-            className="flex-1"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSendMessage();
-              }
-            }}
-          />
+      <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 py-3">
+        <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white border border-border rounded-full shadow-sm overflow-hidden">
+          <div className="flex items-center flex-1 pl-4 pr-2 h-full">
+            <Input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="输入消息..."
+              className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSendMessage();
+                }
+              }}
+            />
+          </div>
+          <Separator orientation="vertical" className="h-full" />
           <Button
-            size="icon"
-            className="rounded-full"
+            type="submit"
+            variant="default"
+            size="sm"
             onClick={handleSendMessage}
+            className="h-full px-6 rounded-none"
+            style={{ borderRadius: 0 }}
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
       </div>
-
-      <BottomNav />
     </div>
   );
 }

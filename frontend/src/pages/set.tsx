@@ -89,7 +89,7 @@ export default function SetPage() {
       </nav>
 
       {/* 可滚动内容区域 - 添加顶部padding避免被固定标题遮挡 */}
-      <div className="flex-1 pb-8 px-4 space-y-3 pt-20">
+      <div className="flex-1 pb-8 space-y-3 pt-20 px-4">
         {/* 推送通知 */}
         <Card className="p-4 rounded-xl space-y-4">
           <div className="flex items-center justify-between">

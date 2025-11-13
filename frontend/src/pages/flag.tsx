@@ -338,13 +338,13 @@ export default function FlagPage() {
         </div>
       )}
       
-      <div className="flex-1 pb-24 px-4 space-y-4">
+      <div className="flex-1 pb-24 space-y-4 px-4">
         {/* 顶部日历 */}
-        <section className="pt-3 -mx-4">
+        <section className="pt-3">
           <Calendar
             mode="single"
             captionLayout="dropdown"
-            className="w-full rounded-xl border-0 border-y border-slate-200 shadow-none dark:border-slate-800"
+            className="w-full rounded-xl border border-slate-200 shadow-sm dark:border-slate-800"
             formatters={{
               formatMonthDropdown: (date) => date.toLocaleString('zh-CN', { month: 'long' }),
               formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString('zh-CN', { month: 'long' })}`,
@@ -377,7 +377,7 @@ export default function FlagPage() {
         </section>
 
         {/* 打卡三模块 */}
-        <section className="grid grid-cols-4 gap-3 -mx-4 h-24">
+        <section className="grid grid-cols-4 gap-3 h-24">
           <Card 
             className={`col-span-1 px-2 py-3 flex flex-col items-center justify-center gap-1.5 transition-all border-transparent rounded-xl ${
               isPunchedToday ? 'shadow-none pointer-events-none cursor-default' : 'cursor-pointer active:scale-[0.98]'
@@ -440,9 +440,9 @@ export default function FlagPage() {
         </div>
 
         {/* 未完成flag列表 */}
-        <section className="space-y-2 -mx-4">
+        <section className="space-y-2">
           {incompleteTasks.length === 0 ? (
-            <Empty className="border-none mx-4">
+            <Empty className="border-none">
               <EmptyHeader>
                 <EmptyTitle>还没有flag</EmptyTitle>
                 <EmptyDescription>
@@ -469,7 +469,7 @@ export default function FlagPage() {
               {incompleteTasks.map((t) => (
                 <Popover key={t.id}>
                   <PopoverTrigger asChild>
-                    <Card className="p-3 rounded-xl border-x-0 cursor-pointer hover:bg-slate-50 transition-colors">
+                    <Card className="p-3 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <TaskRing count={t.count} total={t.total} />
@@ -625,11 +625,11 @@ export default function FlagPage() {
               </div>
             </div>
             
-            <section className="space-y-2 -mx-4">
+            <section className="space-y-2">
               {completedTasks.map((t) => (
                 <Popover key={t.id}>
                   <PopoverTrigger asChild>
-                    <Card className="p-3 opacity-60 grayscale rounded-xl border-x-0 cursor-pointer hover:opacity-80 transition-opacity">
+                    <Card className="p-3 opacity-60 grayscale rounded-xl cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <TaskRing count={t.count} total={t.total} />

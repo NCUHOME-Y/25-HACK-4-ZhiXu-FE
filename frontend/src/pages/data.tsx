@@ -207,15 +207,15 @@ export default function DataPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <div className="flex-1 pb-24 px-4 space-y-4">
+      <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
-        <div className="pt-6 pb-2">
-          <h1 className="text-2xl font-bold">数据统计</h1>
+        <div className="pt-6 pb-2 px-4">
+          <h1 className="text-2xl font-bold">璇历</h1>
           <p className="text-sm text-muted-foreground mt-1">本月学习数据概览</p>
         </div>
 
         {/* 打卡概览 */}
-        <section>
+        <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">打卡概览</h2>
           <Card className="p-4">
             <div className="grid grid-cols-3 gap-4">
@@ -243,7 +243,7 @@ export default function DataPage() {
 
         {/* Flag完成度 */}
         {flagStats && (
-          <section>
+          <section className="px-4">
             <h2 className="text-lg font-semibold mb-3">Flag完成度</h2>
             <Card className="p-3 space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -331,7 +331,7 @@ export default function DataPage() {
         )}
 
         {/* 学习趋势 */}
-        <section>
+        <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">学习趋势</h2>
           <Card>
             <Tabs value={studyTrendPeriod} onValueChange={(v: string) => setStudyTrendPeriod(v as typeof studyTrendPeriod)} className="w-full">
@@ -356,7 +356,7 @@ export default function DataPage() {
         </section>
 
         {/* 打卡习惯 */}
-        <section>
+        <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">打卡习惯</h2>
           <ChartBarMultiple 
             data={punchTypeData}

@@ -140,9 +140,9 @@ export default function MinePage() {
   // ========== 渲染 ========== 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <div className="flex-1 pb-24 px-4 space-y-4">
+      <div className="flex-1 pb-24 space-y-4">
         {/* 用户信息卡片 */}
-        <section className="pt-6">
+        <section className="pt-6 px-4">
           <Card className="p-4 rounded-xl">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
@@ -157,7 +157,7 @@ export default function MinePage() {
         </section>
 
         {/* 数据统计（压缩版） */}
-        <section>
+        <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">数据统计</h2>
           <div className="grid grid-cols-3 gap-3">
             <Card className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/30">
@@ -176,7 +176,7 @@ export default function MinePage() {
         </section>
 
         {/* 已获得徽章 */}
-        <section>
+        <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">已获得徽章 ({achievedBadges}/{totalBadges})</h2>
           <Card className="p-4 rounded-xl bg-white dark:bg-slate-950">
             <Accordion type="single" collapsible className="w-full">
@@ -231,7 +231,7 @@ export default function MinePage() {
         </section>
 
         {/* 个人信息 */}
-        <section>
+        <section className="px-4">
           <Card 
             className="p-4 rounded-xl cursor-pointer active:scale-[0.98] transition-transform"
             onClick={() => setEditDialogOpen(true)}
@@ -250,7 +250,7 @@ export default function MinePage() {
         </section>
 
         {/* 用户反馈 */}
-        <section>
+        <section className="px-4">
           <Card 
             className="p-4 rounded-xl cursor-pointer active:scale-[0.98] transition-transform"
             onClick={handleFeedback}
@@ -269,7 +269,7 @@ export default function MinePage() {
         </section>
 
         {/* 系统设置 */}
-        <section className="pb-4">
+        <section className="pb-4 px-4">
           <Card 
             className="p-4 rounded-xl cursor-pointer active:scale-[0.98] transition-transform"
             onClick={() => navigate('/set')}
