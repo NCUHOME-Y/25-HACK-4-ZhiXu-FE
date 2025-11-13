@@ -6,6 +6,7 @@ import AIPage from '../pages/ai';
 import DataPage from '../pages/data';
 import ContactPage from '../pages/contact';
 import MinePage from '../pages/mine';
+import SetPage from '../pages/set';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // 应用路由配置
@@ -55,6 +56,14 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <MinePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/set',
+    element: (
+      <ProtectedRoute>
+        <SetPage />
       </ProtectedRoute>
     ),
   },

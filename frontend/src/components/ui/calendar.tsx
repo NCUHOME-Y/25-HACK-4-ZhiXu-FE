@@ -4,10 +4,17 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react"
-import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
+import { DayButton, DayPicker, getDefaultClassNames, type DropdownProps } from "react-day-picker"
 
 import { cn } from "../../lib/helpers/utils"
 import { Button, buttonVariants } from "./button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select"
 
 function Calendar({
   className,
@@ -157,6 +164,8 @@ function Calendar({
           )
         },
         DayButton: CalendarDayButton,
+        MonthsDropdown: CalendarMonthDropdown,
+        YearsDropdown: CalendarYearDropdown,
         WeekNumber: ({ children, ...props }) => {
           return (
             <td {...props}>
@@ -212,3 +221,59 @@ function CalendarDayButton({
 }
 
 export { Calendar, CalendarDayButton }
+
+function CalendarMonthDropdown({ value, onChange, options }: DropdownProps) {
+  const selectedOption = options?.find((opt) => opt.value === value)
+
+  return (
+    <Select
+      value={value?.toString()}
+      onValueChange={(newValue) => {
+        const changeEvent = {
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLSelectElement>
+        onChange?.(changeEvent)
+      }}
+    >
+      <SelectTrigger className="h-8 text-sm">
+        <SelectValue>{selectedOption?.label || value}</SelectValue>
+      </SelectTrigger>
+      <SelectContent className="max-h-[200px]">
+        {options?.map((option) => (
+          <SelectItem key={option.value} value={option.value.toString()}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+function CalendarYearDropdown({ value, onChange, options }: DropdownProps) {
+  const selectedOption = options?.find((opt) => opt.value === value)
+
+  return (
+    <Select
+      value={value?.toString()}
+      onValueChange={(newValue) => {
+        const changeEvent = {
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLSelectElement>
+        onChange?.(changeEvent)
+      }}
+    >
+      <SelectTrigger className="h-8 text-sm">
+        <SelectValue>{selectedOption?.label || value}</SelectValue>
+      </SelectTrigger>
+      <SelectContent className="max-h-[200px]">
+        {options?.map((option) => (
+          <SelectItem key={option.value} value={option.value.toString()}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+export { CalendarMonthDropdown, CalendarYearDropdown }

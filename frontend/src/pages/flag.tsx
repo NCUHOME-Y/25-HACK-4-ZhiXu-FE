@@ -34,7 +34,11 @@ import {
   EmptyDescription,
   EmptyContent,
   Label,
-  CustomSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '../components';
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
@@ -653,30 +657,40 @@ export default function FlagPage() {
             
             <div>
               <Label htmlFor="flag-label">类型标签</Label>
-              <CustomSelect
-                options={Object.entries(FLAG_LABELS).map(([value, { name }]) => ({
-                  value,
-                  label: name,
-                }))}
+              <Select
                 value={String(newTask.label)}
-                onValueChange={(value) => setNewTask((s) => ({ ...s, label: Number(value) as FlagLabel }))}
-                placeholder="选择类型标签"
-                className="mt-1"
-              />
+                onValueChange={(value: string) => setNewTask((s) => ({ ...s, label: Number(value) as FlagLabel }))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="选择类型标签" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FLAG_LABELS).map(([value, { name }]) => (
+                    <SelectItem key={value} value={value}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="flag-priority">优先级</Label>
-              <CustomSelect
-                options={Object.entries(FLAG_PRIORITIES).map(([value, label]) => ({
-                  value,
-                  label,
-                }))}
+              <Select
                 value={String(newTask.priority)}
-                onValueChange={(value) => setNewTask((s) => ({ ...s, priority: Number(value) as FlagPriority }))}
-                placeholder="选择优先级"
-                className="mt-1"
-              />
+                onValueChange={(value: string) => setNewTask((s) => ({ ...s, priority: Number(value) as FlagPriority }))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="选择优先级" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FLAG_PRIORITIES).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

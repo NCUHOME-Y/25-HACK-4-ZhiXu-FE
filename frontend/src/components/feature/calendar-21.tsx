@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
 
-import { Calendar, CalendarDayButton } from "../ui/calendar"
+import { Calendar, CalendarDayButton, CalendarMonthDropdown, CalendarYearDropdown } from "../ui/calendar"
 
 export default function Calendar21() {
   const [range, setRange] = React.useState<DateRange | undefined>({
@@ -27,6 +27,8 @@ export default function Calendar21() {
         formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString("zh-CN", { month: "long" })}`,
       }}
       components={{
+        MonthsDropdown: CalendarMonthDropdown,
+        YearsDropdown: CalendarYearDropdown,
         DayButton: ({ children, modifiers, day, ...props }) => {
           const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6
 
