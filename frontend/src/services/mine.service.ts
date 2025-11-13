@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { api } from './apiClient';
 import type { User } from '../lib/types/types';
 
 /**
@@ -9,40 +9,30 @@ import type { User } from '../lib/types/types';
 /**
  * 获取用户个人信息
  */
-export async function getUserProfile(): Promise<User> {
-  // TODO: 接入后端 API
-  const response = await apiClient.get<User>('/user/profile');
-  return response.data;
-}
+export const getUserProfile = () =>
+  api.get<User>('/user/profile');
 
 /**
  * 更新用户个人信息
  */
-export async function updateUserProfile(data: Partial<User>): Promise<User> {
-  // TODO: 接入后端 API
-  const response = await apiClient.put<User>('/user/profile', data);
-  return response.data;
-}
+export const updateUserProfile = (data: Partial<User>) =>
+  api.put<User>('/user/profile', data);
 
 /**
  * 修改密码
  */
-export async function changePassword(oldPassword: string, newPassword: string) {
-  // TODO: 接入后端 API
-  const response = await apiClient.post('/user/change-password', {
+export const changePassword = (oldPassword: string, newPassword: string) =>
+  api.post('/user/change-password', {
     oldPassword,
     newPassword,
   });
-  return response.data;
-}
 
 /**
  * 退出登录
  */
 export async function logout() {
-  // TODO: 接入后端 API
   try {
-    await apiClient.post('/auth/logout');
+    await api.post('/auth/logout');
   } catch {
     // 即使接口失败，也清除本地信息
   }

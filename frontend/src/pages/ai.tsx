@@ -24,12 +24,15 @@ const STORAGE_KEYS = {
   GENERATED_PLANS: 'ai_generated_plans',
 };
 
-// AI助手页面
+/**
+ * AI助手页面(太傅)
+ * 根据用户的学习背景和目标,使用AI生成个性化学习计划
+ */
 export default function AIPage() {
   const navigate = useNavigate();
   const addTask = useTaskStore((s) => s.addTask);
 
-  // 状态管理
+  // ========== 本地状态 ==========
   const [background, setBackground] = useState('');
   const [goal, setGoal] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
@@ -57,14 +60,20 @@ export default function AIPage() {
     }
   }, []);
 
-  // 难度配置
+  // ========== 计算属性 ==========
+  /**
+   * 难度配置选项
+   */
   const difficulties: { value: Difficulty; label: string; color: string }[] = [
     { value: 'easy', label: '轻松进度', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
     { value: 'medium', label: '适度难度', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
     { value: 'hard', label: '挑战进度', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
   ];
 
-  // 生成学习计划
+  // ========== 事件处理器 ==========
+  /**
+   * 生成学习计划
+   */
   const handleGenerate = async () => {
     if (!goal.trim()) {
       toast.error('请输入学习目标');
@@ -102,10 +111,14 @@ export default function AIPage() {
     }
   };
 
-  // 将生成的Flag添加到任务列表
+  /**
+   * 将生成的Flag添加到任务列表
+   */
   const handleAddToFlags = (plan: StudyPlan) => {
     // 批量添加Flag到全局store
     const addedTasks: Task[] = [];
+    let totalPoints = 0;
+    
     plan.flags.forEach((flag, index) => {
       const created: Task = {
         id: String(Date.now() + index),
@@ -116,14 +129,16 @@ export default function AIPage() {
         completed: false,
         label: flag.label,
         priority: flag.priority,
+        points: flag.points, // AI生成的积分
         isPublic: false,
         createdAt: new Date().toISOString(),
       };
       addTask(created);
       addedTasks.push(created);
+      totalPoints += flag.points || 0;
     });
 
-    toast.success(`已添加 ${plan.flags.length} 个Flag到列表`, {
+    toast.success(`已添加 ${plan.flags.length} 个Flag（共${totalPoints}积分）`, {
       action: {
         label: '撤销',
         onClick: () => {
@@ -141,6 +156,7 @@ export default function AIPage() {
     }, 800);
   };
 
+  // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-24 space-y-5">
@@ -335,8 +351,16 @@ export default function AIPage() {
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground">{flag.detail}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                               <span>目标: {flag.total} 次</span>
+                              {flag.points && (
+                                <span className="flex items-center gap-1 text-orange-600 font-medium">
+                                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10" />
+                                  </svg>
+                                  {flag.points} 积分
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

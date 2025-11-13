@@ -8,6 +8,7 @@ export interface GeneratedFlag {
   total: number;
   label: FlagLabel;
   priority: FlagPriority;
+  points: number; // 该Flag的积分值
 }
 
 export interface StudyPlan {
@@ -15,6 +16,39 @@ export interface StudyPlan {
   difficulty: Difficulty;
   description: string;
   flags: GeneratedFlag[];
+}
+
+/**
+ * 根据难度、任务量和优先级计算Flag积分
+ */
+export function calculateFlagPoints(
+  difficulty: Difficulty,
+  total: number,
+  priority: FlagPriority
+): number {
+  // 基础分数：根据难度
+  const basePoints: Record<Difficulty, number> = {
+    easy: 10,
+    medium: 20,
+    hard: 35,
+  };
+  
+  // 任务量系数：总数越多，积分越高
+  const volumeMultiplier = 1 + Math.log10(total);
+  
+  // 优先级系数：优先级越高（数字越小），积分越高
+  const priorityMultiplier: Record<FlagPriority, number> = {
+    1: 1.5,  // 急切
+    2: 1.3,  // 较急
+    3: 1.1,  // 一般
+    4: 1.0,  // 不急
+  };
+  
+  const points = Math.round(
+    basePoints[difficulty] * volumeMultiplier * priorityMultiplier[priority]
+  );
+  
+  return points;
 }
 
 /**
@@ -66,12 +100,18 @@ export async function generateStudyPlan(
  */
 function generateFlags(
   _goal: string,
-  _difficulty: Difficulty,
+  difficulty: Difficulty,
   _count: number,
   _totalRange: [number, number]
 ): GeneratedFlag[] {
   // TODO: 这里应该调用后端AI API，传入 goal 和 difficulty，返回智能生成的 flags
   // 临时返回空数组，等待后端接口接入
+  // 当后端API接入后，需要为每个flag计算积分：
+  // flags.map(flag => ({
+  //   ...flag,
+  //   points: calculateFlagPoints(difficulty, flag.total, flag.priority)
+  // }))
+  void difficulty;
   return [];
 }
 

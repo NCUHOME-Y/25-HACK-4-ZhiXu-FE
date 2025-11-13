@@ -2,95 +2,19 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon } from 'lucide-react';
 import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton } from "../components";
-// import contactService from '../services/contact.service'; // TODO: 启用后端API时取消注释
+import contactService from '../services/contact.service';
+import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
+import { adaptPostToUser } from '../lib/helpers/helpers';
+import { POSTS_PER_PAGE } from '../lib/constants/constants';
 
-// 预设头像列表
-const PRESET_AVATARS = [
-  '/avatars/avatar-1.png',
-  '/avatars/avatar-2.png',
-  '/avatars/avatar-3.png',
-  '/avatars/avatar-4.png',
-  '/avatars/avatar-5.png',
-  '/avatars/avatar-6.png',
-  '/avatars/avatar-7.png',
-  '/avatars/avatar-8.png',
-];
-
-// 模拟用户数据
-interface User {
-  id: string;
-  name: string;
-  avatar: string; // 预设头像之一
-  message: string;
-  likes: number;
-  comments: Comment[];
-  totalDays?: number; // 打卡总天数
-  completedFlags?: number; // 完成flag总数
-  totalPoints?: number; // 总积分
-}
-
-interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string; // 评论用户头像
-  content: string;
-  time: string; // 评论发表时间
-}
-
-// 生成更多模拟数据
-const generateMockUsers = (): User[] => {
-  const baseUsers = [
-    { name: '学霸小王', avatar: PRESET_AVATARS[0], message: '今天完成了数学作业的第三章，感觉越来越顺手了！坚持就是胜利 💪' },
-    { name: '英语达人', avatar: PRESET_AVATARS[1], message: '分享一份英语四级核心词汇表，整理了常考的2000个单词，希望对大家有帮助！' },
-    { name: '健身达人', avatar: PRESET_AVATARS[2], message: '发起一个30天健身挑战！每天运动30分钟，有一起的小伙伴吗？' },
-    { name: '代码侠客', avatar: PRESET_AVATARS[3], message: '刚刚解决了一个困扰我一周的Bug，成就感满满！💻' },
-    { name: '阅读爱好者', avatar: PRESET_AVATARS[4], message: '推荐《人类简史》这本书，看完真的能让人思考很多！' },
-    { name: '早起鸟', avatar: PRESET_AVATARS[5], message: '坚持早起第100天！早起真的能改变生活！🌅' },
-    { name: '美食探索家', avatar: PRESET_AVATARS[6], message: '自己做了一顿健康晚餐，低卡又美味~' },
-    { name: '音乐发烧友', avatar: PRESET_AVATARS[7], message: '分享一首最近循环的歌，希望你们也喜欢！🎵' },
-  ];
-
-  const messages = [
-    '今天的学习状态特别好，效率满分！',
-    '终于攻克了这个难题，太开心了！',
-    '和大家分享一个学习小技巧...',
-    '打卡第N天，继续加油！',
-    '今天又学到了新知识，充实的一天！',
-    '完成今天的目标，给自己点个赞！',
-  ];
-
-  return Array.from({ length: 30 }, (_, i) => {
-    const baseUser = baseUsers[i % baseUsers.length];
-    return {
-      id: String(i + 1),
-      name: `${baseUser.name}${i > 7 ? i - 7 : ''}`,
-      avatar: baseUser.avatar,
-      message: i < 3 ? baseUser.message : messages[i % messages.length],
-      likes: Math.floor(Math.random() * 50) + 5,
-      comments: i % 3 === 0 ? [
-        { 
-          id: `c${i}1`, 
-          userId: String((i + 1) % 8 + 1), 
-          userName: baseUsers[(i + 1) % 8].name,
-          userAvatar: PRESET_AVATARS[(i + 1) % 8],
-          content: ['加油！', '太棒了！', '继续坚持！'][i % 3], 
-          time: `${Math.floor(Math.random() * 5) + 1}小时前` 
-        },
-      ] : [],
-      totalDays: Math.floor(Math.random() * 200) + 50,
-      completedFlags: Math.floor(Math.random() * 50) + 10,
-      totalPoints: Math.floor(Math.random() * 3000) + 500,
-    };
-  });
-};
-
-const mockUsers: User[] = generateMockUsers();
-
-// 联系我们页面
+/**
+ * 联系页面(翰林院论)
+ * 展示用户动态、支持搜索、点赞、评论等社交功能
+ */
 export default function ContactPage() {
   const navigate = useNavigate();
-  const [posts] = useState<User[]>(mockUsers);
+
+  // ========== 本地状态 ==========
   const [displayedPosts, setDisplayedPosts] = useState<User[]>([]);
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
@@ -99,121 +23,86 @@ export default function ContactPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
-  const POSTS_PER_PAGE = 15;
-
-  // 过滤帖子
-  const filteredPosts = posts.filter(post => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      post.name.toLowerCase().includes(query) ||
-      post.message.toLowerCase().includes(query) ||
-      post.comments.some(comment => 
-        comment.userName.toLowerCase().includes(query) ||
-        comment.content.toLowerCase().includes(query)
-      )
-    );
-  });
-
-  // 加载更多帖子
+  // ========== 事件处理器 ==========
+  /**
+   * 加载更多帖子(分页加载)
+   */
   const loadMorePosts = useCallback(() => {
     if (loading || !hasMore) return;
     
     setLoading(true);
+    setError(null);
     
-    // TODO: 启用后端API
-    // contactService.getPosts(page, POSTS_PER_PAGE)
-    //   .then(response => {
-    //     if (response.data.length === 0) {
-    //       setHasMore(false);
-    //     } else {
-    //       setDisplayedPosts(prev => [...prev, ...response.data]);
-    //       setPage(prev => prev + 1);
-    //       setHasMore(response.hasMore);
-    //     }
-    //     setLoading(false);
-    //   })
-    //   .catch(error => {
-    //     console.error('加载帖子失败:', error);
-    //     setLoading(false);
-    //   });
-    
-    // 模拟网络延迟（临时使用，启用后端后删除）
-    setTimeout(() => {
-      const startIndex = (page - 1) * POSTS_PER_PAGE;
-      const endIndex = startIndex + POSTS_PER_PAGE;
-      const newPosts = filteredPosts.slice(startIndex, endIndex);
-      
-      if (newPosts.length === 0) {
+    contactService.getPosts(page, POSTS_PER_PAGE)
+      .then((response) => {
+        if (response.data.length === 0) {
+          setHasMore(false);
+        } else {
+          const adaptedPosts = response.data.map(adaptPostToUser);
+          setDisplayedPosts(prev => [...prev, ...adaptedPosts]);
+          setPage(prev => prev + 1);
+          setHasMore(response.hasMore);
+        }
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        console.error('加载帖子失败:', error);
+        setError('无法连接到服务器，请检查后端服务是否启动');
+        setLoading(false);
         setHasMore(false);
-      } else {
-        setDisplayedPosts(prev => [...prev, ...newPosts]);
-        setPage(prev => prev + 1);
-      }
-      setLoading(false);
-    }, 500);
-  }, [loading, hasMore, page, filteredPosts]);
+      });
+  }, [loading, hasMore, page]);
 
-  // 初始加载
+  // ========== 副作用 ==========
+  /**
+   * 初始加载和搜索触发
+   */
   useEffect(() => {
     setDisplayedPosts([]);
     setPage(1);
     setHasMore(true);
     setLoading(true);
+    setError(null);
     
-    // TODO: 启用后端API（搜索功能）
-    // if (searchQuery.trim()) {
-    //   contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE })
-    //     .then(response => {
-    //       setDisplayedPosts(response.data);
-    //       setPage(2);
-    //       setHasMore(response.hasMore);
-    //       setLoading(false);
-    //     })
-    //     .catch(error => {
-    //       console.error('搜索失败:', error);
-    //       setLoading(false);
-    //     });
-    // } else {
-    //   contactService.getPosts(1, POSTS_PER_PAGE)
-    //     .then(response => {
-    //       setDisplayedPosts(response.data);
-    //       setPage(2);
-    //       setHasMore(response.hasMore);
-    //       setLoading(false);
-    //     })
-    //     .catch(error => {
-    //       console.error('加载帖子失败:', error);
-    //       setLoading(false);
-    //     });
-    // }
-    
-    // 模拟网络延迟（临时使用，启用后端后删除）
-    setTimeout(() => {
-      const filtered = posts.filter(post => {
-        if (!searchQuery.trim()) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-          post.name.toLowerCase().includes(query) ||
-          post.message.toLowerCase().includes(query) ||
-          post.comments.some(comment => 
-            comment.userName.toLowerCase().includes(query) ||
-            comment.content.toLowerCase().includes(query)
-          )
-        );
-      });
-      
-      const initialPosts = filtered.slice(0, POSTS_PER_PAGE);
-      setDisplayedPosts(initialPosts);
-      setPage(2);
-      setHasMore(filtered.length > POSTS_PER_PAGE);
-      setLoading(false);
-    }, 500);
-  }, [searchQuery, posts]);
+    if (searchQuery.trim()) {
+      contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE })
+        .then((response) => {
+          const adaptedPosts = response.data.map(adaptPostToUser);
+          setDisplayedPosts(adaptedPosts);
+          setPage(2);
+          setHasMore(response.hasMore);
+          setLoading(false);
+        })
+        .catch((error: unknown) => {
+          console.error('搜索失败:', error);
+          setError('搜索失败，请检查网络连接或稍后再试');
+          setLoading(false);
+          setHasMore(false);
+        });
+    } else {
+      contactService.getPosts(1, POSTS_PER_PAGE)
+        .then((response) => {
+          const adaptedPosts = response.data.map(adaptPostToUser);
+          setDisplayedPosts(adaptedPosts);
+          setPage(2);
+          setHasMore(response.hasMore);
+          setLoading(false);
+        })
+        .catch((error: unknown) => {
+          console.error('加载帖子失败:', error);
+          setError('无法连接到服务器，请确保后端服务已启动（http://localhost:8080）');
+          setLoading(false);
+          setHasMore(false);
+        });
+    }
+  }, [searchQuery]);
 
-  // 滚动监听
+  /**
+   * 滚动监听(触发分页加载)
+   */
   useEffect(() => {
     const currentObserver = observerRef.current;
     
@@ -237,7 +126,9 @@ export default function ContactPage() {
     };
   }, [hasMore, loading, loadMorePosts]);
 
-  // 点赞处理
+  /**
+   * 点赞处理
+   */
   const handleLike = (postId: string, liked: string[]) => {
     const isLiked = liked.includes('liked');
     
@@ -288,7 +179,9 @@ export default function ContactPage() {
     // }
   };
 
-  // 评论处理
+  /**
+   * 评论处理
+   */
   const handleAddComment = (postId: string) => {
     const comment = newComment[postId]?.trim();
     if (!comment) return;
@@ -297,7 +190,7 @@ export default function ContactPage() {
       id: `c${Date.now()}`,
       userId: 'me',
       userName: '我',
-      userAvatar: PRESET_AVATARS[0],
+      userAvatar: '/default-avatar.png',
       content: comment,
       time: '刚刚',
     };
@@ -335,6 +228,7 @@ export default function ContactPage() {
     //   });
   };
 
+  // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-20">
@@ -409,7 +303,40 @@ export default function ContactPage() {
 
         {/* 用户动态列表 */}
         <section className="space-y-3">
-          {displayedPosts.length === 0 && !loading ? (
+          {/* 错误提示 */}
+          {error && (
+            <Card className="p-6 mx-4 bg-red-50 border-red-200">
+              <div className="text-center space-y-3">
+                <p className="text-red-600 font-medium">⚠️ {error}</p>
+                <p className="text-sm text-red-500">开发提示：请先启动后端服务</p>
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    contactService.getPosts(1, POSTS_PER_PAGE)
+                      .then((response) => {
+                        const adaptedPosts = response.data.map(adaptPostToUser);
+                        setDisplayedPosts(adaptedPosts);
+                        setPage(2);
+                        setHasMore(response.hasMore);
+                        setLoading(false);
+                      })
+                      .catch((err: unknown) => {
+                        console.error('重试失败:', err);
+                        setError('无法连接到服务器，请确保后端服务已启动');
+                        setLoading(false);
+                      });
+                  }}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  重试连接
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {displayedPosts.length === 0 && !loading && !error ? (
             <Card className="p-8 text-center text-muted-foreground">
               <p>没有找到相关帖子</p>
             </Card>

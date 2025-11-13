@@ -3,36 +3,34 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
 import { Separator } from "../components/ui/separator";
+import type { PrivateMessage } from '../lib/types/types';
+import { scrollToBottom } from '../lib/helpers/helpers';
 
-// 私聊消息数据
-interface PrivateMessage {
-  id: string;
-  message: string;
-  time: string;
-  isMe: boolean;
-  avatar?: string;
-  userName?: string;
-}
-
+/**
+ * 私聊页面
+ * 一对一私密聊天,支持实时消息收发
+ */
 export default function PrivatePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = location.state?.user || { name: '用户', avatar: '' };
   
+  // ========== 本地状态 ==========
   const [message, setMessage] = useState('');
   const [messages, _setMessages] = useState<PrivateMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 自动滚动到底部
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // ========== 副作用 ==========
+  /**
+   * 消息变化时自动滚动
+   */
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(messagesEndRef);
   }, [messages]);
 
-  // WebSocket连接
+  /**
+   * WebSocket连接管理
+   */
   useEffect(() => {
     // TODO: 替换为实际的WebSocket URL
     // const ws = new WebSocket(`ws://your-backend-url/private-chat/${user.id}`);
@@ -69,6 +67,10 @@ export default function PrivatePage() {
     // };
   }, [user.id, user.avatar, user.name]);
 
+  // ========== 事件处理器 ==========
+  /**
+   * 发送消息
+   */
   const handleSendMessage = () => {
     if (!message.trim()) return;
     
@@ -86,6 +88,7 @@ export default function PrivatePage() {
     setMessage('');
   };
 
+  // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* 顶部导航 */}

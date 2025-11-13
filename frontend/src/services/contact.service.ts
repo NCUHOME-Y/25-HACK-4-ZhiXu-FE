@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { api } from './apiClient';
 
 // 帖子接口类型
 export interface Post {
@@ -53,6 +53,7 @@ export interface SearchPostsParams {
 // 创建帖子参数
 export interface CreatePostParams {
   content: string;
+  taskId?: string; // 关联的任务ID（从Flag分享时使用）
 }
 
 // 添加评论参数
@@ -63,80 +64,85 @@ export interface AddCommentParams {
 
 const contactService = {
   // 获取帖子列表（分页）
-  getPosts: async (page: number = 1, pageSize: number = 15): Promise<PaginatedResponse<Post>> => {
-    const response = await apiClient.get('/posts', {
+  getPosts: (page: number = 1, pageSize: number = 15) =>
+    api.get<PaginatedResponse<Post>>('/posts', {
       params: { page, pageSize }
-    });
-    return response.data;
-  },
+    }),
 
   // 搜索帖子
-  searchPosts: async (params: SearchPostsParams): Promise<PaginatedResponse<Post>> => {
-    const response = await apiClient.get('/posts/search', {
+  searchPosts: (params: SearchPostsParams) =>
+    api.get<PaginatedResponse<Post>>('/posts/search', {
       params: {
         query: params.query,
         page: params.page || 1,
         pageSize: params.pageSize || 15
       }
-    });
-    return response.data;
-  },
+    }),
 
   // 获取单个帖子详情
-  getPost: async (postId: string): Promise<Post> => {
-    const response = await apiClient.get(`/posts/${postId}`);
-    return response.data;
-  },
+  getPost: (postId: string) =>
+    api.get<Post>(`/posts/${postId}`),
 
   // 创建帖子
-  createPost: async (params: CreatePostParams): Promise<Post> => {
-    const response = await apiClient.post('/posts', params);
-    return response.data;
-  },
+  createPost: (params: CreatePostParams) =>
+    api.post<Post>('/posts', params),
 
   // 点赞帖子
-  likePost: async (postId: string): Promise<{ success: boolean; likes: number }> => {
-    const response = await apiClient.post(`/posts/${postId}/like`);
-    return response.data;
-  },
+  likePost: (postId: string) =>
+    api.post<{ success: boolean; likes: number }>(`/posts/${postId}/like`),
 
   // 取消点赞
-  unlikePost: async (postId: string): Promise<{ success: boolean; likes: number }> => {
-    const response = await apiClient.delete(`/posts/${postId}/like`);
-    return response.data;
-  },
+  unlikePost: (postId: string) =>
+    api.delete<{ success: boolean; likes: number }>(`/posts/${postId}/like`),
 
   // 添加评论
-  addComment: async (params: AddCommentParams): Promise<PostComment> => {
-    const response = await apiClient.post(`/posts/${params.postId}/comments`, {
+  addComment: (params: AddCommentParams) =>
+    api.post<PostComment>(`/posts/${params.postId}/comments`, {
       content: params.content
-    });
-    return response.data;
-  },
+    }),
 
   // 获取帖子的评论列表
-  getComments: async (postId: string): Promise<PostComment[]> => {
-    const response = await apiClient.get(`/posts/${postId}/comments`);
-    return response.data;
-  },
+  getComments: (postId: string) =>
+    api.get<PostComment[]>(`/posts/${postId}/comments`),
 
   // 删除评论
-  deleteComment: async (postId: string, commentId: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.delete(`/posts/${postId}/comments/${commentId}`);
-    return response.data;
-  },
+  deleteComment: (postId: string, commentId: string) =>
+    api.delete<{ success: boolean }>(`/posts/${postId}/comments/${commentId}`),
 
   // 获取用户信息
-  getUserInfo: async (userId: string): Promise<UserInfo> => {
-    const response = await apiClient.get(`/users/${userId}`);
-    return response.data;
-  },
+  getUserInfo: (userId: string) =>
+    api.get<UserInfo>(`/users/${userId}`),
 
   // 删除帖子
-  deletePost: async (postId: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.delete(`/posts/${postId}`);
-    return response.data;
-  }
+  deletePost: (postId: string) =>
+    api.delete<{ success: boolean }>(`/posts/${postId}`),
+
+  // 从Flag创建帖子（分享Flag到社交页面）
+  createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; priority?: number }): Promise<Post> => {
+    const labelNames: Record<number, string> = {
+      1: '学习提升',
+      2: '健康运动',
+      3: '工作效率',
+      4: '兴趣爱好',
+      5: '生活习惯'
+    };
+    const priorityNames: Record<number, string> = {
+      1: '急切',
+      2: '较急',
+      3: '一般',
+      4: '不急'
+    };
+    
+    const content = `【我的Flag】${task.title}\n${task.detail || ''}\n\n标签: ${labelNames[task.label || 1]} | 优先级: ${priorityNames[task.priority || 3]}`;
+    return api.post<Post>('/posts', {
+      content,
+      taskId: task.id
+    });
+  },
+
+  // 根据任务ID删除关联的帖子
+  deletePostByTaskId: (taskId: string) =>
+    api.delete<{ success: boolean }>(`/posts/task/${taskId}`)
 };
 
 export default contactService;

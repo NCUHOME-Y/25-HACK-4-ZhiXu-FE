@@ -122,3 +122,80 @@ export function useClickOutside<T extends HTMLElement>(
 
   return ref;
 }
+
+// 通用分页加载 Hook
+export function usePagination<T>({
+  fetchFn,
+  pageSize = 15,
+  deps = []
+}: {
+  fetchFn: (page: number, size: number) => Promise<{ data: T[]; hasMore: boolean }>;
+  pageSize?: number;
+  deps?: unknown[];
+}) {
+  const [items, setItems] = useState<T[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetchFn(page, pageSize);
+      setItems(prev => [...prev, ...response.data]);
+      setPage(prev => prev + 1);
+      setHasMore(response.hasMore);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFn, page, pageSize, loading, hasMore]);
+
+  const reset = useCallback(() => {
+    setItems([]);
+    setPage(1);
+    setHasMore(true);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    reset();
+  }, deps);
+
+  return { items, loading, hasMore, error, loadMore, reset, setItems };
+}
+
+// 通用表单状态管理 Hook
+export function useFormState<T extends Record<string, any>>(initialState: T) {
+  const [values, setValues] = useState<T>(initialState);
+  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+
+  const handleChange = useCallback((field: keyof T, value: any) => {
+    setValues(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  }, []);
+
+  const setError = useCallback((field: keyof T, message: string) => {
+    setErrors(prev => ({ ...prev, [field]: message }));
+  }, []);
+
+  const reset = useCallback(() => {
+    setValues(initialState);
+    setErrors({});
+  }, [initialState]);
+
+  return { values, errors, handleChange, setError, reset, setValues };
+}
+
+// 通用切换状态 Hook
+export function useToggle(initialValue = false): [boolean, () => void, (value: boolean) => void] {
+  const [value, setValue] = useState(initialValue);
+  const toggle = useCallback(() => setValue(v => !v), []);
+  return [value, toggle, setValue];
+}

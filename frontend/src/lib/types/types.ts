@@ -29,6 +29,8 @@ export interface Task {
   label?: FlagLabel // 类型标签 1-5
   priority?: FlagPriority // 优先级 4:不急 3:一般 2:较急 1:急切
   isPublic?: boolean // 对应后端 is_hiden 取反（是否公开到社交页面）
+  postId?: string // 关联的社交帖子ID（当isPublic为true时）
+  points?: number // 该任务的积分值
   agreeNumber?: number // 点赞数
   createdAt?: string // 创建时间
   startTime?: string // 计划起始时间
@@ -102,5 +104,50 @@ export interface PunchTypeStats {
 // 打卡记录扩展（包含打卡类型）
 export interface PunchRecordExtended extends PunchRecord {
   type: 'active' | 'passive' // 主动打卡或被动打卡
+}
+
+// ========== 社交相关类型 ==========
+// 社交用户类型（联系页面使用）
+export interface ContactUser {
+  id: string;
+  name: string;        // 映射自 API 的 userName
+  avatar: string;      // 映射自 API 的 userAvatar
+  message: string;     // 映射自 API 的 content
+  likes: number;
+  comments: ContactComment[];
+  totalDays?: number;
+  completedFlags?: number;
+  totalPoints?: number;
+}
+
+// 评论类型（联系页面使用）
+export interface ContactComment {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  time: string;        // 映射自 API 的 createdAt
+}
+
+// 私聊消息类型
+export interface PrivateMessage {
+  id: string;
+  message: string;
+  time: string;
+  isMe: boolean;
+  avatar?: string;
+  userName?: string;
+}
+
+// 公共聊天室消息类型
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  avatar?: string;
+  message: string;
+  time: string;
+  isMe?: boolean;
 }
 

@@ -11,13 +11,16 @@ export interface CreateTaskPayload {
   dateRange?: unknown;
 }
 
+// 临时占位函数 - 避免重复 void 语句
+const mockEndpoint = (_endpoint: string, ..._args: unknown[]) => {};
+
 // ==================== 打卡相关 ====================
 /**
  * 获取已打卡日期列表
  * TODO: 接入后端 GET /punch/list
  */
 export async function fetchPunchDates(): Promise<string[]> {
-  void API_ENDPOINTS.PUNCH.LIST;
+  mockEndpoint(API_ENDPOINTS.PUNCH.LIST);
   return [];
 }
 
@@ -26,8 +29,7 @@ export async function fetchPunchDates(): Promise<string[]> {
  * TODO: 接入后端 POST /punch/toggle
  */
 export async function togglePunch(date: string): Promise<boolean> {
-  void API_ENDPOINTS.PUNCH.TOGGLE;
-  void date;
+  mockEndpoint(API_ENDPOINTS.PUNCH.TOGGLE, date);
   return true;
 }
 
@@ -37,7 +39,7 @@ export async function togglePunch(date: string): Promise<boolean> {
  * TODO: 接入后端 GET /task/list
  */
 export async function fetchTasks(): Promise<Task[]> {
-  void API_ENDPOINTS.TASK.LIST;
+  mockEndpoint(API_ENDPOINTS.TASK.LIST);
   return [];
 }
 
@@ -46,7 +48,7 @@ export async function fetchTasks(): Promise<Task[]> {
  * TODO: 接入后端 POST /task/create
  */
 export async function createTask(payload: CreateTaskPayload): Promise<Task> {
-  void API_ENDPOINTS.TASK.CREATE;
+  mockEndpoint(API_ENDPOINTS.TASK.CREATE, payload);
   return {
     id: String(Date.now()),
     title: payload.title,
@@ -62,8 +64,7 @@ export async function createTask(payload: CreateTaskPayload): Promise<Task> {
  * TODO: 接入后端 PATCH /task/:id
  */
 export async function updateTask(id: string, partial: Partial<CreateTaskPayload>): Promise<boolean> {
-  void API_ENDPOINTS.TASK.UPDATE(id);
-  void partial;
+  mockEndpoint(API_ENDPOINTS.TASK.UPDATE(id), partial);
   return true;
 }
 
@@ -72,7 +73,7 @@ export async function updateTask(id: string, partial: Partial<CreateTaskPayload>
  * TODO: 接入后端 POST /task/:id/tick
  */
 export async function tickTask(id: string): Promise<boolean> {
-  void API_ENDPOINTS.TASK.TICK(id);
+  mockEndpoint(API_ENDPOINTS.TASK.TICK(id));
   return true;
 }
 
@@ -82,7 +83,7 @@ export async function tickTask(id: string): Promise<boolean> {
  * TODO: 接入后端 POST /study/start
  */
 export async function startStudySession(): Promise<StudyRecord> {
-  void API_ENDPOINTS.STUDY.START;
+  mockEndpoint(API_ENDPOINTS.STUDY.START);
   return {
     id: String(Date.now()),
     userId: "local",
@@ -96,9 +97,24 @@ export async function startStudySession(): Promise<StudyRecord> {
  * TODO: 接入后端 POST /study/stop
  */
 export async function stopStudySession(sessionId: string, duration: number): Promise<boolean> {
-  void API_ENDPOINTS.STUDY.STOP;
-  void sessionId;
-  void duration;
+  mockEndpoint(API_ENDPOINTS.STUDY.STOP, sessionId, duration);
   return true;
 }
 
+// ==================== 积分相关 ====================
+/**
+ * 完成任务后增加积分
+ * TODO: 接入后端 POST /user/points
+ */
+export async function addUserPoints(taskId: string, points: number): Promise<{ success: boolean; totalPoints: number }> {
+  mockEndpoint('/user/points', taskId, points);
+  return { success: true, totalPoints: 0 };
+}
+
+/**
+ * 获取用户总积分
+ * TODO: 接入后端 GET /user/points
+ */
+export async function getUserPoints(): Promise<number> {
+  return 0;
+}

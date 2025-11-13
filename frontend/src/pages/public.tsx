@@ -3,34 +3,32 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
 import { Separator } from "../components/ui/separator";
+import type { ChatMessage } from '../lib/types/types';
+import { scrollToBottom } from '../lib/helpers/helpers';
 
-// 聊天消息数据
-interface ChatMessage {
-  id: string;
-  userId: string;
-  userName: string;
-  avatar?: string;
-  message: string;
-  time: string;
-  isMe?: boolean;
-}
-
+/**
+ * 公共聊天室页面
+ * 所有用户可见的群聊室,支持实时消息收发
+ */
 export default function PublicPage() {
   const navigate = useNavigate();
+
+  // ========== 本地状态 ==========
   const [message, setMessage] = useState('');
   const [messages, _setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 自动滚动到底部
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // ========== 副作用 ==========
+  /**
+   * 消息变化时自动滚动
+   */
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(messagesEndRef);
   }, [messages]);
 
-  // WebSocket连接
+  /**
+   * WebSocket连接管理
+   */
   useEffect(() => {
     // TODO: 替换为实际的WebSocket URL
     // const ws = new WebSocket('ws://your-backend-url/public-chat');
@@ -69,6 +67,10 @@ export default function PublicPage() {
     // };
   }, []);
 
+  // ========== 事件处理器 ==========
+  /**
+   * 发送消息
+   */
   const handleSendMessage = () => {
     if (!message.trim()) return;
     
@@ -85,6 +87,7 @@ export default function PublicPage() {
     setMessage('');
   };
 
+  // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* 顶部导航 */}

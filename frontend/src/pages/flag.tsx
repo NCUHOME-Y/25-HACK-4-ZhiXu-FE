@@ -45,10 +45,12 @@ import {
 } from '../components';
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
-import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
+import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, calculateTaskPoints } from '../lib/helpers/helpers';
 import { useStudyTimer } from '../lib/hooks/hooks';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { PunchChartProps, TaskRingProps, FlagLabel, FlagPriority } from '../lib/types/types';
+import contactService from '../services/contact.service';
+import { addUserPoints } from '../services/flag.service';
 
 
 /**
@@ -205,15 +207,31 @@ export default function FlagPage() {
   /**
    * 任务记次
    */
-  const handleTickTask = (taskId: string) => {
+  const handleTickTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const willComplete = task.count !== undefined && task.total !== undefined && task.count + 1 >= task.total;
+    
     tickTaskInStore(taskId);
+    
+    // 如果任务完成，计算并添加积分
+    if (willComplete && task.points) {
+      try {
+        await addUserPoints(taskId, task.points);
+        toast.success(`恭喜完成！获得 ${task.points} 积分 🎉`);
+      } catch (error) {
+        console.error('添加积分失败:', error);
+      }
+    }
+    
     // TODO: 接入后端 await tickTask(taskId)
   };
 
   /**
    * 保存任务（新建或编辑）
    */
-  const handleSaveTask = () => {
+  const handleSaveTask = async () => {
     if (!newTask.title.trim()) {
       setShowError(true);
       return;
@@ -221,7 +239,46 @@ export default function FlagPage() {
     setShowError(false);
     if (editingTaskId) {
       const oldTask = tasks.find(t => t.id === editingTaskId);
+      const isPublicChanged = oldTask && oldTask.isPublic !== newTask.isPublic;
+      
       updateTaskInStore(editingTaskId, newTask);
+      
+      // 处理分享/撤回逻辑
+      if (isPublicChanged) {
+        if (newTask.isPublic && !oldTask?.postId) {
+          // 分享到社交页面
+          try {
+            const post = await contactService.createPostFromTask({
+              id: editingTaskId,
+              title: newTask.title,
+              detail: newTask.detail,
+              label: newTask.label,
+              priority: newTask.priority
+            });
+            updateTaskInStore(editingTaskId, { ...newTask, postId: post.id });
+            toast.success('flag已分享到翰林院论', {
+              action: {
+                label: '查看',
+                onClick: () => navigate('/contact')
+              }
+            });
+          } catch (error) {
+            console.error('分享失败:', error);
+            toast.error('分享失败，请检查网络连接');
+          }
+        } else if (!newTask.isPublic && oldTask?.postId) {
+          // 撤回社交帖子
+          try {
+            await contactService.deletePost(oldTask.postId);
+            updateTaskInStore(editingTaskId, { ...newTask, postId: undefined });
+            toast.success('已从翰林院论撤回');
+          } catch (error) {
+            console.error('撤回失败:', error);
+            toast.error('撤回失败，请稍后重试');
+          }
+        }
+      }
+      
       toast.success('flag已更新', {
         action: oldTask ? {
           label: '撤销',
@@ -232,33 +289,64 @@ export default function FlagPage() {
               total: oldTask.total || 1,
               label: oldTask.label,
               priority: oldTask.priority,
-              isPublic: oldTask.isPublic
+              isPublic: oldTask.isPublic,
+              postId: oldTask.postId
             });
             toast.success('已撤销更新');
           }
         } : undefined
       });
       // TODO: 接入后端 await updateTask(editingTaskId, newTask)
-      // TODO: 如果 isPublic 变化，调用发帖/删帖 API
     } else {
+      // 如果没有设置积分，自动计算
+      const points = calculateTaskPoints({
+        total: newTask.total || 1,
+        priority: newTask.priority || 3,
+        difficulty: 'medium'
+      });
+      
       const created = { 
         id: String(Date.now()), 
-        ...newTask, 
+        ...newTask,
+        points, // 自动计算的积分
         count: 0, 
         completed: false 
       };
       addTask(created);
-      toast.success('flag已创建', {
-        action: {
-          label: '撤销',
-          onClick: () => {
-            useTaskStore.getState().deleteTask(created.id);
-            toast.success('已撤销创建');
-          }
+      
+      // 如果设置为公开，自动分享到社交页面
+      if (newTask.isPublic) {
+        try {
+          const post = await contactService.createPostFromTask({
+            id: created.id,
+            title: newTask.title,
+            detail: newTask.detail,
+            label: newTask.label,
+            priority: newTask.priority
+          });
+          updateTaskInStore(created.id, { postId: post.id });
+          toast.success('flag已创建并分享到翰林院论', {
+            action: {
+              label: '查看',
+              onClick: () => navigate('/contact')
+            }
+          });
+        } catch (error) {
+          console.error('分享失败:', error);
+          toast.success('flag已创建');
         }
-      });
+      } else {
+        toast.success('flag已创建', {
+          action: {
+            label: '撤销',
+            onClick: () => {
+              useTaskStore.getState().deleteTask(created.id);
+              toast.success('已撤销创建');
+            }
+          }
+        });
+      }
       // TODO: 接入后端 await createTask(newTask)
-      // TODO: 如果 isPublic 为 true，调用发帖 API
     }
     closeDrawer();
   };
@@ -266,10 +354,20 @@ export default function FlagPage() {
   /**
    * 删除任务
    */
-  const handleDeleteTask = () => {
+  const handleDeleteTask = async () => {
     if (!editingTaskId) return;
     const taskToDelete = tasks.find(t => t.id === editingTaskId);
     if (!taskToDelete) return;
+    
+    // 如果任务有关联的帖子，先删除帖子
+    if (taskToDelete.postId) {
+      try {
+        await contactService.deletePost(taskToDelete.postId);
+      } catch (error) {
+        console.error('删除关联帖子失败:', error);
+      }
+    }
+    
     deleteTaskInStore(editingTaskId);
     toast.success('flag已删除', {
       action: {

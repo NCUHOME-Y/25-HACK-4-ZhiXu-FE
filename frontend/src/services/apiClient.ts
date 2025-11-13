@@ -1,5 +1,6 @@
 ﻿import axios from 'axios';
 import { handleApiError } from './error.service';
+import { createApiWrapper } from '../lib/helpers/api-helpers';
 
 /**
  * API 客户端配置
@@ -26,5 +27,8 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// 创建 API 包装器以简化 service 层代码
+export const api = createApiWrapper(apiClient);
 
 export default apiClient;

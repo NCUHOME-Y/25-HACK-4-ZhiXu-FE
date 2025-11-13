@@ -128,3 +128,80 @@ export const formatFileSize = (bytes: number): string => {
 export const sleep = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
+
+// ========== 社交相关工具函数 ==========
+// 将后端 Post 类型转换为前端 ContactUser 类型
+export const adaptPostToUser = (post: {
+  id: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  likes: number;
+  comments: Array<{
+    id: string;
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    content: string;
+    createdAt: string;
+  }>;
+}): import('../types/types').ContactUser => ({
+  id: post.id,
+  name: post.userName,
+  avatar: post.userAvatar,
+  message: post.content,
+  likes: post.likes,
+  comments: post.comments.map(c => ({
+    id: c.id,
+    userId: c.userId,
+    userName: c.userName,
+    userAvatar: c.userAvatar,
+    content: c.content,
+    time: c.createdAt
+  })),
+  totalDays: 0,
+  completedFlags: 0,
+  totalPoints: 0
+});
+
+// 聊天页面自动滚动到底部
+export const scrollToBottom = (ref: React.RefObject<HTMLDivElement | null>) => {
+  ref.current?.scrollIntoView({ behavior: 'smooth' });
+};
+
+// ========== 积分计算工具函数 ==========
+/**
+ * 根据任务属性计算积分
+ */
+export const calculateTaskPoints = (params: {
+  total: number;
+  priority: 1 | 2 | 3 | 4;
+  difficulty?: 'easy' | 'medium' | 'hard';
+}): number => {
+  const { total, priority, difficulty = 'medium' } = params;
+  
+  // 基础分数：根据难度
+  const basePoints: Record<string, number> = {
+    easy: 10,
+    medium: 20,
+    hard: 35,
+  };
+  
+  // 任务量系数：总数越多，积分越高
+  const volumeMultiplier = 1 + Math.log10(total);
+  
+  // 优先级系数：优先级越高（数字越小），积分越高
+  const priorityMultiplier: Record<number, number> = {
+    1: 1.5,  // 急切
+    2: 1.3,  // 较急
+    3: 1.1,  // 一般
+    4: 1.0,  // 不急
+  };
+  
+  const points = Math.round(
+    basePoints[difficulty] * volumeMultiplier * priorityMultiplier[priority]
+  );
+  
+  return points;
+};
+

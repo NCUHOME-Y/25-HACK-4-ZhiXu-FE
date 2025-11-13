@@ -7,4 +7,7 @@ export * from './ai.service';
 export * from './contact.service';
 export * from './error.service';
 export * from './mine.service';
-export * from './chat.service';
+
+// 聊天服务 - 统一导出
+export { privateChatService, publicChatService } from './chat.service';
+export type { ChatMessage, Conversation, ChatRoom } from './chat.service';

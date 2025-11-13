@@ -111,3 +111,7 @@ export const ERROR_CONFIG: Record<ErrorType, ErrorConfig> = {
     color: "text-slate-500",
   },
 } as const;
+
+// ========== 分页配置 ==========
+// 社交页面每页帖子数量
+export const POSTS_PER_PAGE = 15;

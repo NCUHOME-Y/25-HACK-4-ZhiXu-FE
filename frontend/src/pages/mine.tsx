@@ -33,9 +33,11 @@ export default function MinePage() {
   const navigate = useNavigate();
   
   // ========== 本地状态 ========== 
+  // Zustand 全局状态
   const tasks = useTaskStore((s) => s.tasks);
   const punchedDates = useTaskStore((s) => s.punchedDates);
   
+  // 本地UI状态
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [nickname, setNickname] = useState('知序学习者');
   const [bio, setBio] = useState('每天进步一点点，成为更好的自己');
@@ -48,15 +50,13 @@ export default function MinePage() {
   /** 打卡总天数 */
   const totalPunchDays = useMemo(() => punchedDates.length, [punchedDates]);
   
-  /** 模拟积分数据 */
-  const points = 2850;
+  /** 积分数据 - 从后端API获取 */
+  const [points, _setPoints] = useState(0);
+  const [badges, _setBadges] = useState<Array<{id: number; isUnlocked: boolean}>>([]);
   
   /** 已获得徽章数 */
-  const achievedBadges = 3;
-  const totalBadges = 12;
-  
-  // 已获得的徽章列表（从后端API获取，这里暂时模拟）
-  const unlockedBadgeIds = [0, 1, 2]; // 示例：已解锁前3个徽章
+  const achievedBadges = badges.filter(b => b.isUnlocked).length;
+  const totalBadges = badges.length;
   
   // 所有徽章配置
   const allBadges = [
@@ -117,20 +117,31 @@ export default function MinePage() {
     return colorMap[color] || 'text-slate-400';
   };
 
-  // 预设头像列表
+  /**
+   * 预设头像列表
+   */
   const avatarOptions = ['知', '序', '学', '习', '者', '🎓', '📚', '✨'];
 
-  // ========== 事件处理器 ========== 
+  // ========== 事件处理器 ==========
+  /**
+   * 保存个人资料
+   */ 
   const handleSaveProfile = () => {
     // TODO: 保存到后端
     setEditDialogOpen(false);
   };
 
+  /**
+   * 选择头像
+   */
   const handleSelectAvatar = (selectedAvatar: string) => {
     setAvatar(selectedAvatar);
     setAvatarPopoverOpen(false);
   };
 
+  /**
+   * 打开用户反馈
+   */
   const handleFeedback = () => {
     // 腾讯文档反馈链接 - TODO: 替换为实际的腾讯文档链接
     const feedbackDocUrl = 'https://docs.qq.com/form/page/YOUR_FORM_ID';
@@ -185,7 +196,8 @@ export default function MinePage() {
                   {/* 前3个已获得的徽章 - 始终显示 */}
                   <div className="grid grid-cols-3 gap-4">
                     {allBadges.slice(0, 3).map((badge) => {
-                      const isUnlocked = unlockedBadgeIds.includes(badge.id);
+                      const badgeData = badges.find(b => b.id === badge.id);
+                      const isUnlocked = badgeData?.isUnlocked || false;
                       const IconComponent = badge.icon;
                       return (
                         <div 
@@ -210,7 +222,8 @@ export default function MinePage() {
                   <AccordionContent>
                     <div className="grid grid-cols-3 gap-4 pt-2">
                       {allBadges.slice(3).map((badge) => {
-                        const isUnlocked = unlockedBadgeIds.includes(badge.id);
+                        const badgeData = badges.find(b => b.id === badge.id);
+                        const isUnlocked = badgeData?.isUnlocked || false;
                         const IconComponent = badge.icon;
                         return (
                           <div 
@@ -347,11 +360,20 @@ export default function MinePage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => setEditDialogOpen(false)}>
+          <DialogFooter className="gap-3">
+            <Button 
+              variant="outline" 
+              className="border-blue-200 text-blue-600 hover:bg-blue-50 rounded-full px-6 py-2" 
+              onClick={() => setEditDialogOpen(false)}
+            >
               取消
             </Button>
-            <Button onClick={handleSaveProfile}>保存</Button>
+            <Button 
+              className="rounded-full px-6 py-2" 
+              onClick={handleSaveProfile}
+            >
+              保存
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

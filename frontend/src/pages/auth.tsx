@@ -22,9 +22,14 @@ import {
 
 type AuthMode = "login" | "signup" | "otp" | "otp-input"
 
+/**
+ * 认证页面
+ * 支持账号密码登录、注册、验证码登录等方式
+ */
 export default function AuthPage() {
   const navigate = useNavigate()
   
+  // ========== 本地状态 ==========
   // 当前显示的认证模式
   const [mode, setMode] = useState<AuthMode>("login")
   // 当前手机号（用于跨步骤保留）
@@ -43,7 +48,10 @@ export default function AuthPage() {
   const [showAlertDialog, setShowAlertDialog] = useState(false)
   const [alertMessage, setAlertMessage] = useState("请先输入手机号")
 
-  // 切换到验证码页面(从登录)
+  // ========== 事件处理器 ==========
+  /**
+   * 切换到验证码页面(从登录)
+   */
   const switchToOTPFromLogin = () => {
     // 直接进入验证码登录的手机号输入页
     setMode("otp")
@@ -51,7 +59,9 @@ export default function AuthPage() {
     setOtpSent(false)
   }
 
-  // 发送验证码
+  /**
+   * 发送验证码
+   */
   const handleSendOTP = async () => {
     const value = otpPhone.trim()
     const isValidPhone = /^\d{11}$/.test(value)
@@ -81,7 +91,9 @@ export default function AuthPage() {
     }
   }
 
-  // 切换到验证码页面（从注册）
+  /**
+   * 切换到验证码页面(从注册)
+   */
   const switchToOTPFromSignup = () => {
     // 读取注册表单的各字段并做最小校验（不改子组件，使用 DOM 读取）
     const nameInput = document.getElementById("name") as HTMLInputElement | null
@@ -121,7 +133,9 @@ export default function AuthPage() {
     setMode("otp")
   }
 
-  // 处理登录
+  /**
+   * 处理登录
+   */
   const handleLogin = async () => {
     setLoggingIn(true)
     try {
@@ -137,7 +151,9 @@ export default function AuthPage() {
     }
   }
 
-  // 验证码验证成功后的处理
+  /**
+   * 验证码验证成功后的处理
+   */
   const handleOTPVerificationSuccess = async () => {
     setVerifyingOTP(true)
     try {
@@ -153,6 +169,7 @@ export default function AuthPage() {
     }
   }
 
+  // ========== 渲染 ==========
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
