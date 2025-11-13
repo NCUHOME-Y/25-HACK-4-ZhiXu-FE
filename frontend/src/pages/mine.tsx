@@ -139,14 +139,14 @@ export default function MinePage() {
 
   // ========== 渲染 ========== 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-24 px-4 space-y-4">
         {/* 用户信息卡片 */}
         <section className="pt-6">
           <Card className="p-4 rounded-xl">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                <AvatarFallback className="text-2xl font-bold text-white bg-transparent">{avatar}</AvatarFallback>
+                <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">{avatar}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h2 className="text-xl font-bold">{nickname}</h2>
@@ -348,7 +348,7 @@ export default function MinePage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+            <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => setEditDialogOpen(false)}>
               取消
             </Button>
             <Button onClick={handleSaveProfile}>保存</Button>

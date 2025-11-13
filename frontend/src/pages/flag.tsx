@@ -325,7 +325,7 @@ export default function FlagPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white">
       {alertVisible && (
         <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[9999] w-11/12 max-w-md">
           <Alert variant="destructive" className={alertHiding ? 'alert-hide' : ''}>
@@ -388,7 +388,7 @@ export default function FlagPage() {
             {isPunchedToday && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />}
           </Card>
 
-          <div className="col-span-2 px-2 py-2 flex flex-col justify-center gap-2 bg-transparent rounded-lg">
+          <div className="col-span-2 px-2 py-2 flex flex-col justify-center gap-2 bg-white rounded-lg">
             <div className="w-full flex items-center justify-between">
               <div className="text-xs text-muted-foreground text-center leading-tight">已连续<br />坚持</div>
               <div className="flex-shrink-0">
@@ -513,7 +513,7 @@ export default function FlagPage() {
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="h-8 w-8 rounded-lg" 
+                        className="h-8 w-8 rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50" 
                         onClick={() => startEditTask(t)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -604,7 +604,7 @@ export default function FlagPage() {
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="h-8 w-8" 
+                        className="h-8 w-8 border-blue-200 text-blue-600" 
                         disabled
                       >
                         <Pencil className="h-4 w-4" />

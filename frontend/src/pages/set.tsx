@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bell, Palette, Lock, LogOut, Info } from 'lucide-react';
+import { ChevronLeft, Bell, Lock, LogOut, Info } from 'lucide-react';
 import { 
   Card, 
   Button,
@@ -33,7 +33,6 @@ export default function SetPage() {
   
   // ========== 本地状态 ========== 
   const [notificationEnabled, setNotificationEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [notificationHour, setNotificationHour] = useState('09');
   const [notificationMinute, setNotificationMinute] = useState('00');
@@ -73,9 +72,9 @@ export default function SetPage() {
 
   // ========== 渲染 ========== 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* 固定标题栏 - 与search栏相同样式 */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-950 md:hidden">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white md:hidden">
         <div className="flex h-16 items-center px-4 gap-3">
           <Button
             variant="ghost"
@@ -95,8 +94,8 @@ export default function SetPage() {
         <Card className="p-4 rounded-xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 rounded-lg bg-blue-50">
+                <Bell className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <h3 className="font-medium">推送通知</h3>
@@ -106,7 +105,7 @@ export default function SetPage() {
             <button
               onClick={() => setNotificationEnabled(!notificationEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notificationEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                notificationEnabled ? 'bg-blue-600' : 'bg-slate-300'
               }`}
             >
               <span
@@ -150,41 +149,14 @@ export default function SetPage() {
           </div>
         </Card>
 
-        {/* 深色模式 */}
-        <Card className="p-4 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/30">
-                <Palette className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="font-medium">深色模式</h3>
-                <p className="text-xs text-muted-foreground">切换应用主题颜色</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                darkMode ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-700'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  darkMode ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </Card>
-
         {/* 修改密码 */}
         <Card 
-          className="p-4 rounded-xl cursor-pointer active:scale-[0.98] transition-transform hover:bg-slate-50 dark:hover:bg-slate-900/50"
+          className="p-4 rounded-xl cursor-pointer active:scale-[0.98] transition-transform hover:bg-slate-50"
           onClick={() => setChangePasswordDialogOpen(true)}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
-              <Lock className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+            <div className="p-2 rounded-lg bg-slate-100">
+              <Lock className="h-5 w-5 text-slate-600" />
             </div>
             <div className="flex-1">
               <h3 className="font-medium">修改密码</h3>
@@ -199,8 +171,8 @@ export default function SetPage() {
             <AccordionItem value="about" className="border-none">
               <AccordionTrigger className="hover:no-underline p-0">
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
-                    <Info className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="p-2 rounded-lg bg-green-50">
+                    <Info className="h-5 w-5 text-green-600" />
                   </div>
                   <div className="flex-1 text-left">
                     <h3 className="font-medium">关于我们</h3>
@@ -216,13 +188,13 @@ export default function SetPage() {
                   </div>
                   <Separator />
                   <div className="space-y-2">
-                    <button className="text-sm text-blue-600 dark:text-blue-400 hover:underline block">
+                    <button className="text-sm text-blue-600 hover:underline block">
                       用户协议
                     </button>
-                    <button className="text-sm text-blue-600 dark:text-blue-400 hover:underline block">
+                    <button className="text-sm text-blue-600 hover:underline block">
                       隐私政策
                     </button>
-                    <button className="text-sm text-blue-600 dark:text-blue-400 hover:underline block">
+                    <button className="text-sm text-blue-600 hover:underline block">
                       开源许可
                     </button>
                   </div>
@@ -241,7 +213,7 @@ export default function SetPage() {
         <div className="pt-2">
           <Button
             variant="outline"
-            className="w-full h-12 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl"
+            className="w-full h-12 text-red-600 border-red-200 hover:bg-red-50 rounded-xl"
             onClick={() => setLogoutDialogOpen(true)}
           >
             <LogOut className="h-4 w-4 mr-2" />
@@ -252,7 +224,7 @@ export default function SetPage() {
 
       {/* 退出登录确认 Dialog */}
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-3xl max-w-[320px] mx-4">
           <DialogHeader>
             <DialogTitle>确认退出</DialogTitle>
             <DialogDescription>
@@ -260,10 +232,18 @@ export default function SetPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              className="rounded-full px-4 py-2 my-1 min-w-[80px] border-blue-200 text-blue-600 hover:bg-blue-50"
+              onClick={() => setLogoutDialogOpen(false)}
+            >
               取消
             </Button>
-            <Button variant="destructive" onClick={handleLogout}>
+            <Button 
+              variant="destructive" 
+              className="rounded-full px-4 py-2 my-1 min-w-[80px] text-white"
+              onClick={handleLogout}
+            >
               确认退出
             </Button>
           </DialogFooter>
@@ -272,7 +252,7 @@ export default function SetPage() {
 
       {/* 修改密码 Dialog */}
       <Dialog open={changePasswordDialogOpen} onOpenChange={setChangePasswordDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)]">
+        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] rounded-3xl">
           <DialogHeader>
             <DialogTitle>修改密码</DialogTitle>
             <DialogDescription>
@@ -312,15 +292,22 @@ export default function SetPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setChangePasswordDialogOpen(false);
-              setOldPassword('');
-              setNewPassword('');
-              setConfirmPassword('');
-            }}>
+            <Button 
+              variant="outline" 
+              className="rounded-full px-4 py-2 my-1 min-w-[80px] border-blue-200 text-blue-600 hover:bg-blue-50"
+              onClick={() => {
+                setChangePasswordDialogOpen(false);
+                setOldPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+              }}
+            >
               取消
             </Button>
-            <Button onClick={handleChangePassword}>
+            <Button 
+              className="rounded-full px-4 py-2 my-1 min-w-[80px]"
+              onClick={handleChangePassword}
+            >
               确认修改
             </Button>
           </DialogFooter>

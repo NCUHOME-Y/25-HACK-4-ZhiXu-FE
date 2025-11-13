@@ -196,7 +196,7 @@ export default function DataPage() {
   // ========== 渲染 ========== 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col bg-white">
         <div className="flex-1 pb-24 px-4 flex items-center justify-center">
           <p className="text-muted-foreground">加载中...</p>
         </div>
@@ -206,7 +206,7 @@ export default function DataPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-24 px-4 space-y-4">
         {/* 页面标题 */}
         <div className="pt-6 pb-2">

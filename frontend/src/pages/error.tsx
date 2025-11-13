@@ -51,7 +51,7 @@ export default function ErrorPage() {
         <CardFooter className="flex gap-3">
           <Button 
             variant="outline" 
-            className="flex-1"
+            className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
             onClick={() => navigate(-1)}
           >
             <RefreshCw className="mr-2 h-4 w-4" />

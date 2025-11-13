@@ -29,11 +29,11 @@ export function setChartData(completed: number, uncompleted: number) {
 const chartConfig = {
   completed: {
     label: "已完成",
-    color: "#10b981",
+    color: "#3b82f6",
   },
   uncompleted: {
     label: "未完成",
-    color: "#f59e0b",
+    color: "#93c5fd",
   },
 } satisfies ChartConfig
 
