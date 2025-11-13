@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, UserPen, Settings, Trophy, Flame, Target, Star, MessageSquare } from 'lucide-react';
+import { ChevronRight, UserPen, Settings, Trophy, Flame, Target, Star, MessageSquare, User } from 'lucide-react';
 import { 
   BottomNav, 
   Card, 
@@ -152,6 +152,15 @@ export default function MinePage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-24 space-y-4">
+        {/* 页面标题 */}
+        <div className="pt-6 pb-1 px-4">
+          <div className="flex items-center gap-2">
+            <User className="h-7 w-7 text-blue-500" />
+            <h1 className="text-2xl font-bold">我的</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">个人中心，查看成就和设置</p>
+        </div>
+
         {/* 用户信息卡片 */}
         <section className="pt-6 px-4">
           <Card className="p-4 rounded-xl">
@@ -171,16 +180,16 @@ export default function MinePage() {
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">数据统计</h2>
           <div className="grid grid-cols-3 gap-3">
-            <Card className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/30">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{totalPunchDays}</div>
+            <Card className="p-4 rounded-xl bg-blue-50 border-blue-200">
+              <div className="text-2xl font-bold text-blue-600 mb-1">{totalPunchDays}</div>
               <div className="text-xs text-muted-foreground">打卡总天数</div>
             </Card>
-            <Card className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900/30">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{completedCount}</div>
+            <Card className="p-4 rounded-xl bg-green-50 border-green-200">
+              <div className="text-2xl font-bold text-green-600 mb-1">{completedCount}</div>
               <div className="text-xs text-muted-foreground">完成flag数</div>
             </Card>
-            <Card className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900/30">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">{points}</div>
+            <Card className="p-4 rounded-xl bg-orange-50 border-orange-200">
+              <div className="text-2xl font-bold text-orange-600 mb-1">{points}</div>
               <div className="text-xs text-muted-foreground">总积分</div>
             </Card>
           </div>
@@ -189,7 +198,7 @@ export default function MinePage() {
         {/* 已获得徽章 */}
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">已获得徽章 ({achievedBadges}/{totalBadges})</h2>
-          <Card className="p-4 rounded-xl bg-white dark:bg-slate-950">
+          <Card className="p-4 rounded-xl bg-white">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="badges" className="border-none">
                 <div className="space-y-3">
@@ -213,7 +222,7 @@ export default function MinePage() {
 
                   {/* 展开/收起按钮 */}
                   <AccordionTrigger className="hover:no-underline p-0 pt-2">
-                    <span className="text-sm text-blue-600 dark:text-blue-400">
+                    <span className="text-sm text-blue-600">
                       查看全部徽章
                     </span>
                   </AccordionTrigger>
@@ -250,8 +259,8 @@ export default function MinePage() {
             onClick={() => setEditDialogOpen(true)}
           >
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30">
-                <UserPen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-3 rounded-xl bg-blue-50">
+                <UserPen className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold">个人信息</h3>
@@ -269,8 +278,8 @@ export default function MinePage() {
             onClick={handleFeedback}
           >
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30">
-                <MessageSquare className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <div className="p-3 rounded-xl bg-purple-50">
+                <MessageSquare className="h-6 w-6 text-purple-600" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold">用户反馈</h3>
@@ -288,8 +297,8 @@ export default function MinePage() {
             onClick={() => navigate('/set')}
           >
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/30">
-                <Settings className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+              <div className="p-3 rounded-xl bg-slate-50">
+                <Settings className="h-6 w-6 text-slate-600" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold">系统设置</h3>

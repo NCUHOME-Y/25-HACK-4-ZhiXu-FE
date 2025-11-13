@@ -232,6 +232,15 @@ export default function ContactPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-20">
+        {/* 页面标题 */}
+        <div className="pt-6 pb-1 px-4">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-7 w-7 text-blue-500" />
+            <h1 className="text-2xl font-bold">翰林院论</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">展示用户动态，支持社交互动</p>
+        </div>
+
         {/* 搜索框 */}
         <div className="px-4 pt-4 pb-3">
           <div className="flex items-center w-full h-12 bg-white border border-border rounded-full shadow-sm overflow-hidden">

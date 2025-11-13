@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Check, CheckCircle2, Plus } from 'lucide-react';
+import { Pencil, Check, CheckCircle2, Plus, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -437,12 +437,21 @@ export default function FlagPage() {
       )}
       
       <div className="flex-1 pb-24 space-y-4 px-4">
+        {/* 页面标题 */}
+        <div className="pt-6 pb-1 px-0">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="h-7 w-7 text-blue-500" />
+            <h1 className="text-2xl font-bold">Flag</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">管理您的学习目标和任务</p>
+        </div>
+
         {/* 顶部日历 */}
         <section className="pt-3">
           <Calendar
             mode="single"
             captionLayout="dropdown"
-            className="w-full rounded-xl border border-slate-200 shadow-sm dark:border-slate-800"
+            className="w-full rounded-xl border border-slate-200 shadow-sm"
             formatters={{
               formatMonthDropdown: (date) => date.toLocaleString('zh-CN', { month: 'long' }),
               formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString('zh-CN', { month: 'long' })}`,
@@ -571,7 +580,7 @@ export default function FlagPage() {
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <TaskRing count={t.count} total={t.total} />
-                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400 whitespace-nowrap">
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 whitespace-nowrap">
                             未完成
                           </span>
                         </div>
@@ -601,11 +610,11 @@ export default function FlagPage() {
                               </span>
                             )}
                             {t.isPublic ? (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700">
                                 已分享
                               </span>
                             ) : (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
                                 未分享
                               </span>
                             )}
@@ -731,7 +740,7 @@ export default function FlagPage() {
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <TaskRing count={t.count} total={t.total} />
-                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 whitespace-nowrap">
                             已完成
                           </span>
                         </div>
@@ -761,11 +770,11 @@ export default function FlagPage() {
                               </span>
                             )}
                             {t.isPublic ? (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700">
                                 已分享
                               </span>
                             ) : (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
                                 未分享
                               </span>
                             )}

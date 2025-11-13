@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, Clock, Flag } from 'lucide-react';
+import { Calendar, Clock, Flag, TrendingUp } from 'lucide-react';
 import { 
   BottomNav, 
   Card, 
@@ -210,8 +210,11 @@ export default function DataPage() {
       <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
         <div className="pt-6 pb-2 px-4">
-          <h1 className="text-2xl font-bold">璇历</h1>
-          <p className="text-sm text-muted-foreground mt-1">本月学习数据概览</p>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-7 w-7 text-blue-500" />
+            <h1 className="text-2xl font-bold">璇历</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">查看学习数据和统计信息</p>
         </div>
 
         {/* 打卡概览 */}
@@ -219,19 +222,19 @@ export default function DataPage() {
           <h2 className="text-lg font-semibold mb-3">打卡概览</h2>
           <Card className="p-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{calculatedMonthlyStats.punchedDays}</div>
+              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50">
+                <Calendar className="h-6 w-6 text-blue-600 mb-2" />
+                <div className="text-2xl font-bold text-blue-600">{calculatedMonthlyStats.punchedDays}</div>
                 <div className="text-xs text-muted-foreground mt-1">累计打卡</div>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50 dark:bg-red-950">
-                <Calendar className="h-6 w-6 text-red-600 dark:text-red-400 mb-2" />
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{calculatedMonthlyStats.missedDays}</div>
+              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50">
+                <Calendar className="h-6 w-6 text-red-600 mb-2" />
+                <div className="text-2xl font-bold text-red-600">{calculatedMonthlyStats.missedDays}</div>
                 <div className="text-xs text-muted-foreground mt-1">缺卡天数</div>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                <Clock className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{Math.floor(calculatedMonthlyStats.totalStudyTime / 60)}</div>
+              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-50">
+                <Clock className="h-6 w-6 text-green-600 mb-2" />
+                <div className="text-2xl font-bold text-green-600">{Math.floor(calculatedMonthlyStats.totalStudyTime / 60)}</div>
                 <div className="text-xs text-muted-foreground mt-1">累计时长(h)</div>
               </div>
             </div>
@@ -247,15 +250,15 @@ export default function DataPage() {
             <h2 className="text-lg font-semibold mb-3">Flag完成度</h2>
             <Card className="p-3 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900">
-                  <Flag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50">
+                  <Flag className="h-4 w-4 text-blue-600" />
                   <div>
                     <div className="text-lg font-bold">{flagStats.completedCount}</div>
                     <div className="text-xs text-muted-foreground">已完成</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900">
-                  <Flag className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50">
+                  <Flag className="h-4 w-4 text-orange-600" />
                   <div>
                     <div className="text-lg font-bold">{flagStats.uncompletedCount}</div>
                     <div className="text-xs text-muted-foreground">未完成</div>
@@ -286,7 +289,7 @@ export default function DataPage() {
                               {stat.percentage.toFixed(1)}%
                             </span>
                           </div>
-                          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                             <div 
                               className="h-full transition-all"
                               style={{ 
@@ -306,7 +309,7 @@ export default function DataPage() {
                           <span className="font-medium">无标签</span>
                           <span className="tabular-nums font-semibold text-slate-400">0%</span>
                         </div>
-                        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                           <div className="h-full transition-all w-0 bg-slate-400" />
                         </div>
                       </div>

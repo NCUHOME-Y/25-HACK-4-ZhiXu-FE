@@ -235,7 +235,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setMode("login")}
-                    className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-50"
+                    className="underline underline-offset-4 hover:text-slate-900"
                   >
                     返回登录
                   </button>

@@ -74,7 +74,7 @@ export default function SetPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* 固定标题栏 - 与search栏相同样式 */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white md:hidden">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white">
         <div className="flex h-16 items-center px-4 gap-3">
           <Button
             variant="ghost"
