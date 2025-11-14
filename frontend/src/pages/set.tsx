@@ -52,8 +52,8 @@ export default function SetPage() {
     navigate('/auth');
   };
 
-  const handleChangePassword = () => {
-    // TODO: 实际修改密码逻辑
+  // P1修复：调用后端修改密码API
+  const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       alert('两次输入的密码不一致');
       return;
@@ -62,12 +62,39 @@ export default function SetPage() {
       alert('密码长度至少6位');
       return;
     }
-    // 调用API修改密码
-    console.log('修改密码:', { oldPassword, newPassword });
-    setChangePasswordDialogOpen(false);
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      const { changePassword } = await import('../services/set.service');
+      await changePassword(oldPassword, newPassword);
+      alert('密码修改成功');
+      setChangePasswordDialogOpen(false);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('修改密码失败:', error);
+      alert('修改密码失败，请检查旧密码是否正确');
+    }
+  };
+
+  // P1修复：调用后端更新通知状态API
+  const handleToggleNotification = async (enabled: boolean) => {
+    try {
+      const { updateNotificationEnabled } = await import('../services/set.service');
+      await updateNotificationEnabled(enabled);
+      setNotificationEnabled(enabled);
+    } catch (error) {
+      console.error('更新通知状态失败:', error);
+    }
+  };
+
+  // P1修复：调用后端更新通知时间API
+  const handleUpdateNotificationTime = async (hour: string, minute: string) => {
+    try {
+      const { updateNotificationTime } = await import('../services/set.service');
+      await updateNotificationTime(hour, minute);
+    } catch (error) {
+      console.error('更新通知时间失败:', error);
+    }
   };
 
   // ========== 渲染 ========== 
@@ -103,7 +130,7 @@ export default function SetPage() {
               </div>
             </div>
             <button
-              onClick={() => setNotificationEnabled(!notificationEnabled)}
+              onClick={() => handleToggleNotification(!notificationEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 notificationEnabled ? 'bg-blue-600' : 'bg-slate-300'
               }`}
@@ -119,7 +146,7 @@ export default function SetPage() {
           <div className="space-y-2">
             <Label className="text-sm font-medium">通知时间</Label>
             <div className="flex gap-2">
-              <Select value={notificationHour} onValueChange={setNotificationHour}>
+              <Select value={notificationHour} onValueChange={(hour) => { setNotificationHour(hour); handleUpdateNotificationTime(hour, notificationMinute); }}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="时" />
                 </SelectTrigger>
@@ -132,7 +159,7 @@ export default function SetPage() {
                 </SelectContent>
               </Select>
               <span className="flex items-center text-lg font-medium">:</span>
-              <Select value={notificationMinute} onValueChange={setNotificationMinute}>
+              <Select value={notificationMinute} onValueChange={(minute) => { setNotificationMinute(minute); handleUpdateNotificationTime(notificationHour, minute); }}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="分" />
                 </SelectTrigger>

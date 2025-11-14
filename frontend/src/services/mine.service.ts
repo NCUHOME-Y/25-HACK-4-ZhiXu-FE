@@ -43,3 +43,9 @@ export async function logout() {
 
   return { success: true };
 }
+
+// P1修复：获取用户成就/徽章系统
+export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; isUnlocked: boolean }> }> => {
+  const response = await api.get<{ achievements: Array<{ id: number; isUnlocked: boolean }> }>('/api/getUserAchievement');
+  return response;
+};

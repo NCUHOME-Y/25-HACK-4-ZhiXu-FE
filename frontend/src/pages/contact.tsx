@@ -253,8 +253,12 @@ export default function ContactPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    // TODO: 调用后端搜索API
-                    console.log('搜索:', searchQuery);
+                    // P1修复：调用后端搜索用户API
+                    contactService.searchUsers(searchQuery).then(users => {
+                      console.log('搜索用户结果:', users);
+                    }).catch(error => {
+                      console.error('搜索失败:', error);
+                    });
                   }
                 }}
                 className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
@@ -266,8 +270,12 @@ export default function ContactPage() {
               variant="default"
               size="sm"
               onClick={() => {
-                // TODO: 调用后端搜索API
-                console.log('搜索:', searchQuery);
+                // P1修复：调用后端搜索用户API
+                contactService.searchUsers(searchQuery).then(users => {
+                  console.log('搜索用户结果:', users);
+                }).catch(error => {
+                  console.error('搜索失败:', error);
+                });
               }}
               className="h-full px-6 rounded-none"
             >

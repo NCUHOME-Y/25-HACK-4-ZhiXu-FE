@@ -129,35 +129,67 @@ export const sleep = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
+// 格式化时间为相对时间（如：1分钟前、2小时前等）
+export const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return '刚刚';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes}分钟前`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `${hours}小时前`;
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400);
+    return `${days}天前`;
+  } else if (diffInSeconds < 31536000) {
+    const months = Math.floor(diffInSeconds / 2592000);
+    return `${months}个月前`;
+  } else {
+    const years = Math.floor(diffInSeconds / 31536000);
+    return `${years}年前`;
+  }
+};
+
 // ========== 社交相关工具函数 ==========
 // 将后端 Post 类型转换为前端 ContactUser 类型
 export const adaptPostToUser = (post: {
-  id: string;
-  userName: string;
-  userAvatar: string;
+  id: number | string;
+  user_id?: number;
+  userName?: string;
+  userAvatar?: string;
   content: string;
-  likes: number;
-  comments: Array<{
-    id: string;
-    userId: string;
-    userName: string;
-    userAvatar: string;
+  like?: number;
+  likes?: number;
+  comments?: Array<{
+    id: number | string;
+    user_id?: number;
+    userId?: string;
+    userName?: string;
+    userAvatar?: string;
     content: string;
-    createdAt: string;
+    created_at?: string;
+    createdAt?: string;
   }>;
+  created_at?: string;
+  createdAt?: string;
 }): import('../types/types').ContactUser => ({
-  id: post.id,
-  name: post.userName,
-  avatar: post.userAvatar,
-  message: post.content,
-  likes: post.likes,
-  comments: post.comments.map(c => ({
-    id: c.id,
-    userId: c.userId,
-    userName: c.userName,
-    userAvatar: c.userAvatar,
-    content: c.content,
-    time: c.createdAt
+  id: String(post.id || '0'),
+  name: post.userName || '匿名用户',
+  avatar: post.userAvatar || '/default-avatar.png',
+  message: post.content || '',
+  likes: post.likes || post.like || 0,
+  comments: (post.comments || []).map(c => ({
+    id: String(c.id || '0'),
+    userId: String(c.userId || c.user_id || '0'),
+    userName: c.userName || '匿名',
+    userAvatar: c.userAvatar || '/default-avatar.png',
+    content: c.content || '',
+    time: formatTimeAgo(c.createdAt || c.created_at || new Date().toISOString())
   })),
   totalDays: 0,
   completedFlags: 0,

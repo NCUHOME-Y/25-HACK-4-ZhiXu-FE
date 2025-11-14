@@ -12,6 +12,10 @@ import type { AxiosError } from 'axios';
 export function handleApiError(error: AxiosError): void {
   // 网络错误
   if (!error.response) {
+    // 如果在登录/注册页面，不跳转，让页面自己处理错误
+    if (window.location.pathname === '/auth') {
+      return;
+    }
     window.location.href = '/error?status=network&message=网络连接失败';
     return;
   }
@@ -20,6 +24,10 @@ export function handleApiError(error: AxiosError): void {
 
   // 根据状态码跳转到对应错误页面
   if (status === 401) {
+    // 如果在登录页面，不跳转，让登录表单显示错误消息
+    if (window.location.pathname === '/auth') {
+      return;
+    }
     localStorage.removeItem('authToken');
     window.location.href = '/error?status=401';
   } else if (status === 404) {

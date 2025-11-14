@@ -160,7 +160,8 @@ class PublicChatService {
     // 断开现有连接
     this.disconnect();
 
-    const wsUrl = `ws://localhost:8080/ws/chat/${this.PUBLIC_ROOM_ID}?token=${token}`;
+    // 修复：后端路由是 /ws/chat
+    const wsUrl = `ws://localhost:8080/ws/chat?token=${token}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

@@ -12,10 +12,8 @@ import {
   Textarea,
   Separator,
 } from '../components';
-import { useTaskStore } from '../lib/stores/stores';
 import { generateStudyPlan, type StudyPlan, type Difficulty } from '../services/ai.service';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
-import type { Task } from '../lib/types/types';
 
 // 本地存储键
 const STORAGE_KEYS = {
@@ -30,7 +28,6 @@ const STORAGE_KEYS = {
  */
 export default function AIPage() {
   const navigate = useNavigate();
-  const addTask = useTaskStore((s) => s.addTask);
 
   // ========== 本地状态 ==========
   const [background, setBackground] = useState('');
@@ -112,48 +109,36 @@ export default function AIPage() {
   };
 
   /**
-   * 将生成的Flag添加到任务列表
+   * 将生成的Flag添加到任务列表（已统一字段名）
    */
-  const handleAddToFlags = (plan: StudyPlan) => {
-    // 批量添加Flag到全局store
-    const addedTasks: Task[] = [];
-    let totalPoints = 0;
-    
-    plan.flags.forEach((flag, index) => {
-      const created: Task = {
-        id: String(Date.now() + index),
-        title: flag.title,
-        detail: flag.detail,
-        total: flag.total,
-        count: 0,
-        completed: false,
-        label: flag.label,
-        priority: flag.priority,
-        points: flag.points, // AI生成的积分
-        isPublic: false,
-        createdAt: new Date().toISOString(),
-      };
-      addTask(created);
-      addedTasks.push(created);
-      totalPoints += flag.points || 0;
-    });
-
-    toast.success(`已添加 ${plan.flags.length} 个Flag（共${totalPoints}积分）`, {
-      action: {
-        label: '撤销',
-        onClick: () => {
-          addedTasks.forEach(task => {
-            useTaskStore.getState().deleteTask(task.id);
-          });
-          toast.success('已撤销添加');
-        }
-      }
-    });
-    
-    // 跳转到Flag页面
-    setTimeout(() => {
-      navigate('/flag');
-    }, 800);
+  const handleAddToFlags = async (plan: StudyPlan) => {
+    try {
+        // 批量添加Flag到后端
+      const { createTask } = await import('../services/flag.service');
+      let totalPoints = 0;
+      
+      for (const flag of plan.flags) {
+        // 字段已统一，直接传递
+        await createTask({
+          title: flag.title,
+          detail: flag.detail,
+          total: flag.total,
+          label: FLAG_LABELS[flag.label].name, // 转换数字标签为字符串名称
+          priority: flag.priority,
+          points: flag.points,
+        });
+        
+        totalPoints += flag.points || 0;
+      }      toast.success(`已添加 ${plan.flags.length} 个Flag（共${totalPoints}积分）`);
+      
+      // 跳转到Flag页面
+      setTimeout(() => {
+        navigate('/flag');
+      }, 800);
+    } catch (error) {
+      console.error('添加Flag失败:', error);
+      toast.error('添加失败，请重试');
+    }
   };
 
   // ========== 渲染 ==========

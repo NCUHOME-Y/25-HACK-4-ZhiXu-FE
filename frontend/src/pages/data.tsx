@@ -33,6 +33,18 @@ export default function DataPage() {
   const [punchTypeData, setPunchTypeData] = useState<Array<{ category: string; value1: number; value2: number }>>([]); // 打卡类型数据
   const [loading, setLoading] = useState(true); // 加载状态
 
+  // P1修复：从后端加载标签统计数据
+  useEffect(() => {
+    import('../services/data.service').then(({ getFlagLabels }) => {
+      getFlagLabels().then(labelData => {
+        console.log('标签系统统计:', labelData);
+        // TODO: 可以将这些数据整合到UI展示中
+      }).catch(error => {
+        console.error('获取标签统计失败:', error);
+      });
+    });
+  }, []);
+
 
   // ========== 副作用 ========== 
   /**
@@ -110,6 +122,7 @@ export default function DataPage() {
     const completedCount = tasks.filter(t => t.completed).length;
     const uncompletedCount = tasks.filter(t => !t.completed).length;
     const totalCount = tasks.length;
+    
     // 标签分组统计
     const labelMap = new Map<FlagLabel, { completed: number; total: number }>();
     tasks.forEach(task => {

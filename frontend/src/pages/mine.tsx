@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, UserPen, Settings, Trophy, Flame, Target, Star, MessageSquare, User } from 'lucide-react';
 import { 
@@ -53,11 +53,7 @@ export default function MinePage() {
   
   /** 积分数据 - 从后端API获取 */
   const [points, _setPoints] = useState(0);
-  const [badges, _setBadges] = useState<Array<{id: number; isUnlocked: boolean}>>([]);
-  
-  /** 已获得徽章数 */
-  const achievedBadges = badges.filter(b => b.isUnlocked).length;
-  const totalBadges = badges.length;
+  const [badges, setBadges] = useState<Array<{id: number; isUnlocked: boolean}>>([]);
   
   // 所有徽章配置
   const allBadges = [
@@ -74,6 +70,21 @@ export default function MinePage() {
     { id: 10, name: '完美主义', icon: Target, color: 'amber' },
     { id: 11, name: '全能选手', icon: Trophy, color: 'lime' },
   ];
+  
+  // P1修复：加载用户成就系统
+  useEffect(() => {
+    import('../services/mine.service').then(({ getUserAchievements }) => {
+      getUserAchievements().then(data => {
+        setBadges(data.achievements || []);
+      }).catch(error => {
+        console.error('获取成就失败:', error);
+      });
+    });
+  }, []);
+  
+  /** 已获得徽章数 */
+  const achievedBadges = badges.filter(b => b.isUnlocked).length;
+  const totalBadges = badges.length > 0 ? badges.length : allBadges.length;
   
   // 获取徽章的颜色类名
   const getBadgeColor = (color: string, isUnlocked: boolean) => {
@@ -141,10 +152,21 @@ export default function MinePage() {
 
   /**
    * 选择头像
+   * P1修复：调用后端切换头像 API
    */
-  const handleSelectAvatar = (selectedAvatar: string) => {
-    setAvatar(selectedAvatar);
-    setAvatarPopoverOpen(false);
+  const handleSelectAvatar = async (selectedAvatar: string) => {
+    const avatarIndex = avatarOptions.indexOf(selectedAvatar);
+    if (avatarIndex !== -1) {
+      try {
+        const { switchAvatar } = await import('../services/set.service');
+        await switchAvatar(avatarIndex);
+        setAvatar(selectedAvatar);
+        setAvatarPopoverOpen(false);
+      } catch (error) {
+        console.error('切换头像失败:', error);
+        alert('切换头像失败，请重试');
+      }
+    }
   };
 
   /**

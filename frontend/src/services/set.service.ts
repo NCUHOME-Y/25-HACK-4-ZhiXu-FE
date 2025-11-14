@@ -9,25 +9,31 @@ import apiClient from './apiClient';
 
 /**
  * 更新通知开关状态
+ * P1修复：调用后端/api/updateRemindStatus
  */
 export const updateNotificationEnabled = async (enabled: boolean): Promise<void> => {
-  await apiClient.put('/api/settings/notification', { enabled });
+  const { api } = await import('./apiClient');
+  await api.put('/api/updateRemindStatus', { status: enabled });
 };
 
 /**
  * 更新通知时间
+ * P1修复：调用后端/api/updateRemindTime
  */
 export const updateNotificationTime = async (hour: string, minute: string): Promise<void> => {
-  await apiClient.put('/api/settings/notification-time', { hour, minute });
+  const { api } = await import('./apiClient');
+  await api.put('/api/updateRemindTime', { time: `${hour}:${minute}` });
 };
 
 // ========== 密码管理 ==========
 
 /**
  * 修改密码
+ * P1修复：调用后端/updatePassword
  */
 export const changePassword = async (oldPassword: string, newPassword: string): Promise<void> => {
-  await apiClient.put('/api/settings/password', { old_password: oldPassword, new_password: newPassword });
+  const { api } = await import('./apiClient');
+  await api.put('/updatePassword', { old_password: oldPassword, new_password: newPassword });
 };
 
 // ========== 用户资料 ==========
@@ -39,9 +45,16 @@ export const updateProfile = async (nickname: string, bio: string, avatar: strin
   await apiClient.put('/api/settings/profile', { nickname, bio, avatar });
 };
 
+// P1修复：切换头像
+export const switchAvatar = async (avatarIndex: number): Promise<void> => {
+  const { api } = await import('./apiClient');
+  await api.post('/api/swithhead', { head: avatarIndex });
+};
+
 export default {
   updateNotificationEnabled,
   updateNotificationTime,
   changePassword,
   updateProfile,
+  switchAvatar,
 };

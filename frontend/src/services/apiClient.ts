@@ -7,14 +7,14 @@ import { createApiWrapper } from '../lib/helpers/api-helpers';
  * 包含请求拦截器和响应拦截器
  */
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: 'http://localhost:8080',
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 });
 
 // 请求拦截器 - 添加认证 token
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem('auth_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
