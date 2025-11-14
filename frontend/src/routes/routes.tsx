@@ -10,6 +10,7 @@ import SetPage from '../pages/set';
 import RankPage from '../pages/rank';
 import PublicPage from '../pages/public';
 import PrivatePage from '../pages/private';
+import ChatRoomsPage from '../pages/chat-rooms';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // 应用路由配置
@@ -75,6 +76,14 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <RankPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/chat-rooms',
+    element: (
+      <ProtectedRoute>
+        <ChatRoomsPage />
       </ProtectedRoute>
     ),
   },

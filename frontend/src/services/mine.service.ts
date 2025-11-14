@@ -17,13 +17,10 @@ export const getUserProfile = () =>
  * 注意：后端没有统一的profile更新接口，需要分别调用
  */
 export const updateUserProfile = async (data: Partial<User>) => {
-  const results: any[] = [];
-  
   // 更新用户名（逐个调用以便捕获具体错误）
   if (data.nickname) {
     try {
-      const result = await api.put('/updateUsername', { new_name: data.nickname });
-      results.push(result);
+      await api.put('/updateUsername', { new_name: data.nickname });
     } catch (error) {
       // 如果是用户名重复错误，抛出具体错误信息
       if (error && typeof error === 'object' && 'response' in error) {
@@ -37,9 +34,8 @@ export const updateUserProfile = async (data: Partial<User>) => {
   // 更新头像（如果有avatar且是数字编号）
   if (data.avatar && /^\d+$/.test(data.avatar)) {
     try {
-      const result = await api.post('/api/swithhead', { number: parseInt(data.avatar) });
-      results.push(result);
-    } catch (error) {
+      await api.post('/api/swithhead', { number: parseInt(data.avatar) });
+    } catch {
       throw new Error('更新头像失败');
     }
   }
@@ -75,8 +71,16 @@ export async function logout() {
   return { success: true };
 }
 
-// P1修复：获取用户成就/徽章系统
-export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; isUnlocked: boolean }> }> => {
-  const response = await api.get<{ achievements: Array<{ id: number; isUnlocked: boolean }> }>('/api/getUserAchievement');
-  return response;
+// 获取用户成就/徽章系统（后端已统一格式）
+export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }> => {
+  const response = await api.get<{ 
+    achievements: Array<{ 
+      id: number; 
+      name: string; 
+      description: string;
+      isUnlocked: boolean;
+    }> 
+  }>('/api/getUserAchievement');
+  
+  return { achievements: response.achievements || [] };
 };

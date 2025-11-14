@@ -33,15 +33,51 @@ export default function DataPage() {
   const [punchTypeData, setPunchTypeData] = useState<Array<{ category: string; value1: number; value2: number }>>([]); // 打卡类型数据
   const [loading, setLoading] = useState(true); // 加载状态
 
-  // P1修复：从后端加载标签统计数据
+  // P1修复：从后端加载标签统计数据和用户数据
   useEffect(() => {
-    import('../services/data.service').then(({ getFlagLabels }) => {
-      getFlagLabels().then(labelData => {
+    const loadAllData = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          console.log('未登录，跳过加载数据');
+          return;
+        }
+        
+        // 加载标签统计
+        const { getFlagLabels } = await import('../services/data.service');
+        const labelData = await getFlagLabels();
         console.log('标签系统统计:', labelData);
-      }).catch(error => {
-        console.error('获取标签统计失败:', error);
-      });
-    });
+        
+        // 加载任务和打卡数据
+        const { fetchTasks, fetchPunchDates } = await import('../services/flag.service');
+        const [tasksData, punchData] = await Promise.all([
+          fetchTasks(),
+          fetchPunchDates()
+        ]);
+        
+        console.log('数据页加载到的任务:', tasksData);
+        console.log('数据页加载到的打卡:', punchData);
+        
+        // 更新store
+        useTaskStore.setState({ 
+          tasks: tasksData,
+          punchedDates: punchData
+        });
+        
+        // 加载用户统计数据
+        const { api } = await import('../services/apiClient');
+        const userData = await api.get<{ month_learn_time: number }>('/api/getUser');
+        console.log('用户学习时长:', userData.month_learn_time);
+        useTaskStore.setState({
+          dailyElapsed: (userData.month_learn_time || 0) * 60 // 分钟转秒
+        });
+      } catch (error) {
+        console.error('加载数据失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAllData();
   }, []);
 
 
@@ -149,22 +185,31 @@ export default function DataPage() {
    * 格式化学习趋势数据，添加日期标签
    */
   const formattedStudyTrendData = useMemo(() => {
-    return studyTrendData.map((item, index) => {
-      let label = '';
-      if (studyTrendPeriod === 'weekly') {
-        const weekdays = ['一', '二', '三', '四', '五', '六', '七'];
-        label = weekdays[index] || '';
-      } else if (studyTrendPeriod === 'monthly') {
-        if ([0, 5, 10, 15, 20, 25, 29].includes(index)) {
-          label = String(index);
-        }
-      } else if (studyTrendPeriod === 'yearly') {
-        if ([0, 30, 60, 90, 120, 150, 179].includes(index)) {
-          label = String(index);
-        }
-      }
-      return { ...item, label };
-    });
+    if (studyTrendPeriod === 'weekly') {
+      // 周视图：7个数据点，每个都有标签
+      const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      return studyTrendData.slice(0, 7).map((item, index) => ({
+        ...item,
+        label: weekdays[index] || ''
+      }));
+    } else if (studyTrendPeriod === 'monthly') {
+      // 月视图：30个数据点，只在特定位置显示标签
+      return studyTrendData.slice(0, 30).map((item, index) => {
+        const day = index + 1;
+        // 在第1、6、11、16、21、26、30天显示标签
+        const label = [1, 6, 11, 16, 21, 26, 30].includes(day) ? `${day}日` : '';
+        return { ...item, label };
+      });
+    } else if (studyTrendPeriod === 'yearly') {
+      // 年视图：180个数据点，每9天显示一个标签（共20个标签）
+      return studyTrendData.slice(0, 180).map((item, index) => {
+        const day = index + 1;
+        // 每9天显示一个标签：1, 10, 19, 28, 37...
+        const label = (day - 1) % 9 === 0 ? `${day}天` : '';
+        return { ...item, label };
+      });
+    }
+    return studyTrendData;
   }, [studyTrendData, studyTrendPeriod]);
 
   /**

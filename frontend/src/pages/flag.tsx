@@ -46,7 +46,6 @@ import {
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, calculateTaskPoints } from '../lib/helpers/helpers';
-import { useStudyTimer } from '../lib/hooks/hooks';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { PunchChartProps, TaskRingProps, FlagLabel, FlagPriority } from '../lib/types/types';
 import contactService from '../services/contact.service';
@@ -99,6 +98,48 @@ export default function FlagPage() {
   const tickTaskInStore = useTaskStore((s) => s.tickTask);
   const punchedDates = useTaskStore((s) => s.punchedDates);
   const togglePunchTodayInStore = useTaskStore((s) => s.togglePunchToday);
+  
+  // P1修复：从后端加载任务和打卡数据
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // 检查是否登录
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          console.log('未登录，跳过加载数据');
+          return;
+        }
+        
+        // 加载任务列表
+        const { fetchTasks, fetchPunchDates } = await import('../services/flag.service');
+        const [tasksData, punchData] = await Promise.all([
+          fetchTasks(),
+          fetchPunchDates()
+        ]);
+        
+        console.log('加载到的任务数据:', tasksData);
+        console.log('加载到的打卡数据:', punchData);
+        
+        // 更新store
+        useTaskStore.setState({ 
+          tasks: tasksData,
+          punchedDates: punchData
+        });
+      } catch (error) {
+        console.error('加载数据失败:', error);
+        // 如果是401错误，可能token过期，跳转到登录页
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError.response?.status === 401) {
+            console.log('Token过期，需要重新登录');
+            localStorage.removeItem('auth_token');
+            navigate('/auth');
+          }
+        }
+      }
+    };
+    loadData();
+  }, [navigate]);
   const studying = useTaskStore((s) => s.studying);
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
   const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
@@ -124,9 +165,6 @@ export default function FlagPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // ========== 副作用 ========== 
-  // 学习计时副作用
-  useStudyTimer(studying, increaseDailyElapsed);
-
   // 错误提示动画副作用
   useEffect(() => {
     if (showError && !alertVisible) {
@@ -212,22 +250,34 @@ export default function FlagPage() {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
+    // 防止重复点击
+    const button = document.activeElement as HTMLButtonElement;
+    if (button) button.disabled = true;
+    
     const willComplete = task.count !== undefined && task.total !== undefined && task.count + 1 >= task.total;
     
     tickTaskInStore(taskId);
     
-    // 如果任务完成，计算并添加积分
-    if (willComplete && task.points) {
-      try {
-        await addUserPoints(taskId, task.points);
-        toast.success(`恭喜完成！获得 ${task.points} 积分 🎉`);
-      } catch (error) {
-        console.error('添加积分失败:', error);
+    try {
+      // 接入后端
+      await tickTask(taskId);
+      
+      // 如果任务完成，计算并添加积分
+      if (willComplete && task.points) {
+        try {
+          await addUserPoints(taskId, task.points);
+          toast.success(`恭喜完成！获得 ${task.points} 积分 🎉`);
+        } catch (error) {
+          console.error('添加积分失败:', error);
+        }
       }
+    } catch (error) {
+      console.error('更新任务失败:', error);
+      toast.error('更新失败，请重试');
+    } finally {
+      // 恢复按钮
+      if (button) button.disabled = false;
     }
-    
-    // 接入后端
-    await tickTask(taskId);
   };
 
   /**
@@ -299,7 +349,14 @@ export default function FlagPage() {
         } : undefined
       });
       // 接入后端
-      await updateTask(editingTaskId);
+      await updateTask(editingTaskId, {
+        title: newTask.title,
+        detail: newTask.detail,
+        label: newTask.label,
+        priority: newTask.priority,
+        total: newTask.total || 1,
+        isPublic: newTask.isPublic
+      });
     } else {
       // 如果没有设置积分，自动计算
       const points = calculateTaskPoints({

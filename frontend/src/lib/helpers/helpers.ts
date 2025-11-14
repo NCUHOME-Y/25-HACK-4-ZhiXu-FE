@@ -179,15 +179,15 @@ export const adaptPostToUser = (post: {
   createdAt?: string;
 }): import('../types/types').ContactUser => ({
   id: String(post.id || '0'),
-  name: post.userName || '匿名用户',
-  avatar: post.userAvatar || '/default-avatar.png',
+  name: post.userName || '用户',
+  avatar: post.userAvatar || '',
   message: post.content || '',
   likes: post.likes || post.like || 0,
   comments: (post.comments || []).map(c => ({
     id: String(c.id || '0'),
     userId: String(c.userId || c.user_id || '0'),
-    userName: c.userName || '匿名',
-    userAvatar: c.userAvatar || '/default-avatar.png',
+    userName: c.userName || '用户',
+    userAvatar: c.userAvatar || '',
     content: c.content || '',
     time: formatTimeAgo(c.createdAt || c.created_at || new Date().toISOString())
   })),

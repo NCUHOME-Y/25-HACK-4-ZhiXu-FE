@@ -115,3 +115,17 @@ export const ERROR_CONFIG: Record<ErrorType, ErrorConfig> = {
 // ========== 分页配置 ==========
 // 社交页面每页帖子数量
 export const POSTS_PER_PAGE = 15;
+
+// ========== 用户头像预设 ==========
+// 所有预设头像必须从 assets/images 目录中选择
+export const PRESET_AVATARS = [
+  '/src/assets/images/screenshot_20251114_131601.png',
+  '/src/assets/images/screenshot_20251114_131629.png',
+  '/src/assets/images/screenshot_20251114_131937.png',
+  '/src/assets/images/screenshot_20251114_131951.png',
+  '/src/assets/images/screenshot_20251114_132014.png',
+  '/src/assets/images/screenshot_20251114_133459.png',
+] as const;
+
+// 默认头像索引（如果用户没有设置头像）
+export const DEFAULT_AVATAR_INDEX = 0;

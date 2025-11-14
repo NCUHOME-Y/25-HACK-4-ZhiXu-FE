@@ -90,20 +90,21 @@ const contactService = {
 
   // 搜索帖子
   searchPosts: async (params: SearchPostsParams): Promise<PaginatedResponse<Post>> => {
-    const response = await api.post<{ posts: Post[] }>('/api/searchPosts', { query: params.query });
+    const response = await api.post<{ post: Post[] }>('/api/searchPosts', { keyword: params.query });
+    const posts = response.post || [];
     // 模拟分页
     const page = params.page || 1;
     const pageSize = params.pageSize || 15;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedPosts = response.posts.slice(startIndex, endIndex);
+    const paginatedPosts = posts.slice(startIndex, endIndex);
     
     return {
       data: paginatedPosts,
-      total: response.posts.length,
+      total: posts.length,
       page,
       pageSize,
-      hasMore: endIndex < response.posts.length
+      hasMore: endIndex < posts.length
     };
   },
 
@@ -144,7 +145,7 @@ const contactService = {
       postId: params.postId,
       userId: 'current_user',
       userName: '当前用户',
-      userAvatar: '/default-avatar.png',
+      userAvatar: '',
       content: params.content,
       createdAt: new Date().toISOString()
     };
@@ -202,7 +203,7 @@ const contactService = {
 
   // P1修复：搜索用户
   searchUsers: async (query: string): Promise<SearchUserResult[]> => {
-    const response = await api.post<{ users: SearchUserResult[] }>('/api/searchUser', { query });
+    const response = await api.post<{ users: SearchUserResult[] }>('/api/searchUser', { username: query });
     return response.users || [];
   },
 };

@@ -32,12 +32,17 @@ interface TaskState {
 	stopStudy: () => void;
 	increaseDailyElapsed: () => void;
 }
+
+// 全局计时器ID，存储在模块作用域
+let globalTimerId: number | null = null;
+
 const fmt = (d: Date) => {
 	const y = d.getFullYear();
 	const m = String(d.getMonth() + 1).padStart(2, "0");
 	const day = String(d.getDate()).padStart(2, "0");
 	return `${y}-${m}-${day}`;
 };
+
 export const useTaskStore = create<TaskState>(
 	(
 		set: (partial: Partial<TaskState> | ((state: TaskState) => Partial<TaskState>)) => void,
@@ -65,8 +70,32 @@ export const useTaskStore = create<TaskState>(
 		const cur = get().punchedDates;
 			set({ punchedDates: cur.includes(today) ? cur.filter((d: string) => d !== today) : [...cur, today] });
 	},
-	startStudy: () => set({ studying: true, sessionElapsed: 0 }),
+	startStudy: () => {
+		// 如果已经有计时器在运行，先清除
+		if (globalTimerId !== null) {
+			window.clearInterval(globalTimerId);
+		}
+		
+		// 启动全局计时器
+		globalTimerId = window.setInterval(() => {
+			const state = get();
+			if (state.studying) {
+				set({ 
+					dailyElapsed: state.dailyElapsed + 1,
+					sessionElapsed: state.sessionElapsed + 1
+				});
+			}
+		}, 1000);
+		
+		set({ studying: true, sessionElapsed: 0 });
+	},
 	stopStudy: () => {
+		// 清除全局计时器
+		if (globalTimerId !== null) {
+			window.clearInterval(globalTimerId);
+			globalTimerId = null;
+		}
+		
 		const session = get().sessionElapsed;
 		set({ 
 			studying: false,

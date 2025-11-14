@@ -5,94 +5,130 @@ import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../component
 import { Separator } from "../components/ui/separator";
 import type { PrivateMessage } from '../lib/types/types';
 import { scrollToBottom } from '../lib/helpers/helpers';
+import authService from '../services/auth.service';
 
 /**
  * 私聊页面
- * 一对一私密聊天,支持实时消息收发
  */
 export default function PrivatePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = location.state?.user || { name: '用户', avatar: '' };
+  const user = location.state?.user || { id: '', name: '用户', avatar: '' };
   
-  // ========== 本地状态 ==========
   const [message, setMessage] = useState('');
-  const [messages, _setMessages] = useState<PrivateMessage[]>([]);
+  const [messages, setMessages] = useState<PrivateMessage[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
-  // ========== 副作用 ==========
-  /**
-   * 消息变化时自动滚动
-   */
+  useEffect(() => {
+    const loadUser = async () => {
+      const currentUser = await authService.getCurrentUser();
+      if (currentUser) {
+        setCurrentUserId(currentUser.id);
+      }
+    };
+    loadUser();
+  }, []);
+
   useEffect(() => {
     scrollToBottom(messagesEndRef);
   }, [messages]);
 
-  /**
-   * WebSocket连接管理
-   */
   useEffect(() => {
-    // TODO: 替换为实际的WebSocket URL
-    // const ws = new WebSocket(`ws://your-backend-url/private-chat/${user.id}`);
+    if (!currentUserId || !user.id) return;
 
-    // ws.onopen = () => {
-    //   console.log('WebSocket连接已建立');
-    // };
+    const token = authService.getToken();
+    if (!token) {
+      navigate('/auth');
+      return;
+    }
 
-    // ws.onmessage = (event) => {
-    //   const data = JSON.parse(event.data);
-    //   const newMessage: PrivateMessage = {
-    //     id: data.id,
-    //     message: data.message,
-    //     time: data.time,
-    //     isMe: data.userId === 'currentUserId',
-    //     avatar: data.isMe ? undefined : user.avatar,
-    //     userName: data.isMe ? '我' : user.name,
-    //   };
-    //   _setMessages((prev) => [...prev, newMessage]);
-    // };
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//localhost:8080/ws/chat?token=${token}`;
+    
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
 
-    // ws.onerror = (error) => {
-    //   console.error('WebSocket错误:', error);
-    // };
+    ws.onopen = () => {
+      console.log('私聊WebSocket连接已建立', { targetUserId: user.id });
+    };
 
-    // ws.onclose = () => {
-    //   console.log('WebSocket连接已关闭');
-    // };
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (String(data.from) === user.id || String(data.from) === currentUserId) {
+          const newMessage: PrivateMessage = {
+            id: `${data.from}-${Date.now()}`,
+            message: data.content,
+            time: new Date(data.created_at).toLocaleTimeString('zh-CN', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            isMe: String(data.from) === currentUserId,
+            avatar: String(data.from) === currentUserId ? undefined : user.avatar,
+            userName: String(data.from) === currentUserId ? '我' : user.name,
+          };
+          setMessages((prev) => [...prev, newMessage]);
+        }
+      } catch (error) {
+        console.error('解析私聊消息失败:', error);
+      }
+    };
 
-    // return () => {
-    //   if (ws.readyState === WebSocket.OPEN) {
-    //     ws.close();
-    //   }
-    // };
-  }, [user.id, user.avatar, user.name]);
+    ws.onerror = (error) => {
+      console.error('私聊WebSocket错误:', error);
+    };
 
-  // ========== 事件处理器 ==========
-  /**
-   * 发送消息
-   */
+    ws.onclose = () => {
+      console.log('私聊WebSocket连接已关闭');
+    };
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [currentUserId, user.id, user.avatar, user.name, navigate]);
+
   const handleSendMessage = () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !wsRef.current || !user.id) {
+      console.log('无法发送：', { message: message.trim(), ws: !!wsRef.current, userId: user.id });
+      return;
+    }
     
-    // TODO: 通过WebSocket发送消息
-    // const messageData = {
-    //   message: message.trim(),
-    //   time: new Date().toISOString(),
-    //   recipientId: user.id,
-    // };
+    const messageData = {
+      content: message.trim(),
+      to: parseInt(user.id),
+    };
     
-    // if (ws && ws.readyState === WebSocket.OPEN) {
-    //   ws.send(JSON.stringify(messageData));
-    // }
-
-    setMessage('');
+    console.log('私聊WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
+    
+    if (wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(messageData));
+      console.log('私聊消息已发送');
+      
+      const newMessage: PrivateMessage = {
+        id: `${currentUserId}-${Date.now()}`,
+        message: message.trim(),
+        time: new Date().toLocaleTimeString('zh-CN', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+        isMe: true,
+        userName: '我',
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      setMessage('');
+    } else {
+      console.error('私聊WebSocket未连接，状态:', wsRef.current.readyState);
+      alert('连接已断开，请刷新页面重试');
+    }
   };
 
-  // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      {/* 顶部导航 */}
-      <nav className="bg-white sticky top-0 z-10">
+      <nav className="bg-white sticky top-0 z-10 border-b">
         <div className="px-4 py-4 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -105,7 +141,6 @@ export default function PrivatePage() {
         </div>
       </nav>
 
-      {/* 聊天消息列表 */}
       <div className="flex-1 pb-24 overflow-y-auto px-4 pt-4">
         <div className="space-y-4">
           {messages.map((msg) => (
@@ -141,7 +176,6 @@ export default function PrivatePage() {
         </div>
       </div>
 
-      {/* 底部输入框 */}
       <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 py-3">
         <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white border border-border rounded-full shadow-sm overflow-hidden">
           <div className="flex items-center flex-1 pl-4 pr-2 h-full">

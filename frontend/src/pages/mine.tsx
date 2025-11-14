@@ -59,8 +59,57 @@ export default function MinePage() {
   const totalPunchDays = useMemo(() => punchedDates.length, [punchedDates]);
   
   /** 积分数据 - 从后端API获取 */
-  const [points, _setPoints] = useState(0);
+  const [points, setPoints] = useState(0);
   const [badges, setBadges] = useState<Array<{id: number; isUnlocked: boolean}>>([]);
+  
+  // P1修复：从后端加载用户统计数据
+  useEffect(() => {
+    const loadUserStats = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          console.log('未登录，跳过加载数据');
+          return;
+        }
+        
+        const { api } = await import('../services/apiClient');
+        const userData = await api.get<{ 
+          count: number; 
+          daka: number; 
+          month_learn_time: number;
+          name: string;
+          email: string;
+          head_show: number;
+        }>('/api/getUser');
+        
+        console.log('我的页面-用户数据:', userData);
+        
+        setPoints(userData.count || 0);
+        
+        // 更新用户资料
+        setProfile(prev => ({
+          ...prev,
+          nickname: userData.name || prev.nickname,
+          avatar: `/src/assets/images/screenshot_20251114_${['131601', '131629', '131937', '131951', '132014', '133459'][userData.head_show - 1]}.png`
+        }));
+        
+        // 更新store中的打卡和学习时长数据
+        useTaskStore.setState({
+          dailyElapsed: (userData.month_learn_time || 0) * 60 // 分钟转秒
+        });
+        
+        // 加载打卡数据
+        const { fetchPunchDates } = await import('../services/flag.service');
+        const punchData = await fetchPunchDates();
+        console.log('我的页面-打卡数据:', punchData);
+        useTaskStore.setState({ punchedDates: punchData });
+        
+      } catch (error) {
+        console.error('加载用户统计失败:', error);
+      }
+    };
+    loadUserStats();
+  }, []);
   
   // 所有徽章配置
   const allBadges = [
@@ -80,18 +129,44 @@ export default function MinePage() {
   
   // P1修复：加载用户成就系统
   useEffect(() => {
-    import('../services/mine.service').then(({ getUserAchievements }) => {
-      getUserAchievements().then(data => {
+    const loadAchievements = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          console.log('未登录，使用默认徽章');
+          return;
+        }
+        
+        const { getUserAchievements } = await import('../services/mine.service');
+        const data = await getUserAchievements();
+        console.log('成就数据:', data);
         setBadges(data.achievements || []);
-      }).catch(error => {
+      } catch (error) {
         console.error('获取成就失败:', error);
-      });
-    });
+      }
+    };
+    loadAchievements();
   }, []);
   
   /** 已获得徽章数 */
   const achievedBadges = badges.filter(b => b.isUnlocked).length;
   const totalBadges = badges.length > 0 ? badges.length : allBadges.length;
+  
+  // 合并后端成就数据和前端配置
+  const displayBadges = badges.length > 0 
+    ? badges.map((badge, index) => ({
+        id: badge.id,
+        name: badge.name,
+        description: badge.description,
+        isUnlocked: badge.isUnlocked,
+        icon: allBadges[index % allBadges.length]?.icon || Trophy,
+        color: allBadges[index % allBadges.length]?.color || 'blue'
+      }))
+    : allBadges.map(badge => ({
+        ...badge,
+        isUnlocked: false,
+        description: ''
+      }));
   
   // 获取徽章的颜色类名
   const getBadgeColor = (color: string, isUnlocked: boolean) => {
@@ -252,20 +327,29 @@ export default function MinePage() {
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="badges" className="border-none">
                 <div className="space-y-3">
-                  {/* 前3个已获得的徽章 - 始终显示 */}
+                  {/* 前3个徽章 - 始终显示 */}
                   <div className="grid grid-cols-3 gap-4">
-                    {allBadges.slice(0, 3).map((badge) => {
-                      const badgeData = badges.find(b => b.id === badge.id);
-                      const isUnlocked = badgeData?.isUnlocked || false;
+                    {displayBadges.slice(0, 3).map((badge) => {
                       const IconComponent = badge.icon;
                       return (
-                        <div 
-                          key={badge.id}
-                          className={`flex flex-col items-center gap-2 p-3 rounded-xl ${getBadgeColor(badge.color, isUnlocked)}`}
-                        >
-                          <IconComponent className={`h-8 w-8 ${getIconColor(badge.color, isUnlocked)}`} />
-                          <span className="text-xs text-center">{isUnlocked ? badge.name : '待解锁'}</span>
-                        </div>
+                        <Popover key={badge.id}>
+                          <PopoverTrigger asChild>
+                            <div 
+                              className={`flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer ${getBadgeColor(badge.color, badge.isUnlocked)}`}
+                            >
+                              <IconComponent className={`h-8 w-8 ${getIconColor(badge.color, badge.isUnlocked)}`} />
+                              <span className="text-xs text-center">{badge.isUnlocked ? badge.name : '待解锁'}</span>
+                            </div>
+                          </PopoverTrigger>
+                          {badge.isUnlocked && badge.description && (
+                            <PopoverContent>
+                              <div className="space-y-2">
+                                <h4 className="font-semibold">{badge.name}</h4>
+                                <p className="text-sm text-muted-foreground">{badge.description}</p>
+                              </div>
+                            </PopoverContent>
+                          )}
+                        </Popover>
                       );
                     })}
                   </div>
@@ -280,18 +364,27 @@ export default function MinePage() {
                   {/* 展开后显示的剩余徽章 */}
                   <AccordionContent>
                     <div className="grid grid-cols-3 gap-4 pt-2">
-                      {allBadges.slice(3).map((badge) => {
-                        const badgeData = badges.find(b => b.id === badge.id);
-                        const isUnlocked = badgeData?.isUnlocked || false;
+                      {displayBadges.slice(3).map((badge) => {
                         const IconComponent = badge.icon;
                         return (
-                          <div 
-                            key={badge.id}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl ${getBadgeColor(badge.color, isUnlocked)}`}
-                          >
-                            <IconComponent className={`h-8 w-8 ${getIconColor(badge.color, isUnlocked)}`} />
-                            <span className="text-xs text-center">{isUnlocked ? badge.name : '待解锁'}</span>
-                          </div>
+                          <Popover key={badge.id}>
+                            <PopoverTrigger asChild>
+                              <div 
+                                className={`flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer ${getBadgeColor(badge.color, badge.isUnlocked)}`}
+                              >
+                                <IconComponent className={`h-8 w-8 ${getIconColor(badge.color, badge.isUnlocked)}`} />
+                                <span className="text-xs text-center">{badge.isUnlocked ? badge.name : '待解锁'}</span>
+                              </div>
+                            </PopoverTrigger>
+                            {badge.isUnlocked && badge.description && (
+                              <PopoverContent>
+                                <div className="space-y-2">
+                                  <h4 className="font-semibold">{badge.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{badge.description}</p>
+                                </div>
+                              </PopoverContent>
+                            )}
+                          </Popover>
                         );
                       })}
                     </div>

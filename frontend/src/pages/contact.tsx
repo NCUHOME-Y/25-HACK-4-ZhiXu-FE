@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon } from 'lucide-react';
-import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton } from "../components";
+import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon, Plus } from 'lucide-react';
+import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea } from "../components";
 import contactService from '../services/contact.service';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser } from '../lib/helpers/helpers';
@@ -20,11 +20,17 @@ export default function ContactPage() {
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState<string>(''); // 实际执行搜索的查询
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const observerRef = useRef<HTMLDivElement>(null);
+  
+  // 发布帖子相关状态
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [newPostContent, setNewPostContent] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
 
   // ========== 事件处理器 ==========
   /**
@@ -67,7 +73,7 @@ export default function ContactPage() {
     setLoading(true);
     setError(null);
     
-    if (searchQuery.trim()) {
+    if (activeSearchQuery.trim()) {
       contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE })
         .then((response) => {
           if (response && Array.isArray(response.data)) {
@@ -108,7 +114,7 @@ export default function ContactPage() {
           setHasMore(false);
         });
     }
-  }, [searchQuery]);
+  }, [activeSearchQuery]);
 
   /**
    * 滚动监听(触发分页加载)
@@ -200,7 +206,7 @@ export default function ContactPage() {
       id: `c${Date.now()}`,
       userId: 'me',
       userName: '我',
-      userAvatar: '/default-avatar.png',
+      userAvatar: '',
       content: comment,
       time: '刚刚',
     };
@@ -246,6 +252,34 @@ export default function ContactPage() {
       });
   };
 
+  /**
+   * 发布新帖子
+   */
+  const handleCreatePost = async () => {
+    const content = newPostContent.trim();
+    if (!content) return;
+    
+    setIsPosting(true);
+    try {
+      await contactService.createPost({ content });
+      setNewPostContent('');
+      setIsDrawerOpen(false);
+      // 重新加载帖子列表
+      setDisplayedPosts([]);
+      setPage(1);
+      setHasMore(true);
+      const response = await contactService.getPosts(1, POSTS_PER_PAGE);
+      const adaptedPosts = response.data.map(adaptPostToUser);
+      setDisplayedPosts(adaptedPosts);
+      setPage(2);
+      setHasMore(response.hasMore);
+    } catch (error) {
+      console.error('发布帖子失败:', error);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -271,12 +305,7 @@ export default function ContactPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    // P1修复：调用后端搜索用户API
-                    contactService.searchUsers(searchQuery).then(users => {
-                      console.log('搜索用户结果:', users);
-                    }).catch(error => {
-                      console.error('搜索失败:', error);
-                    });
+                    setActiveSearchQuery(searchQuery);
                   }
                 }}
                 className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
@@ -287,14 +316,7 @@ export default function ContactPage() {
               type="submit"
               variant="default"
               size="sm"
-              onClick={() => {
-                // P1修复：调用后端搜索用户API
-                contactService.searchUsers(searchQuery).then(users => {
-                  console.log('搜索用户结果:', users);
-                }).catch(error => {
-                  console.error('搜索失败:', error);
-                });
-              }}
+              onClick={() => setActiveSearchQuery(searchQuery)}
               className="h-full px-6 rounded-none"
             >
               搜索
@@ -305,29 +327,23 @@ export default function ContactPage() {
         {/* 顶部导航模块 */}
         <section className="grid grid-cols-2 gap-3 mb-4 px-4">
           <Card 
-            className="p-4 flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
+            className="p-6 flex items-center justify-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
             onClick={() => navigate('/rank')}
           >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-              <Trophy className="h-6 w-6 text-white" />
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+              <Trophy className="h-7 w-7 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">排行榜</div>
-              <div className="text-xs text-muted-foreground truncate">查看大家的进度</div>
-            </div>
+            <div className="text-xl font-bold">排行榜</div>
           </Card>
           
           <Card 
-            className="p-4 flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
-            onClick={() => navigate('/public')}
+            className="p-6 flex items-center justify-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
+            onClick={() => navigate('/chat-rooms')}
           >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="h-6 w-6 text-white" />
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <MessageCircle className="h-7 w-7 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">聊天室</div>
-              <div className="text-xs text-muted-foreground truncate">和大家一起交流</div>
-            </div>
+            <div className="text-xl font-bold">聊天室</div>
           </Card>
         </section>
 
@@ -552,6 +568,52 @@ export default function ContactPage() {
           )}
         </section>
       </div>
+      
+      {/* 发布帖子按钮 - 固定在右下角 */}
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <button
+          onClick={() => setIsDrawerOpen(true)}
+          className="fixed right-6 bottom-24 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center text-white"
+          aria-label="发布帖子"
+        >
+          <Plus className="h-7 w-7" strokeWidth={2.5} />
+        </button>
+        
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>发布新帖子</DrawerTitle>
+            <DrawerDescription>
+              分享你的想法和动态到翰林院论坛
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          <div className="px-4 py-4">
+            <Textarea
+              placeholder="写下你想说的话...\n\n可以分享学习心得、生活感悟、或是提出问题"
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
+              className="min-h-[200px] resize-none text-base"
+              disabled={isPosting}
+            />
+          </div>
+          
+          <DrawerFooter>
+            <Button 
+              onClick={handleCreatePost}
+              disabled={!newPostContent.trim() || isPosting}
+              className="w-full"
+            >
+              {isPosting ? '发布中...' : '发布'}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" className="w-full" disabled={isPosting}>
+                取消
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+      
       <BottomNav />
     </div>
   );

@@ -22,7 +22,10 @@ export const updateNotificationEnabled = async (enabled: boolean): Promise<void>
  */
 export const updateNotificationTime = async (hour: string, minute: string): Promise<void> => {
   const { api } = await import('./apiClient');
-  await api.put('/api/updateRemindTime', { time: `${hour}:${minute}` });
+  await api.put('/api/updateRemindTime', { 
+    time_remind: parseInt(hour), 
+    min_remind: parseInt(minute) 
+  });
 };
 
 // ========== 密码管理 ==========
@@ -48,7 +51,7 @@ export const updateProfile = async (nickname: string, bio: string, avatar: strin
 // P1修复：切换头像
 export const switchAvatar = async (avatarIndex: number): Promise<void> => {
   const { api } = await import('./apiClient');
-  await api.post('/api/swithhead', { head: avatarIndex });
+  await api.post('/api/swithhead', { number: avatarIndex });
 };
 
 export default {

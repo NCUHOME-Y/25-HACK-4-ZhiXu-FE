@@ -72,7 +72,16 @@ export function ChartAreaDefault({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              interval={0}
+              tick={(props) => {
+                const { x, y, payload } = props;
+                // 只显示非空标签
+                if (!payload.value) return null;
+                return (
+                  <text x={x} y={y} dy={16} textAnchor="middle" fill="currentColor" className="text-xs">
+                    {payload.value}
+                  </text>
+                );
+              }}
             />
             <ChartTooltip
               cursor={false}

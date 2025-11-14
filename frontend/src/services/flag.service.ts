@@ -37,7 +37,7 @@ export async function togglePunch(date: string): Promise<boolean> {
 // ==================== 任务相关 ====================
 /**
  * 获取任务列表
- * P1修复：调用后端获取Flag列表（已统一字段名）
+ * 后端已统一返回前端格式，无需转换
  */
 export async function fetchTasks(): Promise<Task[]> {
   const { api } = await import('./apiClient');
@@ -56,23 +56,15 @@ export async function createTask(payload: CreateTaskPayload & {
 }): Promise<Task> {
   const { api } = await import('./apiClient');
   
-  // 将数字label转换为后端期望的字符串类别名称
-  const labelMap: Record<string, string> = {
-    '1': '生活',
-    '2': '学习', 
-    '3': '工作',
-    '4': '兴趣',
-    '5': '运动'
-  };
-  
-  const labelName = labelMap[payload.label || '2'] || '学习';
+  // label应该是数字类型（1-5）
+  const labelNum = parseInt(payload.label || '2') || 2;
   
   // 前后端字段已统一，直接发送
   const backendPayload = {
     title: payload.title,
     detail: payload.detail || '',
     is_public: false,
-    label: labelName,
+    label: labelNum,  // 发送数字而不是字符串
     priority: payload.priority || 1,
     total: payload.total || 1,
     points: payload.points || 0,
@@ -86,11 +78,26 @@ export async function createTask(payload: CreateTaskPayload & {
 
 /**
  * 更新任务
- * P1修复：调用后端更新Flag隐藏状态（已统一字段名）
+ * P1修复：调用后端更新Flag完整信息
  */
-export async function updateTask(id: string): Promise<boolean> {
+export async function updateTask(id: string, taskData: {
+  title: string;
+  detail: string;
+  label: number;
+  priority: number;
+  total: number;
+  isPublic: boolean;
+}): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.put('/api/updateFlagHide', { id: parseInt(id) });
+  await api.put('/api/updateFlag', { 
+    id: parseInt(id),
+    title: taskData.title,
+    detail: taskData.detail,
+    label: taskData.label,
+    priority: taskData.priority,
+    total: taskData.total,
+    is_public: taskData.isPublic
+  });
   return true;
 }
 
@@ -149,7 +156,7 @@ export async function getUserPoints(): Promise<number> {
 // P1修复：切换Flag隐藏/公开状态（分享到社交页面）
 export async function toggleFlagVisibility(flagId: string, isHidden: boolean): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.put('/api/updateFlagHide', { id: flagId, is_hidden: isHidden });
+  await api.put('/api/updateFlagHide', { id: parseInt(flagId) });
   return true;
 }
 
