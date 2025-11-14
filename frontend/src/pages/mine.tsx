@@ -5,6 +5,7 @@ import {
   BottomNav, 
   Card, 
   Avatar, 
+  AvatarImage,
   AvatarFallback,
   Accordion,
   AccordionContent,
@@ -40,8 +41,8 @@ export default function MinePage() {
   // 本地UI状态
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [nickname, setNickname] = useState('知序学习者');
-  const [bio, setBio] = useState('每天进步一点点，成为更好的自己');
-  const [avatar, setAvatar] = useState('知');
+  const [bio, setBio] = useState('每天进步一点点,成为更好的自己');
+  const [avatar, setAvatar] = useState('/src/assets/images/screenshot_20251114_131601.png');
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
 
   // ========== 计算属性 ========== 
@@ -118,9 +119,16 @@ export default function MinePage() {
   };
 
   /**
-   * 预设头像列表
+   * 预设头像列表 - 使用图片路径
    */
-  const avatarOptions = ['知', '序', '学', '习', '者', '🎓', '📚', '✨'];
+  const avatarOptions = [
+    '/src/assets/images/screenshot_20251114_131601.png',
+    '/src/assets/images/screenshot_20251114_131629.png',
+    '/src/assets/images/screenshot_20251114_131937.png',
+    '/src/assets/images/screenshot_20251114_131951.png',
+    '/src/assets/images/screenshot_20251114_132014.png',
+    '/src/assets/images/screenshot_20251114_133459.png'
+  ];
 
   // ========== 事件处理器 ==========
   /**
@@ -166,7 +174,8 @@ export default function MinePage() {
           <Card className="p-4 rounded-xl">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">{avatar}</AvatarFallback>
+                <AvatarImage src={avatar} alt="Avatar" />
+                <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">知</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h2 className="text-xl font-bold">{nickname}</h2>
@@ -323,23 +332,23 @@ export default function MinePage() {
               <div className="flex items-center gap-4">
                 <Popover open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
                   <PopoverTrigger asChild>
-                    <button className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white hover:opacity-90 transition-opacity flex-shrink-0">
-                      {avatar}
+                    <button className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0">
+                      <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80 rounded-2xl">
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       {avatarOptions.map((option) => (
                         <button
                           key={option}
                           onClick={() => handleSelectAvatar(option)}
-                          className={`h-14 w-14 rounded-full flex items-center justify-center transition-all ${
+                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${
                             avatar === option 
-                              ? 'bg-blue-100 dark:bg-blue-950 ring-2 ring-blue-500' 
-                              : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                              ? 'ring-2 ring-blue-500' 
+                              : 'hover:ring-2 hover:ring-slate-300'
                           }`}
                         >
-                          <div className="text-2xl font-bold">{option}</div>
+                          <img src={option} alt="Avatar option" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
