@@ -34,6 +34,14 @@ export interface UserInfo {
   totalPoints: number;
 }
 
+// 搜索用户结果类型
+export interface SearchUserResult {
+  id: number;
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
 // 分页响应类型
 export interface PaginatedResponse<T> {
   data: T[];
@@ -110,20 +118,37 @@ const contactService = {
       content: params.content 
     }),
 
-  // 点赞帖子
+  // 点赞/取消点赞帖子（后端自动切换状态）
   likePost: (postId: string) =>
-    api.post<{ success: boolean; likes: number }>('/api/likepost', { post_id: postId }),
+    api.post<{ success: boolean; likes: number }>('/api/likepost', { 
+      post_id: parseInt(postId)
+    }),
 
-  // 取消点赞（后端可能没有这个接口，使用相同的likepost接口）
+  // 取消点赞（使用相同接口，后端会自动判断）
   unlikePost: (postId: string) =>
-    api.post<{ success: boolean; likes: number }>('/api/likepost', { post_id: postId }),
+    api.post<{ success: boolean; likes: number }>('/api/likepost', { 
+      post_id: parseInt(postId)
+    }),
 
   // 添加评论
-  addComment: (params: AddCommentParams) =>
-    api.post<PostComment>('/api/commentOnPost', {
-      post_id: params.postId,
+  addComment: async (params: AddCommentParams): Promise<PostComment> => {
+    await api.post<{ success: boolean }>('/api/commentOnPost', {
+      post_id: parseInt(params.postId),
       content: params.content
-    }),
+    });
+    
+    // 后端只返回 success，前端需要构造评论对象
+    // 注意：实际使用时应该重新获取评论列表或让后端返回完整对象
+    return {
+      id: String(Date.now()),
+      postId: params.postId,
+      userId: 'current_user',
+      userName: '当前用户',
+      userAvatar: '/default-avatar.png',
+      content: params.content,
+      createdAt: new Date().toISOString()
+    };
+  },
 
   // 获取帖子的评论列表
   getComments: (postId: string) =>
@@ -176,8 +201,8 @@ const contactService = {
     }),
 
   // P1修复：搜索用户
-  searchUsers: async (query: string): Promise<any[]> => {
-    const response = await api.post<{ users: any[] }>('/api/searchUser', { query });
+  searchUsers: async (query: string): Promise<SearchUserResult[]> => {
+    const response = await api.post<{ users: SearchUserResult[] }>('/api/searchUser', { query });
     return response.users || [];
   },
 };

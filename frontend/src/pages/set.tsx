@@ -46,10 +46,20 @@ export default function SetPage() {
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
   // ========== 事件处理器 ========== 
-  const handleLogout = () => {
-    // TODO: 实际登出逻辑
-    setLogoutDialogOpen(false);
-    navigate('/auth');
+  const handleLogout = async () => {
+    try {
+      const { authService } = await import('../services/auth.service');
+      await authService.logout();
+      localStorage.removeItem('auth_token');
+      setLogoutDialogOpen(false);
+      navigate('/auth');
+    } catch (error) {
+      console.error('登出失败:', error);
+      // 即使失败也清除token并跳转
+      localStorage.removeItem('auth_token');
+      setLogoutDialogOpen(false);
+      navigate('/auth');
+    }
   };
 
   // P1修复：调用后端修改密码API

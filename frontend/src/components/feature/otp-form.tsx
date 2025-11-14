@@ -21,9 +21,11 @@ import {
 interface OTPFormProps extends React.ComponentProps<typeof Card> {
   onSwitchToLogin?: () => void
   onVerificationSuccess?: () => void
+  error?: string // 添加错误信息
+  loading?: boolean // 添加加载状态
 }
 
-export function OTPForm({ onSwitchToLogin, onVerificationSuccess, ...props }: OTPFormProps) {
+export function OTPForm({ onSwitchToLogin, onVerificationSuccess, error, loading = false, ...props }: OTPFormProps) {
   return (
     <Card {...props}>
       <CardHeader>
@@ -33,6 +35,12 @@ export function OTPForm({ onSwitchToLogin, onVerificationSuccess, ...props }: OT
       <CardContent>
         <form>
           <FieldGroup>
+            {/* 错误提示 */}
+            {error && (
+              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400 mb-4">
+                {error}
+              </div>
+            )}
             <Field>
               <FieldLabel htmlFor="otp">验证码</FieldLabel>
               <InputOTP maxLength={6} id="otp" required>
@@ -50,7 +58,9 @@ export function OTPForm({ onSwitchToLogin, onVerificationSuccess, ...props }: OT
               </FieldDescription>
             </Field>
             <FieldGroup>
-              <Button type="button" onClick={onVerificationSuccess}>验证</Button>
+              <Button type="button" onClick={onVerificationSuccess} disabled={loading}>
+                {loading ? "验证中..." : "验证"}
+              </Button>
               <FieldDescription className="text-center">
                 没有收到验证码？ <a href="#">重新发送</a>
                 {" | "}

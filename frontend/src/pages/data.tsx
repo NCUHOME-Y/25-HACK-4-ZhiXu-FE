@@ -38,7 +38,6 @@ export default function DataPage() {
     import('../services/data.service').then(({ getFlagLabels }) => {
       getFlagLabels().then(labelData => {
         console.log('标签系统统计:', labelData);
-        // TODO: 可以将这些数据整合到UI展示中
       }).catch(error => {
         console.error('获取标签统计失败:', error);
       });
@@ -59,7 +58,6 @@ export default function DataPage() {
           value: item.duration
         }));
         setStudyTrendData(formattedData);
-        // TODO: 接入后端 await getStudyTrend(studyTrendPeriod)
       } catch (err) {
         console.error('加载学习趋势失败:', err);
         setStudyTrendData([]);

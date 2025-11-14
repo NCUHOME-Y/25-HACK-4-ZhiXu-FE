@@ -38,7 +38,7 @@ export default function ContactPage() {
     
     contactService.getPosts(page, POSTS_PER_PAGE)
       .then((response) => {
-        if (response.data.length === 0) {
+        if (!response || !Array.isArray(response.data) || response.data.length === 0) {
           setHasMore(false);
         } else {
           const adaptedPosts = response.data.map(adaptPostToUser);
@@ -70,10 +70,15 @@ export default function ContactPage() {
     if (searchQuery.trim()) {
       contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE })
         .then((response) => {
-          const adaptedPosts = response.data.map(adaptPostToUser);
-          setDisplayedPosts(adaptedPosts);
-          setPage(2);
-          setHasMore(response.hasMore);
+          if (response && Array.isArray(response.data)) {
+            const adaptedPosts = response.data.map(adaptPostToUser);
+            setDisplayedPosts(adaptedPosts);
+            setPage(2);
+            setHasMore(response.hasMore);
+          } else {
+            setDisplayedPosts([]);
+            setHasMore(false);
+          }
           setLoading(false);
         })
         .catch((error: unknown) => {
@@ -85,10 +90,15 @@ export default function ContactPage() {
     } else {
       contactService.getPosts(1, POSTS_PER_PAGE)
         .then((response) => {
-          const adaptedPosts = response.data.map(adaptPostToUser);
-          setDisplayedPosts(adaptedPosts);
-          setPage(2);
-          setHasMore(response.hasMore);
+          if (response && Array.isArray(response.data)) {
+            const adaptedPosts = response.data.map(adaptPostToUser);
+            setDisplayedPosts(adaptedPosts);
+            setPage(2);
+            setHasMore(response.hasMore);
+          } else {
+            setDisplayedPosts([]);
+            setHasMore(false);
+          }
           setLoading(false);
         })
         .catch((error: unknown) => {
@@ -127,12 +137,12 @@ export default function ContactPage() {
   }, [hasMore, loading, loadMorePosts]);
 
   /**
-   * 点赞处理
+   * 点赞处理（后端自动切换点赞/取消状态）
    */
   const handleLike = (postId: string, liked: string[]) => {
     const isLiked = liked.includes('liked');
     
-    // 先更新UI
+    // 先乐观更新UI
     setDisplayedPosts(displayedPosts.map(post => 
       post.id === postId 
         ? { ...post, likes: isLiked ? post.likes + 1 : post.likes - 1 }
@@ -149,34 +159,34 @@ export default function ContactPage() {
       return newSet;
     });
     
-    // TODO: 调用后端接口更新点赞状态
-    // if (isLiked) {
-    //   contactService.likePost(postId).catch(error => {
-    //     console.error('点赞失败:', error);
-    //     // 回滚UI
-    //     setDisplayedPosts(displayedPosts.map(post => 
-    //       post.id === postId ? { ...post, likes: post.likes - 1 } : post
-    //     ));
-    //     setLikedPosts(prev => {
-    //       const newSet = new Set(prev);
-    //       newSet.delete(postId);
-    //       return newSet;
-    //     });
-    //   });
-    // } else {
-    //   contactService.unlikePost(postId).catch(error => {
-    //     console.error('取消点赞失败:', error);
-    //     // 回滚UI
-    //     setDisplayedPosts(displayedPosts.map(post => 
-    //       post.id === postId ? { ...post, likes: post.likes + 1 } : post
-    //     ));
-    //     setLikedPosts(prev => {
-    //       const newSet = new Set(prev);
-    //       newSet.add(postId);
-    //       return newSet;
-    //     });
-    //   });
-    // }
+    // 调用后端接口（后端自动处理点赞/取消逻辑）
+    contactService.likePost(postId)
+      .then(response => {
+        // 用后端返回的真实点赞数更新UI
+        if (response && typeof response.likes === 'number') {
+          setDisplayedPosts(displayedPosts.map(post => 
+            post.id === postId ? { ...post, likes: response.likes } : post
+          ));
+        }
+      })
+      .catch(error => {
+        console.error('点赞操作失败:', error);
+        // 回滚UI到原始状态
+        setDisplayedPosts(displayedPosts.map(post => 
+          post.id === postId 
+            ? { ...post, likes: isLiked ? post.likes - 1 : post.likes + 1 }
+            : post
+        ));
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          if (isLiked) {
+            newSet.delete(postId);
+          } else {
+            newSet.add(postId);
+          }
+          return newSet;
+        });
+      });
   };
 
   /**
@@ -204,28 +214,36 @@ export default function ContactPage() {
 
     setNewComment({ ...newComment, [postId]: '' });
     
-    // TODO: 调用后端接口添加评论
-    // contactService.addComment({ postId, content: comment })
-    //   .then(savedComment => {
-    //     // 用后端返回的评论替换临时评论
-    //     setDisplayedPosts(displayedPosts.map(post => {
-    //       if (post.id === postId) {
-    //         const comments = post.comments.filter(c => c.id !== newCommentObj.id);
-    //         return { ...post, comments: [...comments, savedComment] };
-    //       }
-    //       return post;
-    //     }));
-    //   })
-    //   .catch(error => {
-    //     console.error('添加评论失败:', error);
-    //     // 回滚UI
-    //     setDisplayedPosts(displayedPosts.map(post => {
-    //       if (post.id === postId) {
-    //         return { ...post, comments: post.comments.filter(c => c.id !== newCommentObj.id) };
-    //       }
-    //       return post;
-    //     }));
-    //   });
+    // 调用后端接口添加评论
+    contactService.addComment({ postId, content: comment })
+      .then(savedComment => {
+        // 用后端返回的评论替换临时评论
+        const adaptedComment: Comment = {
+          id: String(savedComment.id),
+          userId: String(savedComment.userId),
+          userName: savedComment.userName,
+          userAvatar: savedComment.userAvatar,
+          content: savedComment.content,
+          time: savedComment.createdAt
+        };
+        setDisplayedPosts(displayedPosts.map(post => {
+          if (post.id === postId) {
+            const comments = post.comments.filter(c => c.id !== newCommentObj.id);
+            return { ...post, comments: [...comments, adaptedComment] };
+          }
+          return post;
+        }));
+      })
+      .catch(error => {
+        console.error('添加评论失败:', error);
+        // 回滚UI
+        setDisplayedPosts(displayedPosts.map(post => {
+          if (post.id === postId) {
+            return { ...post, comments: post.comments.filter(c => c.id !== newCommentObj.id) };
+          }
+          return post;
+        }));
+      });
   };
 
   // ========== 渲染 ==========

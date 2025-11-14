@@ -1,7 +1,14 @@
 // 必要的全局类型定义（精简版）
 
 // 用户相关
-export interface User { id: string; name: string; phone: string }
+export interface User { 
+  id: string; 
+  name: string; 
+  phone: string;
+  nickname?: string;
+  bio?: string;
+  avatar?: string;
+}
 
 // 认证相关
 export interface LoginCredentials { phone: string; password: string }

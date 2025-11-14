@@ -50,7 +50,7 @@ import { useStudyTimer } from '../lib/hooks/hooks';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { PunchChartProps, TaskRingProps, FlagLabel, FlagPriority } from '../lib/types/types';
 import contactService from '../services/contact.service';
-import { addUserPoints } from '../services/flag.service';
+import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
 
 
 /**
@@ -115,7 +115,8 @@ export default function FlagPage() {
     total: 1,
     label: 1 as FlagLabel,
     priority: 3 as FlagPriority,
-    isPublic: false
+    isPublic: false,
+    points: 0
   });
   const [showError, setShowError] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
@@ -225,7 +226,8 @@ export default function FlagPage() {
       }
     }
     
-    // TODO: 接入后端 await tickTask(taskId)
+    // 接入后端
+    await tickTask(taskId);
   };
 
   /**
@@ -296,7 +298,8 @@ export default function FlagPage() {
           }
         } : undefined
       });
-      // TODO: 接入后端 await updateTask(editingTaskId, newTask)
+      // 接入后端
+      await updateTask(editingTaskId);
     } else {
       // 如果没有设置积分，自动计算
       const points = calculateTaskPoints({
@@ -346,7 +349,15 @@ export default function FlagPage() {
           }
         });
       }
-      // TODO: 接入后端 await createTask(newTask)
+      // 接入后端
+      await createTask({
+        title: newTask.title,
+        detail: newTask.detail,
+        total: newTask.total,
+        label: String(newTask.label),  // 数字转字符串，service层会转换为中文名称
+        priority: newTask.priority,
+        points: newTask.points
+      });
     }
     closeDrawer();
   };
@@ -378,7 +389,7 @@ export default function FlagPage() {
         }
       }
     });
-    // TODO: 接入后端 await deleteTask(editingTaskId)
+    // 接入后端 - 删除任务后端暂时不支持，只删除本地
     setDeleteDialogOpen(false);
     closeDrawer();
   };
@@ -393,7 +404,8 @@ export default function FlagPage() {
       total: 1,
       label: 1 as FlagLabel,
       priority: 3 as FlagPriority,
-      isPublic: false
+      isPublic: false,
+      points: 0
     });
     setEditingTaskId(null);
     setShowError(false);
@@ -411,7 +423,8 @@ export default function FlagPage() {
       total: task.total || 1,
       label: task.label || 1,
       priority: task.priority || 3,
-      isPublic: task.isPublic || false
+      isPublic: task.isPublic || false,
+      points: task.points || 0
     });
     setOpenDrawer(true);
   };
@@ -419,9 +432,14 @@ export default function FlagPage() {
   /**
    * 切换今日打卡状态
    */
-  const togglePunchToday = () => {
+  const togglePunchToday = async () => {
     togglePunchTodayInStore();
-    // TODO: 接入后端 await togglePunch(formatDateYMD(new Date()))
+    // 接入后端
+    try {
+      await togglePunch(formatDateYMD(new Date()));
+    } catch (error) {
+      console.error('打卡失败:', error);
+    }
   };
 
   // ========== 渲染 ==========

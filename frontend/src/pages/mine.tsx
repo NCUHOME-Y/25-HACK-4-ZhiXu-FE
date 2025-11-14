@@ -25,6 +25,8 @@ import {
   PopoverTrigger
 } from "../components";
 import { useTaskStore } from '../lib/stores/stores';
+import { updateUserProfile } from '../services/mine.service';
+import { toast } from 'sonner';
 
 /**
  * 我的页面
@@ -40,9 +42,14 @@ export default function MinePage() {
   
   // 本地UI状态
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [nickname, setNickname] = useState('知序学习者');
-  const [bio, setBio] = useState('每天进步一点点,成为更好的自己');
-  const [avatar, setAvatar] = useState('/src/assets/images/screenshot_20251114_131601.png');
+  const [profile, setProfile] = useState({
+    nickname: '知序学习者',
+    bio: '每天进步一点点,成为更好的自己',
+    avatar: '/src/assets/images/screenshot_20251114_131601.png'
+  });
+  const [nickname, setNickname] = useState(profile.nickname);
+  const [bio, setBio] = useState(profile.bio);
+  const [avatar, setAvatar] = useState(profile.avatar);
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
 
   // ========== 计算属性 ========== 
@@ -145,9 +152,21 @@ export default function MinePage() {
   /**
    * 保存个人资料
    */ 
-  const handleSaveProfile = () => {
-    // TODO: 保存到后端
-    setEditDialogOpen(false);
+  const handleSaveProfile = async () => {
+    // 保存到后端
+    try {
+      await updateUserProfile({ 
+        nickname, 
+        bio, 
+        avatar 
+      });
+      setProfile({ nickname, bio, avatar });
+      setEditDialogOpen(false);
+      toast.success('个人信息更新成功');
+    } catch (error) {
+      console.error('保存个人资料失败:', error);
+      toast.error('保存个人资料失败，请重试');
+    }
   };
 
   /**

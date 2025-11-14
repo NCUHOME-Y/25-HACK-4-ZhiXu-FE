@@ -146,9 +146,43 @@ export default function RankPage() {
           </Button>
         </div>
 
-        {/* 排行榜列表 */}
+        {/* 排行榜列表 - 固定显示前20名 */}
         <div className="space-y-3">
-          {rankUsers.map((user) => (
+          {Array.from({ length: 20 }, (_, index) => {
+            const user = rankUsers[index];
+            const rank = index + 1;
+            
+            if (!user) {
+              // 占位符：没有数据时显示空白但保留排名
+              return (
+                <Card key={`placeholder-${rank}`} className="p-4 bg-gray-50 opacity-40">
+                  <div className="flex items-center gap-4">
+                    {/* 排名 */}
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-gray-200 text-gray-400">
+                      {rank}
+                    </div>
+                    {/* 占位内容 */}
+                    <div className="flex-1 flex items-center gap-3">
+                      <Avatar className="w-10 h-10 bg-gray-300">
+                        <AvatarFallback>-</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-400">暂无数据</div>
+                        <div className="text-sm text-gray-300">等待上榜</div>
+                      </div>
+                    </div>
+                    {/* 数据 */}
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-300">-</div>
+                      <div className="text-xs text-gray-300">{getUnit()}</div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            }
+            
+            // 有数据时正常显示
+            return (
             <Card key={user.id} className={`p-4 ${user.rank <= 6 ? 'border-2 bg-gradient-to-br from-white to-slate-50' : ''} ${user.rank === 1 ? 'border-yellow-300' : user.rank === 2 ? 'border-gray-300' : user.rank === 3 ? 'border-amber-600' : user.rank <= 6 ? 'border-orange-500' : ''}`}>
               <div className="flex items-center gap-4">
                 {/* 排名 */}
@@ -183,7 +217,8 @@ export default function RankPage() {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       </div>
 

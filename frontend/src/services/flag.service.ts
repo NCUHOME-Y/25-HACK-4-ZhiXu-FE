@@ -56,12 +56,23 @@ export async function createTask(payload: CreateTaskPayload & {
 }): Promise<Task> {
   const { api } = await import('./apiClient');
   
+  // 将数字label转换为后端期望的字符串类别名称
+  const labelMap: Record<string, string> = {
+    '1': '生活',
+    '2': '学习', 
+    '3': '工作',
+    '4': '兴趣',
+    '5': '运动'
+  };
+  
+  const labelName = labelMap[payload.label || '2'] || '学习';
+  
   // 前后端字段已统一，直接发送
   const backendPayload = {
     title: payload.title,
     detail: payload.detail || '',
     is_public: false,
-    label: payload.label || '学习',
+    label: labelName,
     priority: payload.priority || 1,
     total: payload.total || 1,
     points: payload.points || 0,

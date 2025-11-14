@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { api } from "../services/apiClient"
 import {
   LoginForm,
   SignupForm,
@@ -38,6 +39,8 @@ export default function AuthPage() {
   const [otpPhone, setOtpPhone] = useState("")
   // 是否已发送验证码
   const [otpSent, setOtpSent] = useState(false)
+  // OTP使用场景：login（验证码登录）或 signup（注册验证）
+  const [otpPurpose, setOtpPurpose] = useState<'login' | 'signup'>('login')
   
   // P1修复：忘记密码相关状态
   const [forgotEmail, setForgotEmail] = useState("")
@@ -71,10 +74,11 @@ export default function AuthPage() {
    * 切换到验证码页面(从登录)
    */
   const switchToOTPFromLogin = () => {
-    // 直接进入验证码登录的手机号输入页
+    // 直接进入验证码登录的邮箱输入页
     setMode("otp")
     setOtpPhone("")
     setOtpSent(false)
+    setOtpPurpose('login') // 设置为验证码登录
   }
 
   /**
@@ -118,7 +122,7 @@ export default function AuthPage() {
   /**
    * 切换到验证码页面(从注册)
    */
-  const switchToOTPFromSignup = () => {
+  const switchToOTPFromSignup = async () => {
     // 读取注册表单的各字段并做最小校验（不改子组件，使用 DOM 读取）
     const nameInput = document.getElementById("name") as HTMLInputElement | null
     const emailInput = document.getElementById("email") as HTMLInputElement | null
@@ -142,8 +146,8 @@ export default function AuthPage() {
       setSignupError("请输入有效的邮箱地址")
       return
     }
-    if (pwd.length < 8) {
-      setSignupError("密码至少需要 8 个字符")
+    if (pwd.length < 6) {
+      setSignupError("密码至少需要 6 个字符")
       return
     }
     if (pwd !== confirm) {
@@ -151,8 +155,33 @@ export default function AuthPage() {
       return
     }
 
-    setPhone(value)
-    setMode("otp")
+    // 调用后端注册API（会创建用户并发送验证码）
+    setSendingOTP(true)
+    try {
+      const response = await api.post('/api/register', {
+        name: name,
+        email: value,
+        password: pwd
+      })
+      
+      if (response) {
+        // 注册成功，切换到验证码输入页面
+        setPhone(value)
+        setOtpPurpose('signup') // 设置为注册验证
+        setOtpSent(true) // 标记验证码已发送
+        setMode("otp")
+      }
+    } catch (error) {
+      console.error('注册失败:', error)
+      let errorMessage = "注册失败，请重试"
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string } } }
+        errorMessage = axiosError.response?.data?.error || errorMessage
+      }
+      setSignupError(errorMessage)
+    } finally {
+      setSendingOTP(false)
+    }
   }
 
   /**
@@ -203,19 +232,49 @@ export default function AuthPage() {
   }
 
   /**
-   * 验证码验证成功后的处理
+   * 验证码登录处理
+   */
+  const handleOTPLogin = async () => {
+    setVerifyingOTP(true)
+    try {
+      const otpInput = document.querySelector('[id="otp"]') as HTMLInputElement | null
+      const code = otpInput?.value ?? ""
+      
+      if (!code || code.length !== 6) {
+        setLoginError("请输入完整的6位验证码")
+        setVerifyingOTP(false)
+        return
+      }
+      
+      const { authService } = await import("../services/auth.service")
+      const result = await authService.loginWithOTP(phone, code)
+      
+      if (result.user) {
+        navigate("/flag")
+      }
+    } catch (error) {
+      console.error('验证码登录失败:', error)
+      let errorMessage = "验证码登录失败"
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string } } }
+        if (axiosError.response?.data?.error) {
+          errorMessage = axiosError.response.data.error
+        }
+      }
+      setLoginError(errorMessage)
+    } finally {
+      setVerifyingOTP(false)
+    }
+  }
+
+  /**
+   * 验证码验证成功后的处理（用于注册）
    */
   const handleOTPVerificationSuccess = async () => {
     setVerifyingOTP(true)
     setSignupError("") // 清除之前的错误
     try {
-      // P1修复：调用后端注册API
-      const nameInput = document.getElementById("name") as HTMLInputElement | null
-      const pwdInput = document.getElementById("password") as HTMLInputElement | null
       const otpInput = document.querySelector('[id="otp"]') as HTMLInputElement | null
-      
-      const name = nameInput?.value?.trim() ?? ""
-      const password = pwdInput?.value ?? ""
       const code = otpInput?.value ?? ""
       
       if (!code || code.length !== 6) {
@@ -224,23 +283,19 @@ export default function AuthPage() {
         return
       }
       
+      // 调用后端验证邮箱API（验证成功后会返回token并自动登录）
       const { authService } = await import("../services/auth.service")
-      const result = await authService.register({ 
-        username: name, 
-        email: phone, // phone变量现在存储邮箱
-        password,
-        code // 传入验证码
-      })
+      const result = await authService.verifyEmail(phone, code) // phone变量存储邮箱
       
-      if (result.user) {
-        // 注册成功后跳转到打卡页面
+      if (result.user && result.token) {
+        // 验证成功，已自动登录，跳转到打卡页面
         navigate("/flag")
       } else {
-        setSignupError("注册失败，请重试")
+        setSignupError("验证失败，请重试")
       }
     } catch (error) {
-      console.error('注册失败:', error)
-      let errorMessage = "注册失败，请重试"
+      console.error('验证邮箱失败:', error)
+      let errorMessage = "验证失败，请重试"
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string } } }
         errorMessage = axiosError.response?.data?.error || errorMessage
@@ -297,8 +352,8 @@ export default function AuthPage() {
       setResetPasswordError("请输入验证码")
       return
     }
-    if (!newPassword || newPassword.length < 8) {
-      setResetPasswordError("密码长度至少8位")
+    if (!newPassword || newPassword.length < 6) {
+      setResetPasswordError("密码长度至少6位")
       return
     }
     if (newPassword !== confirmNewPassword) {
@@ -364,6 +419,12 @@ export default function AuthPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-6">
+                {/* 错误提示 */}
+                {(otpPurpose === 'login' ? loginError : signupError) && (
+                  <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
+                    {otpPurpose === 'login' ? loginError : signupError}
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="otp-email">邮箱</Label>
                   <Input
@@ -413,16 +474,13 @@ export default function AuthPage() {
                 setOtpSent(false)
                 setOtpPhone("")
                 setVerifyingOTP(false)
+                setLoginError("") // 清除登录错误
+                setSignupError("") // 清除注册错误
               }}
-              onVerificationSuccess={handleOTPVerificationSuccess}
+              onVerificationSuccess={otpPurpose === 'login' ? handleOTPLogin : handleOTPVerificationSuccess}
+              error={otpPurpose === 'login' ? loginError : signupError}
+              loading={verifyingOTP}
             />
-            {/* 验证按钮的loading状态覆盖 */}
-            {verifyingOTP && (
-              <div className="flex items-center justify-center p-4">
-                <Spinner className="mr-2" />
-                <span className="text-sm">验证中...</span>
-              </div>
-            )}
           </div>
         )}
 
@@ -513,7 +571,7 @@ export default function AuthPage() {
                   <Input
                     id="new-password"
                     type="password"
-                    placeholder="请输入新密码（至少8位）"
+                    placeholder="请输入新密码（至少6位）"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required

@@ -70,7 +70,13 @@ class AuthService {
       return { success: true, message: '验证码已发送' };
     } catch (error) {
       console.error('发送验证码失败:', error);
-      return { success: false, message: '发送失败，请重试' };
+      // 获取后端返回的具体错误信息
+      let errorMessage = '发送失败，请重试';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string } } };
+        errorMessage = axiosError.response?.data?.error || errorMessage;
+      }
+      return { success: false, message: errorMessage };
     }
   }
 
@@ -81,8 +87,51 @@ class AuthService {
       return { success: true, message: '密码重置成功' };
     } catch (error) {
       console.error('密码重置失败:', error);
-      return { success: false, message: '重置失败，请检查验证码' };
+      // 获取后端返回的具体错误信息
+      let errorMessage = '重置失败，请检查验证码';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string } } };
+        errorMessage = axiosError.response?.data?.error || errorMessage;
+      }
+      return { success: false, message: errorMessage };
     }
+  }
+
+  // 验证码登录（验证邮箱验证码后自动登录）
+  async loginWithOTP(email: string, code: string): Promise<{ user: User; token: string }> {
+    const response = await api.post<{ token: string; user_id: number; name: string; email: string }>(
+      '/api/loginWithOTP',
+      { email, code }
+    );
+    
+    const user: User = {
+      id: String(response.user_id),
+      name: response.name,
+      phone: response.email,
+    };
+    
+    localStorage.setItem('auth_token', response.token);
+    return { user, token: response.token };
+  }
+
+  // 验证邮箱（注册后验证邮箱验证码并自动登录）
+  async verifyEmail(email: string, code: string): Promise<{ user: User; token: string }> {
+    const response = await api.post<{ 
+      success: boolean; 
+      token: string; 
+      user_id: number; 
+      name: string; 
+      email: string 
+    }>('/api/verifyEmail', { email, code });
+    
+    const user: User = {
+      id: String(response.user_id),
+      name: response.name,
+      phone: response.email,
+    };
+    
+    localStorage.setItem('auth_token', response.token);
+    return { user, token: response.token };
   }
 }
 

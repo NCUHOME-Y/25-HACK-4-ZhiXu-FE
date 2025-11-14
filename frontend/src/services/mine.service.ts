@@ -14,9 +14,40 @@ export const getUserProfile = () =>
 
 /**
  * 更新用户个人信息
+ * 注意：后端没有统一的profile更新接口，需要分别调用
  */
-export const updateUserProfile = (data: Partial<User>) =>
-  api.put<User>('/user/profile', data);
+export const updateUserProfile = async (data: Partial<User>) => {
+  const results: any[] = [];
+  
+  // 更新用户名（逐个调用以便捕获具体错误）
+  if (data.nickname) {
+    try {
+      const result = await api.put('/updateUsername', { new_name: data.nickname });
+      results.push(result);
+    } catch (error) {
+      // 如果是用户名重复错误，抛出具体错误信息
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { error?: string } } };
+        throw new Error(axiosError.response?.data?.error || '更新用户名失败');
+      }
+      throw error;
+    }
+  }
+  
+  // 更新头像（如果有avatar且是数字编号）
+  if (data.avatar && /^\d+$/.test(data.avatar)) {
+    try {
+      const result = await api.post('/api/swithhead', { number: parseInt(data.avatar) });
+      results.push(result);
+    } catch (error) {
+      throw new Error('更新头像失败');
+    }
+  }
+  
+  // TODO: bio字段后端暂不支持
+  
+  return data as User;
+};
 
 /**
  * 修改密码

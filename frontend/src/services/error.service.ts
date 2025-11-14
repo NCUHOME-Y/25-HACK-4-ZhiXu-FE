@@ -13,7 +13,9 @@ export function handleApiError(error: AxiosError): void {
   // 网络错误
   if (!error.response) {
     // 如果在登录/注册页面，不跳转，让页面自己处理错误
-    if (window.location.pathname === '/auth') {
+    const currentPath = window.location.pathname;
+    if (currentPath === '/auth' || currentPath === '/') {
+      console.log('[错误处理] 在认证页面,网络错误不跳转');
       return;
     }
     window.location.href = '/error?status=network&message=网络连接失败';
@@ -24,11 +26,17 @@ export function handleApiError(error: AxiosError): void {
 
   // 根据状态码跳转到对应错误页面
   if (status === 401) {
-    // 如果在登录页面，不跳转，让登录表单显示错误消息
-    if (window.location.pathname === '/auth') {
+    // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
+    const currentPath = window.location.pathname;
+    console.log('[错误处理] 收到401错误, 当前路径:', currentPath);
+    if (currentPath === '/auth' || currentPath === '/') {
+      console.log('[错误处理] 在认证页面,401错误不跳转,显示错误提示');
+      console.error('认证失败:', error.response.data);
       return;
     }
-    localStorage.removeItem('authToken');
+    // 只有在已登录状态下的401才清除token并跳转
+    console.log('[错误处理] 不在认证页面,清除token并跳转到错误页');
+    localStorage.removeItem('auth_token');
     window.location.href = '/error?status=401';
   } else if (status === 404) {
     window.location.href = '/error?status=404';
@@ -53,7 +61,7 @@ export function handleGeneralError(message: string, shouldRedirect = false): voi
  * 清除认证信息并跳转到登录页
  */
 export function handleUnauthorized(): void {
-  localStorage.removeItem('authToken');
+  localStorage.removeItem('auth_token');
   window.location.href = '/error?status=401';
 }
 
