@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "../services/apiClient"
 import {
@@ -68,6 +68,29 @@ export default function AuthPage() {
   // 忘记密码错误状态
   const [forgotPasswordError, setForgotPasswordError] = useState<string>("")
   const [resetPasswordError, setResetPasswordError] = useState<string>("")
+  
+  // 验证码倒计时状态
+  const [resendCooldown, setResendCooldown] = useState(0) // 重新发送验证码的冷却时间(秒)
+  const [resetCodeCooldown, setResetCodeCooldown] = useState(0) // 重置密码验证码的冷却时间(秒)
+  
+  // 倒计时定时器
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendCooldown])
+  
+  useEffect(() => {
+    if (resetCodeCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResetCodeCooldown(resetCodeCooldown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resetCodeCooldown])
 
   // ========== 事件处理器 ==========
   /**
@@ -79,6 +102,7 @@ export default function AuthPage() {
     setOtpPhone("")
     setOtpSent(false)
     setOtpPurpose('login') // 设置为验证码登录
+    setLoginError("") // 清除登录错误信息
   }
 
   /**
@@ -107,7 +131,12 @@ export default function AuthPage() {
       if (result.success) {
         setPhone(value)
         setOtpSent(true)
+        setResendCooldown(60) // 设置60秒冷却时间
       } else {
+        // 如果是429错误，设置倒计时
+        if (result.waitSeconds) {
+          setResendCooldown(result.waitSeconds)
+        }
         setAlertMessage(result.message)
         setShowAlertDialog(true)
       }
@@ -332,7 +361,12 @@ export default function AuthPage() {
         setAlertMessage("验证码已发送至邮箱")
         setShowAlertDialog(true)
         setMode("reset-password")
+        setResetCodeCooldown(60) // 设置60秒冷却时间
       } else {
+        // 如果是429错误，设置倒计时
+        if (result.waitSeconds) {
+          setResetCodeCooldown(result.waitSeconds)
+        }
         setForgotPasswordError(result.message)
       }
     } catch {
@@ -390,9 +424,15 @@ export default function AuthPage() {
         {/* 登录表单 */}
         {mode === "login" && (
           <LoginForm
-            onSwitchToSignup={() => setMode("signup")}
+            onSwitchToSignup={() => {
+              setMode("signup")
+              setLoginError("") // 清除登录错误
+            }}
             onSwitchToOTP={switchToOTPFromLogin}
-            onForgotPassword={() => setMode("forgot-password")}
+            onForgotPassword={() => {
+              setMode("forgot-password")
+              setLoginError("") // 清除登录错误
+            }}
             onSubmit={handleLogin}
             loading={loggingIn}
             error={loginError}
@@ -402,7 +442,10 @@ export default function AuthPage() {
         {/* 注册表单 */}
         {mode === "signup" && (
           <SignupForm
-            onSwitchToLogin={() => setMode("login")}
+            onSwitchToLogin={() => {
+              setMode("login")
+              setSignupError("") // 清除注册错误
+            }}
             onSwitchToOTP={switchToOTPFromSignup}
             error={signupError}
           />
@@ -439,16 +482,24 @@ export default function AuthPage() {
                 <Button 
                   className="w-full" 
                   type="button"
-                  disabled={sendingOTP}
+                  disabled={sendingOTP || resendCooldown > 0}
                   onClick={handleSendOTP}
                 >
                   {sendingOTP && <Spinner className="mr-2" />}
-                  {sendingOTP ? "发送中..." : "发送验证码"}
+                  {sendingOTP 
+                    ? "发送中..." 
+                    : resendCooldown > 0 
+                    ? `重新发送 (${resendCooldown}秒)` 
+                    : "发送验证码"}
                 </Button>
                 <div className="text-center text-sm">
                   <button
                     type="button"
-                    onClick={() => setMode("login")}
+                    onClick={() => {
+                      setMode("login")
+                      setLoginError("") // 清除登录错误
+                      setSignupError("") // 清除注册错误
+                    }}
                     className="underline underline-offset-4 hover:text-slate-900"
                   >
                     返回登录
@@ -478,8 +529,10 @@ export default function AuthPage() {
                 setSignupError("") // 清除注册错误
               }}
               onVerificationSuccess={otpPurpose === 'login' ? handleOTPLogin : handleOTPVerificationSuccess}
+              onResend={handleSendOTP}
               error={otpPurpose === 'login' ? loginError : signupError}
               loading={verifyingOTP}
+              resendCooldown={resendCooldown}
             />
           </div>
         )}
@@ -516,16 +569,23 @@ export default function AuthPage() {
                 <Button 
                   className="w-full" 
                   type="button"
-                  disabled={sendingResetCode}
+                  disabled={sendingResetCode || resetCodeCooldown > 0}
                   onClick={handleSendResetCode}
                 >
                   {sendingResetCode && <Spinner className="mr-2" />}
-                  {sendingResetCode ? "发送中..." : "发送验证码"}
+                  {sendingResetCode 
+                    ? "发送中..." 
+                    : resetCodeCooldown > 0 
+                    ? `重新发送 (${resetCodeCooldown}秒)` 
+                    : "发送验证码"}
                 </Button>
                 <div className="text-center text-sm">
                   <button
                     type="button"
-                    onClick={() => setMode("login")}
+                    onClick={() => {
+                      setMode("login")
+                      setForgotPasswordError("") // 清除忘记密码错误
+                    }}
                     className="underline underline-offset-4 hover:text-slate-900"
                   >
                     返回登录
@@ -600,7 +660,10 @@ export default function AuthPage() {
                 <div className="text-center text-sm">
                   <button
                     type="button"
-                    onClick={() => setMode("login")}
+                    onClick={() => {
+                      setMode("login")
+                      setResetPasswordError("") // 清除重置密码错误
+                    }}
                     className="underline underline-offset-4 hover:text-slate-900"
                   >
                     返回登录

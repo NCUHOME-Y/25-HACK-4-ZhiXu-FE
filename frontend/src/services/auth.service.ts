@@ -64,7 +64,7 @@ class AuthService {
   }
 
   // P1修复：发送邮箱验证码
-  async sendEmailCode(email: string): Promise<{ success: boolean; message: string }> {
+  async sendEmailCode(email: string): Promise<{ success: boolean; message: string; waitSeconds?: number }> {
     try {
       await api.post('/api/sendEmailCode', { email });
       return { success: true, message: '验证码已发送' };
@@ -72,11 +72,20 @@ class AuthService {
       console.error('发送验证码失败:', error);
       // 获取后端返回的具体错误信息
       let errorMessage = '发送失败，请重试';
+      let waitSeconds: number | undefined;
+      
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { error?: string } } };
-        errorMessage = axiosError.response?.data?.error || errorMessage;
+        const axiosError = error as { response?: { status?: number; data?: { error?: string; wait_seconds?: number; message?: string } } };
+        
+        // 处理429错误（频率限制）
+        if (axiosError.response?.status === 429) {
+          waitSeconds = axiosError.response.data?.wait_seconds;
+          errorMessage = axiosError.response.data?.message || `发送过于频繁，请等待${waitSeconds}秒后重试`;
+        } else {
+          errorMessage = axiosError.response?.data?.error || errorMessage;
+        }
       }
-      return { success: false, message: errorMessage };
+      return { success: false, message: errorMessage, waitSeconds };
     }
   }
 

@@ -39,8 +39,36 @@ export function handleApiError(error: AxiosError): void {
     localStorage.removeItem('auth_token');
     window.location.href = '/error?status=401';
   } else if (status === 404) {
+    // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
+    const currentPath = window.location.pathname;
+    console.log('[错误处理] 收到404错误, 当前路径:', currentPath);
+    if (currentPath === '/auth' || currentPath === '/') {
+      console.log('[错误处理] 在认证页面,404错误不跳转,显示错误提示');
+      console.error('资源未找到:', error.response.data);
+      return;
+    }
     window.location.href = '/error?status=404';
+  } else if (status === 400) {
+    // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
+    const currentPath = window.location.pathname;
+    console.log('[错误处理] 收到400错误, 当前路径:', currentPath);
+    if (currentPath === '/auth' || currentPath === '/') {
+      console.log('[错误处理] 在认证页面,400错误不跳转,显示错误提示');
+      console.error('请求错误:', error.response.data);
+      return;
+    }
+    // 不在认证页面的400错误也不跳转,让调用方处理
+    console.log('[错误处理] 400错误,不跳转');
+    return;
   } else if (status >= 500) {
+    // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
+    const currentPath = window.location.pathname;
+    console.log('[错误处理] 收到500+错误, 当前路径:', currentPath);
+    if (currentPath === '/auth' || currentPath === '/') {
+      console.log('[错误处理] 在认证页面,500错误不跳转,显示错误提示');
+      console.error('服务器错误:', error.response.data);
+      return;
+    }
     window.location.href = '/error?status=500';
   }
 }
