@@ -34,10 +34,10 @@ export function handleApiError(error: AxiosError): void {
       console.error('认证失败:', error.response.data);
       return;
     }
-    // 只有在已登录状态下的401才清除token并跳转
-    console.log('[错误处理] 不在认证页面,清除token并跳转到错误页');
+    // 只有在已登录状态下的01才清除token并跳转
+    console.log('[错误处理] 不在认证页面,清除token并跳转到登录页');
     localStorage.removeItem('auth_token');
-    window.location.href = '/error?status=401';
+    window.location.href = '/auth';
   } else if (status === 404) {
     // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;

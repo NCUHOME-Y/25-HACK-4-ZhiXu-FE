@@ -59,6 +59,22 @@ export async function generateStudyPlan(
   goal: string,
   difficulty: Difficulty
 ): Promise<StudyPlan> {
+  // 输入验证
+  const trimmedGoal = goal.trim();
+  if (!trimmedGoal) {
+    throw new Error('学习目标不能为空');
+  }
+  if (trimmedGoal.length < 2) {
+    throw new Error('学习目标至少需要2个字符');
+  }
+  if (trimmedGoal.length > 200) {
+    throw new Error('学习目标不能超过200个字符');
+  }
+  // 检查是否包含有意义的内容（至少包含中文、英文或数字）
+  if (!/[\u4e00-\u9fa5a-zA-Z0-9]/.test(trimmedGoal)) {
+    throw new Error('请输入有效的学习目标');
+  }
+
   // 将前端 difficulty 映射到后端的难度分数
   const difficultyMap: Record<Difficulty, number> = {
     easy: 50,
@@ -73,7 +89,7 @@ export async function generateStudyPlan(
     plan: string;
     error?: string;
   }>('/api/ai/generate-plan', {
-    flag: goal,
+    flag: trimmedGoal,
     preferences: difficultyMap[difficulty],
   });
 

@@ -89,6 +89,7 @@ export default function DataPage() {
     const loadStudyTrend = async () => {
       try {
         const data = await getStudyTrend(studyTrendPeriod);
+        console.log(`加载${studyTrendPeriod}学习趋势:`, data);
         const formattedData = data.map((item: StudyTrendData) => ({
           label: item.label,
           value: item.duration
@@ -142,8 +143,13 @@ export default function DataPage() {
     }).length;
     // 本月缺卡天数
     const missedDays = Math.max(0, now.getDate() - monthlyPunches);
+    
+    // 累计打卡天数（所有打卡记录）
+    const totalPunchedDays = punchedDates.length;
+    
     return {
-      punchedDays: monthlyPunches,
+      punchedDays: totalPunchedDays, // 累计打卡天数
+      monthlyPunches, // 本月打卡天数
       missedDays: missedDays,
       totalStudyTime: Math.floor(dailyElapsed / 60) // 转分钟
     };
@@ -182,31 +188,31 @@ export default function DataPage() {
   }, [tasks]);
 
   /**
-   * 格式化学习趋势数据，添加日期标签
+   * 格式化学习趋势数据，选择性显示标签
    */
   const formattedStudyTrendData = useMemo(() => {
+    if (studyTrendData.length === 0) return [];
+    
     if (studyTrendPeriod === 'weekly') {
-      // 周视图：7个数据点，每个都有标签
-      const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-      return studyTrendData.slice(0, 7).map((item, index) => ({
-        ...item,
-        label: weekdays[index] || ''
-      }));
+      // 周视图：显示所有7天的标签
+      return studyTrendData;
     } else if (studyTrendPeriod === 'monthly') {
-      // 月视图：30个数据点，只在特定位置显示标签
-      return studyTrendData.slice(0, 30).map((item, index) => {
-        const day = index + 1;
-        // 在第1、6、11、16、21、26、30天显示标签
-        const label = [1, 6, 11, 16, 21, 26, 30].includes(day) ? `${day}日` : '';
-        return { ...item, label };
+      // 月视图：只在特定位置显示标签（1、6、11、16、21、26、30天）
+      return studyTrendData.map((item, index) => {
+        const shouldShowLabel = [0, 5, 10, 15, 20, 25, 29].includes(index);
+        return {
+          ...item,
+          label: shouldShowLabel ? item.label : ''
+        };
       });
     } else if (studyTrendPeriod === 'yearly') {
-      // 年视图：180个数据点，每9天显示一个标签（共20个标签）
-      return studyTrendData.slice(0, 180).map((item, index) => {
-        const day = index + 1;
-        // 每9天显示一个标签：1, 10, 19, 28, 37...
-        const label = (day - 1) % 9 === 0 ? `${day}天` : '';
-        return { ...item, label };
+      // 年视图：每10个数据点显示一个标签
+      return studyTrendData.map((item, index) => {
+        const shouldShowLabel = index % 10 === 0;
+        return {
+          ...item,
+          label: shouldShowLabel ? item.label : ''
+        };
       });
     }
     return studyTrendData;

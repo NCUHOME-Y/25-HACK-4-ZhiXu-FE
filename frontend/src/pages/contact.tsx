@@ -202,31 +202,13 @@ export default function ContactPage() {
     const comment = newComment[postId]?.trim();
     if (!comment) return;
 
-    const newCommentObj: Comment = {
-      id: `c${Date.now()}`,
-      userId: 'me',
-      userName: '我',
-      userAvatar: '',
-      content: comment,
-      time: '刚刚',
-    };
-
-    // 先更新UI
-    setDisplayedPosts(displayedPosts.map(post => 
-      post.id === postId 
-        ? { ...post, comments: [...post.comments, newCommentObj] }
-        : post
-    ));
-
-    setNewComment({ ...newComment, [postId]: '' });
-    
     // 调用后端接口添加评论
     contactService.addComment({ postId, content: comment })
       .then(savedComment => {
-        // 用后端返回的评论替换临时评论
+        // 用后端返回的评论数据更新UI
         const adaptedComment: Comment = {
-          id: String(savedComment.id),
-          userId: String(savedComment.userId),
+          id: savedComment.id,
+          userId: savedComment.userId,
           userName: savedComment.userName,
           userAvatar: savedComment.userAvatar,
           content: savedComment.content,
@@ -234,21 +216,15 @@ export default function ContactPage() {
         };
         setDisplayedPosts(displayedPosts.map(post => {
           if (post.id === postId) {
-            const comments = post.comments.filter(c => c.id !== newCommentObj.id);
-            return { ...post, comments: [...comments, adaptedComment] };
+            return { ...post, comments: [...post.comments, adaptedComment] };
           }
           return post;
         }));
+        setNewComment({ ...newComment, [postId]: '' });
       })
       .catch(error => {
         console.error('添加评论失败:', error);
-        // 回滚UI
-        setDisplayedPosts(displayedPosts.map(post => {
-          if (post.id === postId) {
-            return { ...post, comments: post.comments.filter(c => c.id !== newCommentObj.id) };
-          }
-          return post;
-        }));
+        alert('评论失败，请重试');
       });
   };
 

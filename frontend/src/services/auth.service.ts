@@ -4,13 +4,25 @@ import type { User } from '../lib/types/types';
 class AuthService {
   isAuthenticated(): boolean {
     const token = localStorage.getItem('auth_token');
-    return !!token;
+    if (!token) {
+      return false;
+    }
+    
+    // 基本的token格式验证（JWT通常是三部分用.分隔）
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.warn('Token格式无效，清除token');
+      localStorage.removeItem('auth_token');
+      return false;
+    }
+    
+    return true;
   }
 
   // P1修复：调用后端获取用户信息
   async getCurrentUser(): Promise<User | null> {
     if (!this.isAuthenticated()) {
-      return null;
+      throw new Error('No valid token');
     }
     try {
       const response = await api.get<{ username: string; phone: string; id: number }>('/api/getUser');
@@ -21,7 +33,9 @@ class AuthService {
       };
     } catch (error) {
       console.error('获取用户信息失败:', error);
-      return null;
+      // 清除无效token
+      localStorage.removeItem('auth_token');
+      throw error;
     }
   }
 

@@ -133,21 +133,28 @@ const contactService = {
 
   // 添加评论
   addComment: async (params: AddCommentParams): Promise<PostComment> => {
-    await api.post<{ success: boolean }>('/api/commentOnPost', {
-      post_id: parseInt(params.postId),
+    const response = await api.post<{ 
+      success: boolean;
+      id: number;
+      userId: number;
+      userName: string;
+      userAvatar: string;
+      content: string;
+      createdAt: string;
+    }>('/api/commentOnPost', {
+      postId: parseInt(params.postId),
       content: params.content
     });
     
-    // 后端只返回 success，前端需要构造评论对象
-    // 注意：实际使用时应该重新获取评论列表或让后端返回完整对象
+    // 后端现在返回完整的评论数据
     return {
-      id: String(Date.now()),
+      id: String(response.id),
       postId: params.postId,
-      userId: 'current_user',
-      userName: '当前用户',
-      userAvatar: '',
-      content: params.content,
-      createdAt: new Date().toISOString()
+      userId: String(response.userId),
+      userName: response.userName,
+      userAvatar: response.userAvatar,
+      content: response.content,
+      createdAt: response.createdAt
     };
   },
 

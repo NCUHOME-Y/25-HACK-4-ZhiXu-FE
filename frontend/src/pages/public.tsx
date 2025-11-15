@@ -157,7 +157,7 @@ export default function PublicPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <nav className="bg-white sticky top-0 z-10 border-b">
+      <nav className="bg-white sticky top-0 z-10">
         <div className="px-4 py-4 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/chat-rooms')}>
             <ArrowLeft className="h-5 w-5" />

@@ -20,15 +20,18 @@ import type {
 export async function getMonthlyStats(): Promise<MonthlyStats> {
   const { api } = await import('./apiClient');
   try {
-    const [, monthDaka, learnTime] = await Promise.all([
-      api.get<{ total: number }>('/api/getdakatotal'),
-      api.get<{ count: number }>('/api/getmonthdaka'),
-      api.get<{ total_time: number }>('/api/getLearnTimemonly')
+    const [dakaTotal, monthDaka, learnTime] = await Promise.all([
+      api.get<{ daka_total: number }>('/api/getdakatotal'),
+      api.get<{ month_daka: number }>('/api/getmonthdaka'),
+      api.get<{ month_learntime: number }>('/api/getLearnTimemonly')
     ]);
+    
+    const punchedDays = monthDaka.month_daka || 0;
+    
     return {
-      punchedDays: monthDaka.count || 0,
-      missedDays: Math.max(0, new Date().getDate() - (monthDaka.count || 0)),
-      totalStudyTime: learnTime.total_time || 0,
+      punchedDays,
+      missedDays: Math.max(0, new Date().getDate() - punchedDays),
+      totalStudyTime: learnTime.month_learntime || 0,
     };
   } catch (error) {
     console.error('获取月度统计失败:', error);
@@ -98,11 +101,35 @@ export async function getStudyTrend(period: 'weekly' | 'monthly' | 'yearly'): Pr
       endpoint = '/api/getLearnTime180days';
     }
     
-    const response = await api.get<{ learn_times: { date: string; duration: number }[] }>(endpoint);
-    return response.learn_times.map(item => ({
-      label: item.date,
-      duration: item.duration
-    }));
+    const response = await api.get<{ learn_times: Array<{ id: number; user_id: number; duration: number; created_at: string }> }>(endpoint);
+    
+    // 后端返回的是 LearnTime 模型数组，包含 created_at 字段
+    if (!response.learn_times || response.learn_times.length === 0) {
+      return [];
+    }
+    
+    return response.learn_times.map((item, index) => {
+      // 格式化日期标签
+      const date = new Date(item.created_at);
+      let label = '';
+      
+      if (period === 'weekly') {
+        // 周视图：显示星期几
+        const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        label = weekdays[date.getDay()];
+      } else if (period === 'monthly') {
+        // 月视图：显示日期
+        label = `${date.getDate()}日`;
+      } else {
+        // 年视图：显示月-日
+        label = `${date.getMonth() + 1}-${date.getDate()}`;
+      }
+      
+      return {
+        label,
+        duration: item.duration || 0
+      };
+    });
   } catch (error) {
     console.error('获取学习趋势失败:', error);
     return [];

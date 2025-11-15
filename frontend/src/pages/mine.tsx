@@ -74,28 +74,37 @@ export default function MinePage() {
         
         const { api } = await import('../services/apiClient');
         const userData = await api.get<{ 
-          count: number; 
-          daka: number; 
-          month_learn_time: number;
-          name: string;
-          email: string;
-          head_show: number;
+          user: {
+            count: number; 
+            daka: number; 
+            month_learn_time: number;
+            name: string;
+            email: string;
+            head_show: number;
+          }
         }>('/api/getUser');
         
         console.log('我的页面-用户数据:', userData);
         
-        setPoints(userData.count || 0);
+        const user = userData.user;
+        setPoints(user.count || 0);
         
-        // 更新用户资料
+        // 更新用户资料（昵称和头像）
+        const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 6) ? user.head_show - 1 : 0;
+        const avatarPath = `/src/assets/images/screenshot_20251114_${['131601', '131629', '131937', '131951', '132014', '133459'][avatarIndex]}.png`;
+        
         setProfile(prev => ({
           ...prev,
-          nickname: userData.name || prev.nickname,
-          avatar: `/src/assets/images/screenshot_20251114_${['131601', '131629', '131937', '131951', '132014', '133459'][userData.head_show - 1]}.png`
+          nickname: user.name || prev.nickname,
+          avatar: avatarPath
         }));
+        
+        setNickname(user.name || '');
+        setAvatar(avatarPath);
         
         // 更新store中的打卡和学习时长数据
         useTaskStore.setState({
-          dailyElapsed: (userData.month_learn_time || 0) * 60 // 分钟转秒
+          dailyElapsed: (user.month_learn_time || 0) * 60 // 分钟转秒
         });
         
         // 加载打卡数据

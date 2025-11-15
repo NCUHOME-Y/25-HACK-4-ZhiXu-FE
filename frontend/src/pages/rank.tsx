@@ -50,6 +50,20 @@ export default function RankPage() {
     loadRankData();
   }, [activeTab]);
 
+  // 监听页面可见性，页面显示时重新加载数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // 页面变为可见时，重新加载排行榜数据
+        rankService.getRankList(activeTab).then(setRankUsers).catch(console.error);
+        rankService.getCurrentUserRank(activeTab).then(setCurrentUser).catch(console.error);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [activeTab]);
+
   // ========== 工具函数 ==========
   /**
    * 获取排名徽章图标

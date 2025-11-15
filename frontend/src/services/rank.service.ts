@@ -63,9 +63,10 @@ const rankService = {
       // 获取当前用户信息
       const userResponse = await api.get<{ user: { user_id: number; name: string; email: string; head_show: number; daka: number; flag_number: number; count: number; month_learn_time: number } }>('/api/getUser');
       
+      // 后端返回的数据结构是 { user: {...} }
       const user = userResponse.user;
       if (!user || !user.user_id) {
-        console.error('用户信息无效');
+        console.error('用户信息无效', userResponse);
         return null;
       }
       
