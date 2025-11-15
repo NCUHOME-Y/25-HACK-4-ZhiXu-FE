@@ -10,9 +10,6 @@ export interface CreateTaskPayload {
   dateRange?: unknown;
 }
 
-// 临时占位函数 - 避免重复 void 语句
-const mockEndpoint = (_endpoint: string, ..._args: unknown[]) => {};
-
 // ==================== 打卡相关 ====================
 /**
  * 获取已打卡日期列表
@@ -134,6 +131,23 @@ export async function updateTask(id: string, taskData: {
 }
 
 /**
+ * 删除任务
+ */
+export async function deleteTask(id: string): Promise<boolean> {
+  const { api } = await import('./apiClient');
+  try {
+    await api.delete('/api/deleteFlag', {
+      data: { id: parseInt(id) }
+    });
+    console.log('✅ 删除Flag成功:', id);
+    return true;
+  } catch (error) {
+    console.error('❌ 删除Flag失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 任务记一次（增加计数）
  * P1修复：调用后端完成Flag（已统一字段名）
  */
@@ -169,24 +183,41 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
 
 // ==================== 积分相关 ====================
 /**
- * 完成任务后增加积分
- * TODO: 接入后端 POST /user/points
+ * 添加用户积分
+ * P1修复：调用后端添加积分API
  */
 export async function addUserPoints(taskId: string, points: number): Promise<{ success: boolean; totalPoints: number }> {
-  mockEndpoint('/user/points', taskId, points);
-  return { success: true, totalPoints: 0 };
+  try {
+    const { api } = await import('./apiClient');
+    const response = await api.post<{ total_points: number }>('/api/addPoints', {
+      task_id: parseInt(taskId),
+      points: points
+    });
+    console.log('✅ 添加积分成功:', response);
+    return { success: true, totalPoints: response.total_points || 0 };
+  } catch (error) {
+    console.error('❗ 添加积分失败:', error);
+    throw error;
+  }
 }
 
 /**
  * 获取用户总积分
- * TODO: 接入后端 GET /user/points
+ * P1修复：调用后端API
  */
 export async function getUserPoints(): Promise<number> {
-  return 0;
+  try {
+    const { api } = await import('./apiClient');
+    const response = await api.get<{ points: number }>('/api/getPoints');
+    return response.points || 0;
+  } catch (error) {
+    console.error('获取积分失败:', error);
+    return 0;
+  }
 }
 
 // P1修复：切换Flag隐藏/公开状态（分享到社交页面）
-export async function toggleFlagVisibility(flagId: string, isHidden: boolean): Promise<boolean> {
+export async function toggleFlagVisibility(flagId: string, _isHidden: boolean): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.put('/api/updateFlagHide', { id: parseInt(flagId) });
   return true;

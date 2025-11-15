@@ -42,6 +42,13 @@ export interface Task {
   createdAt?: string // 创建时间
   startTime?: string // 计划起始时间
   endTime?: string // 计划结束时间
+  // AI生成Flag的扩展字段
+  startDate?: string // Flag有效期开始日期 (YYYY-MM-DD)
+  endDate?: string // Flag有效期结束日期 (YYYY-MM-DD)
+  dailyLimit?: number // 每日打卡上限
+  todayCount?: number // 今日已打卡次数（后端返回）
+  completedAt?: string // 完成时间戳（用于排序已完成列表）
+  lastTickTime?: number // 上次打卡时间戳（用于冷却检查）
 }
 
 // 打卡相关类型

@@ -20,7 +20,7 @@ import type {
 export async function getMonthlyStats(): Promise<MonthlyStats> {
   const { api } = await import('./apiClient');
   try {
-    const [dakaTotal, monthDaka, learnTime] = await Promise.all([
+    const [_dakaTotal, monthDaka, learnTime] = await Promise.all([
       api.get<{ daka_total: number }>('/api/getdakatotal'),
       api.get<{ month_daka: number }>('/api/getmonthdaka'),
       api.get<{ month_learntime: number }>('/api/getLearnTimemonly')
@@ -108,7 +108,7 @@ export async function getStudyTrend(period: 'weekly' | 'monthly' | 'yearly'): Pr
       return [];
     }
     
-    return response.learn_times.map((item, index) => {
+    return response.learn_times.map((item) => {
       // 格式化日期标签
       const date = new Date(item.created_at);
       let label = '';

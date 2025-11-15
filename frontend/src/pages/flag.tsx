@@ -110,7 +110,7 @@ export default function FlagPage() {
       }
       
       // 加载任务列表
-      const { fetchTasks, fetchPunchDates } = await import('../services/flag.service');
+      const { fetchTasks, fetchPunchDates, deleteTask } = await import('../services/flag.service');
       const [tasksData, punchData] = await Promise.all([
         fetchTasks(),
         fetchPunchDates()
@@ -119,11 +119,38 @@ export default function FlagPage() {
       console.log('加载到的任务数据:', tasksData);
       console.log('加载到的打卡数据:', punchData);
       
-      // 更新store
-      useTaskStore.setState({ 
-        tasks: tasksData,
-        punchedDates: punchData
+      // 自动清理过期且未完成的Flag
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayTime = today.getTime();
+      
+      const expiredFlags = tasksData.filter(task => {
+        if (task.completed) return false; // 已完成的不删除
+        if (!task.endDate) return false; // 没有结束日期的不删除
+        
+        const endDate = new Date(task.endDate);
+        endDate.setHours(0, 0, 0, 0);
+        return endDate.getTime() < todayTime; // 结束日期已过
       });
+      
+      if (expiredFlags.length > 0) {
+        console.log('🗑️ 检测到过期未完成的Flag:', expiredFlags.map(f => f.title));
+        // 批量删除过期Flag
+        await Promise.all(expiredFlags.map(flag => deleteTask(flag.id)));
+        // 重新加载任务列表
+        const updatedTasks = await fetchTasks();
+        useTaskStore.setState({ 
+          tasks: updatedTasks,
+          punchedDates: punchData
+        });
+        console.log('✅ 已自动清理', expiredFlags.length, '个过期Flag');
+      } else {
+        // 更新store
+        useTaskStore.setState({ 
+          tasks: tasksData,
+          punchedDates: punchData
+        });
+      }
     } catch (error) {
       console.error('加载数据失败:', error);
       // 如果是401错误，可能token过期，跳转到登录页
@@ -177,6 +204,43 @@ export default function FlagPage() {
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertHiding, setAlertHiding] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  // 冷却状态（用于实时更新UI）
+  const [cooldownStates, setCooldownStates] = useState<Record<string, number>>({});
+  
+  // 未完成Flag展开状态
+  const [showAllIncomplete, setShowAllIncomplete] = useState(false);
+
+  // ========== 副作用 ========== 
+  // 错误提示动画副作用
+  useEffect(() => {
+    const checkCooldowns = () => {
+      const now = Date.now();
+      const newStates: Record<string, number> = {};
+      
+      tasks.forEach(task => {
+        const cooldownKey = `flag_cooldown_${task.id}`;
+        const lastTickTimeStr = localStorage.getItem(cooldownKey);
+        
+        if (lastTickTimeStr) {
+          const lastTickTime = parseInt(lastTickTimeStr);
+          const timePassed = now - lastTickTime;
+          const cooldownMs = 10 * 60 * 1000; // 10分钟
+          
+          if (timePassed < cooldownMs) {
+            newStates[task.id] = Math.ceil((cooldownMs - timePassed) / 1000);
+          }
+        }
+      });
+      
+      setCooldownStates(newStates);
+    };
+    
+    checkCooldowns();
+    const interval = setInterval(checkCooldowns, 1000); // 每秒更新
+    
+    return () => clearInterval(interval);
+  }, [tasks]);
 
   // ========== 副作用 ========== 
   // 错误提示动画副作用
@@ -203,6 +267,36 @@ export default function FlagPage() {
       return () => clearTimeout(timer);
     }
   }, [alertVisible, alertHiding]);
+  
+  // 定时检查冷却状态
+  useEffect(() => {
+    const checkCooldowns = () => {
+      const now = Date.now();
+      const newStates: Record<string, number> = {};
+      
+      tasks.forEach(task => {
+        const cooldownKey = `flag_cooldown_${task.id}`;
+        const lastTickTimeStr = localStorage.getItem(cooldownKey);
+        
+        if (lastTickTimeStr) {
+          const lastTickTime = parseInt(lastTickTimeStr);
+          const timePassed = now - lastTickTime;
+          const cooldownMs = 10 * 60 * 1000; // 10分钟
+          
+          if (timePassed < cooldownMs) {
+            newStates[task.id] = Math.ceil((cooldownMs - timePassed) / 1000);
+          }
+        }
+      });
+      
+      setCooldownStates(newStates);
+    };
+    
+    checkCooldowns();
+    const interval = setInterval(checkCooldowns, 1000); // 每秒更新
+    
+    return () => clearInterval(interval);
+  }, [tasks]);
 
   // ========== 计算属性 ========== 
   /** 连续打卡天数 */
@@ -218,8 +312,25 @@ export default function FlagPage() {
     tasks.filter((t) => !t.completed).sort((a, b) => (a.priority || 3) - (b.priority || 3)),
     [tasks]
   );
-  /** 已完成flag列表 */
-  const completedTasks = useMemo(() => tasks.filter((t) => t.completed), [tasks]);
+  
+  /** 显示的未完成Flag（最多10个） */
+  const displayedIncompleteTasks = useMemo(() => 
+    showAllIncomplete ? incompleteTasks : incompleteTasks.slice(0, 10),
+    [incompleteTasks, showAllIncomplete]
+  );
+  /** 已完成flag列表 - 只显示最近10个 */
+  const completedTasks = useMemo(() => 
+    tasks
+      .filter((t) => t.completed)
+      .sort((a, b) => {
+        // 优先使用completedAt，其次createdAt
+        const aTime = a.completedAt || a.createdAt || '0';
+        const bTime = b.completedAt || b.createdAt || '0';
+        return bTime.localeCompare(aTime); // 降序，最新的在前
+      })
+      .slice(0, 10), // 只取前10个
+    [tasks]
+  );
   /** 已完成flag数量 */
   const completedCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
   /** 学习计时格式化 */
@@ -264,6 +375,52 @@ export default function FlagPage() {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
+    // ✨ 防刷机制 1: 检查打卡冷却时间（10分钟）
+    const now = Date.now();
+    const cooldownKey = `flag_cooldown_${taskId}`;
+    const lastTickTimeStr = localStorage.getItem(cooldownKey);
+    
+    if (lastTickTimeStr) {
+      const lastTickTime = parseInt(lastTickTimeStr);
+      const timePassed = now - lastTickTime;
+      const cooldownMs = 10 * 60 * 1000; // 10分钟冷却
+      
+      if (timePassed < cooldownMs) {
+        const remainingMin = Math.ceil((cooldownMs - timePassed) / 60000);
+        toast.warning(`请稍后再打卡，还需等待 ${remainingMin} 分钟 ⏱️`);
+        return;
+      }
+    }
+    
+    // 检查日期范围
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+    
+    if (task.startDate) {
+      const startDate = new Date(task.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      if (todayTime < startDate.getTime()) {
+        toast.error(`此Flag将于 ${startDate.toLocaleDateString()} 开始`);
+        return;
+      }
+    }
+    
+    if (task.endDate) {
+      const endDate = new Date(task.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      if (todayTime > endDate.getTime()) {
+        toast.error('此Flag已过期');
+        return;
+      }
+    }
+    
+    // TODO: 完整的每日限制检查需要后端返回todayCount字段
+    // if (task.dailyLimit && task.todayCount && task.todayCount >= task.dailyLimit) {
+    //   toast.warning(`今日打卡已达上限 (${task.dailyLimit}次)`);
+    //   return;
+    // }
+    
     // 防止重复点击
     const button = document.activeElement as HTMLButtonElement;
     if (button) button.disabled = true;
@@ -276,6 +433,9 @@ export default function FlagPage() {
       // 接入后端
       await tickTask(taskId);
       
+      // ✨ 防刷机制 2: 记录打卡时间
+      localStorage.setItem(cooldownKey, now.toString());
+      
       // 如果任务完成，计算并添加积分
       if (willComplete && task.points) {
         try {
@@ -284,6 +444,10 @@ export default function FlagPage() {
         } catch (error) {
           console.error('添加积分失败:', error);
         }
+      } else if (willComplete) {
+        toast.success('🎉 Flag已完成！');
+      } else {
+        toast.success('✅ 打卡成功！');
       }
     } catch (error) {
       console.error('更新任务失败:', error);
@@ -677,7 +841,7 @@ export default function FlagPage() {
             </Empty>
           ) : (
             <>
-              {incompleteTasks.map((t) => (
+              {displayedIncompleteTasks.map((t) => (
                 <Popover key={t.id}>
                   <PopoverTrigger asChild>
                     <Card className="p-3 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
@@ -736,11 +900,16 @@ export default function FlagPage() {
                           </Button>
                           <Button
                             size="icon"
-                            className="h-8 w-8 rounded-lg"
+                            className="h-8 w-8 rounded-lg relative"
                             onClick={() => handleTickTask(t.id)}
-                            title="记一次"
+                            title={cooldownStates[t.id] ? `冷却中: ${Math.floor(cooldownStates[t.id] / 60)}分${cooldownStates[t.id] % 60}秒` : "记一次"}
+                            disabled={!!cooldownStates[t.id]}
                           >
-                            <Check className="h-4 w-4" />
+                            {cooldownStates[t.id] ? (
+                              <span className="text-xs font-bold">{Math.floor(cooldownStates[t.id] / 60)}'</span>
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -825,6 +994,28 @@ export default function FlagPage() {
             </>
           )}
         </section>
+        
+        {/* 展开/折叠未完成Flag按钮 */}
+        {incompleteTasks.length > 10 && (
+          <div className="flex justify-center py-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAllIncomplete(!showAllIncomplete)}
+              className="text-xs"
+            >
+              {showAllIncomplete ? (
+                <>
+                  收起 ({incompleteTasks.length - 10} 个已隐藏)
+                </>
+              ) : (
+                <>
+                  展开更多 ({incompleteTasks.length - 10} 个)
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* 已完成flag列表 */}
         {completedTasks.length > 0 && (
@@ -832,7 +1023,7 @@ export default function FlagPage() {
             <div className="flex items-center justify-between pt-6">
               <h2 className="text-base font-semibold">已完成flag</h2>
               <div className="text-sm text-muted-foreground">
-                {completedTasks.length} 个
+                最近 {completedTasks.length} 个
               </div>
             </div>
             

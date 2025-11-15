@@ -75,7 +75,7 @@ export function ChartAreaDefault({
               tick={(props) => {
                 const { x, y, payload } = props;
                 // 只显示非空标签
-                if (!payload.value) return null;
+                if (!payload.value) return <text />; // 返回空元素而不是null
                 return (
                   <text x={x} y={y} dy={16} textAnchor="middle" fill="currentColor" className="text-xs">
                     {payload.value}
