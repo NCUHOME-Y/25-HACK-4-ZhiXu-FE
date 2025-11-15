@@ -28,7 +28,7 @@ export * from "./ui/tabs"
 
 // 导出布局组件
 export * from "./layout/bottomnav"
-export * from "./layout/search"
+export * from "./feature/search"
 
 // 导出功能组件
 export * from "./feature/login-form"

@@ -12,8 +12,22 @@ import {
   PopoverTrigger,
 } from "../ui/popover"
 
-export default function Calendar23() {
-  const [range, setRange] = React.useState<DateRange | undefined>(undefined)
+interface Calendar23Props {
+  value?: DateRange;
+  onChange?: (range: DateRange | undefined) => void;
+}
+
+export default function Calendar23({ value, onChange }: Calendar23Props) {
+  const [range, setRange] = React.useState<DateRange | undefined>(value)
+
+  React.useEffect(() => {
+    setRange(value)
+  }, [value])
+
+  const handleSelect = (newRange: DateRange | undefined) => {
+    setRange(newRange)
+    onChange?.(newRange)
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -22,10 +36,12 @@ export default function Calendar23() {
           <Button
             variant="outline"
             id="dates"
-            className="w-56 justify-between font-normal"
+            className="w-full justify-between font-normal"
           >
             {range?.from && range?.to
-              ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
+              ? `${range.from.toLocaleDateString('zh-CN')} - ${range.to.toLocaleDateString('zh-CN')}`
+              : range?.from
+              ? `${range.from.toLocaleDateString('zh-CN')}`
               : "选择日期范围"}
             <ChevronDownIcon />
           </Button>
@@ -35,9 +51,7 @@ export default function Calendar23() {
             mode="range"
             selected={range}
             captionLayout="dropdown"
-            onSelect={(range) => {
-              setRange(range)
-            }}
+            onSelect={handleSelect}
           />
         </PopoverContent>
       </Popover>

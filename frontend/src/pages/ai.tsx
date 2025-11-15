@@ -74,9 +74,9 @@ export default function AIPage() {
    * 难度配置选项
    */
   const difficulties: { value: Difficulty; label: string; color: string }[] = [
-    { value: 'easy', label: '轻松进度', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
+    { value: 'easy', label: '轻松难度', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
     { value: 'medium', label: '适度难度', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
-    { value: 'hard', label: '挑战进度', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
+    { value: 'hard', label: '挑战难度', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
   ];
 
   // ========== 事件处理器 ==========

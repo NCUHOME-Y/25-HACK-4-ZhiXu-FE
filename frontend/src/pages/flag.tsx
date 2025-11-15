@@ -49,7 +49,7 @@ import {
 import { useTaskStore } from '../lib/stores/stores';
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
-import type { FlagLabel, FlagPriority } from '../lib/types/types';
+import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
 import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
 
@@ -74,36 +74,43 @@ export default function FlagPage() {
         console.log('未登录，跳过加载数据');
         return;
       }
-      // 加载任务列表
-      const { fetchTasks, fetchPunchDates, deleteTask } = await import('../services/flag.service');
-      const [tasksData, punchData] = await Promise.all([
+      // 加载任务列表和其他数据
+      const { fetchTasks, fetchPunchDates, deleteTask, fetchFlagsWithDates, fetchPresetFlags, fetchExpiredFlags } = await import('../services/flag.service');
+      const [tasksData, punchData, flagsWithDatesData, presetFlagsData, expiredFlagsData] = await Promise.all([
         fetchTasks(),
-        fetchPunchDates()
+        fetchPunchDates(),
+        fetchFlagsWithDates(),
+        fetchPresetFlags(),
+        fetchExpiredFlags()
       ]);
       console.log('加载到的任务数据:', tasksData);
       console.log('加载到的打卡数据:', punchData);
+      console.log('加载到的有日期flag:', flagsWithDatesData);
+      console.log('加载到的预设flag:', presetFlagsData);
+      console.log('加载到的过期flag:', expiredFlagsData);
+      
       // 自动清理过期且未完成的Flag
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayTime = today.getTime();
-      const expiredFlags = tasksData.filter(task => {
+      const expiredFlagsToDelete = tasksData.filter(task => {
         if (task.completed) return false; // 已完成的不删除
         if (!task.endDate) return false; // 没有结束日期的不删除
         const endDate = new Date(task.endDate);
         endDate.setHours(0, 0, 0, 0);
         return endDate.getTime() < todayTime; // 结束日期已过
       });
-      if (expiredFlags.length > 0) {
-        console.log('🗑️ 检测到过期未完成的Flag:', expiredFlags.map(f => f.title));
+      if (expiredFlagsToDelete.length > 0) {
+        console.log('🗑️ 检测到过期未完成的Flag:', expiredFlagsToDelete.map(f => f.title));
         // 批量删除过期Flag
-        await Promise.all(expiredFlags.map(flag => deleteTask(flag.id)));
+        await Promise.all(expiredFlagsToDelete.map(flag => deleteTask(flag.id)));
         // 重新加载任务列表
         const updatedTasks = await fetchTasks();
         useTaskStore.setState({ 
           tasks: updatedTasks,
           punchedDates: punchData
         });
-        console.log('✅ 已自动清理', expiredFlags.length, '个过期Flag');
+        console.log('✅ 已自动清理', expiredFlagsToDelete.length, '个过期Flag');
       } else {
         // 更新store
         useTaskStore.setState({ 
@@ -111,6 +118,11 @@ export default function FlagPage() {
           punchedDates: punchData
         });
       }
+      
+      // 更新新增的状态
+      setFlagsWithDates(flagsWithDatesData);
+      setPresetFlags(presetFlagsData);
+      setExpiredFlags(expiredFlagsData);
     } catch (error) {
       console.error('加载数据失败:', error);
       // 如果是401错误，可能token过期，跳转到登录页
@@ -158,7 +170,9 @@ export default function FlagPage() {
     label: 1 as FlagLabel,
     priority: 3 as FlagPriority,
     isPublic: false,
-    points: 0
+    points: 0,
+    startDate: '',
+    endDate: ''
   });
   const [showError, setShowError] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
@@ -171,6 +185,13 @@ export default function FlagPage() {
   
   // 未完成Flag展开状态
   const [showAllIncomplete, setShowAllIncomplete] = useState(false);
+  // 预设Flag展开状态
+  const [showAllPreset, setShowAllPreset] = useState(false);
+  
+  // 新增：预设flag和过期flag状态
+  const [presetFlags, setPresetFlags] = useState<typeof tasks>([]);
+  const [expiredFlags, setExpiredFlags] = useState<typeof tasks>([]);
+  const [flagsWithDates, setFlagsWithDates] = useState<typeof tasks>([]);
 
   // ========== 副作用 ========== 
   // 错误提示动画副作用
@@ -226,6 +247,30 @@ export default function FlagPage() {
   // 定时检查冷却状态
   // 旧的每flag冷却逻辑已废弃，已用新全局冷却逻辑替代
 
+  // ========== 工具函数 ========== 
+  /**
+   * 判断 flag 是否在今日有效日期范围内
+   */
+  const isFlagActiveToday = useCallback((flag: Task) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+
+    if (flag.startDate) {
+      const start = new Date(flag.startDate);
+      start.setHours(0, 0, 0, 0);
+      if (todayTime < start.getTime()) return false; // 未到起始日期
+    }
+
+    if (flag.endDate) {
+      const end = new Date(flag.endDate);
+      end.setHours(0, 0, 0, 0);
+      if (todayTime > end.getTime()) return false; // 已过结束日期
+    }
+
+    return true; // 在有效范围内或无限期
+  }, []);
+
   // ========== 计算属性 ========== 
   /** 连续打卡天数 */
   const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
@@ -235,10 +280,12 @@ export default function FlagPage() {
   const todayStr = useMemo(() => formatDateYMD(new Date()), []);
   /** 今日是否已打卡 */
   const isPunchedToday = punchedDates.includes(todayStr);
-  /** 未完成flag列表，按优先级升序 */
+  /** 未完成flag列表，按优先级升序，且过滤只显示今日有效的 flag */
   const incompleteTasks = useMemo(() =>
-    tasks.filter((t) => !t.completed).sort((a, b) => (a.priority || 3) - (b.priority || 3)),
-    [tasks]
+    tasks
+      .filter((t) => !t.completed && isFlagActiveToday(t))
+      .sort((a, b) => (a.priority || 3) - (b.priority || 3)),
+    [tasks, isFlagActiveToday]
   );
   
   /** 显示的未完成Flag（最多6个） */
@@ -273,6 +320,19 @@ export default function FlagPage() {
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  /**
+   * 获取 flag 日期状态显示文本
+   */
+  const getFlagDateStatus = (flag: Task) => {
+    // 只显示 YYYY-MM-DD，不显示时分秒
+    const format = (d?: string) => d ? formatDateYMD(new Date(d)) : '';
+    if (!flag.startDate && !flag.endDate) return '无限期';
+    if (flag.startDate && flag.endDate) return `${format(flag.startDate)} ~ ${format(flag.endDate)}`;
+    if (flag.startDate) return `开始：${format(flag.startDate)}`;
+    if (flag.endDate) return `截止：${format(flag.endDate)}`;
+    return '无限期';
   };
 
   /**
@@ -321,17 +381,17 @@ export default function FlagPage() {
     // 只保留最近1分钟内的完成记录
     completeTimes = completeTimes.filter(t => now - t < 60 * 1000);
     // 判断是否触发冷却
-    if (completeTimes.length >= 2) {
-      // 本次为第3个，触发10分钟冷却
-      localStorage.setItem('flag_global_cooldown_until', String(now + 10 * 60 * 1000));
-      localStorage.setItem(completeTimesKey, JSON.stringify([]));
-      setGlobalCooldown(10 * 60);
-      toast.warning('一分钟内完成3个flag，已进入10分钟冷却 ⏱️');
-      return;
-    }
-    // 记录本次完成时间
-    completeTimes.push(now);
-    localStorage.setItem(completeTimesKey, JSON.stringify(completeTimes));
+        // 记录本次完成时间
+        completeTimes.push(now);
+        localStorage.setItem(completeTimesKey, JSON.stringify(completeTimes));
+        
+        // 完成后再判断是否需要冷却（第三次完成后才冷却）
+        if (completeTimes.length >= 3) {
+          localStorage.setItem('flag_global_cooldown_until', String(now + 10 * 60 * 1000));
+          localStorage.setItem(completeTimesKey, JSON.stringify([]));
+          setGlobalCooldown(10 * 60);
+          toast.warning('一分钟内完成3个flag，已进入10分钟冷却 ⏱️');
+        }
     
     // 检查日期范围
     const today = new Date();
@@ -379,11 +439,11 @@ export default function FlagPage() {
       // 如果任务完成，计算并添加积分
       if (willComplete && task.points) {
         // 判断是否超过每日积分上限
-        if (dailyPoints >= 100) {
-          toast.success('今日通过flag已获得100积分，后续完成不再累计积分');
+        if (dailyPoints >= 150) {
+          toast.success('今日通过flag已获得150积分，后续完成不再累计积分');
         } else {
           // 本次积分
-          const addPoints = Math.min(task.points, 100 - dailyPoints);
+          const addPoints = Math.min(task.points, 150 - dailyPoints);
           try {
             const result = await addUserPoints(taskId, addPoints);
             console.log('✅ 积分添加结果:', result);
@@ -494,8 +554,12 @@ export default function FlagPage() {
         label: newTask.label,
         priority: newTask.priority,
         total: newTask.total || 1,
-        isPublic: newTask.isPublic
+        isPublic: newTask.isPublic,
+        startDate: newTask.startDate,
+        endDate: newTask.endDate
       });
+      // 编辑后立即刷新数据
+      await loadData();
     } else {
       // 如果没有设置积分，自动计算
       const { calculateTaskCompletionPoints } = await import('../lib/helpers/points-system');
@@ -553,10 +617,14 @@ export default function FlagPage() {
         total: newTask.total,
         label: String(newTask.label),  // 数字转字符串，service层会转换为中文名称
         priority: newTask.priority,
-        points: newTask.points
+        points: newTask.points,
+        startDate: newTask.startDate,
+        endDate: newTask.endDate
       });
     }
     closeDrawer();
+    // 创建后立即刷新数据，确保预设flag列表更新
+    await loadData();
   };
 
   /**
@@ -602,7 +670,9 @@ export default function FlagPage() {
       label: 1 as FlagLabel,
       priority: 3 as FlagPriority,
       isPublic: false,
-      points: 0
+      points: 0,
+      startDate: '',
+      endDate: ''
     });
     setEditingTaskId(null);
     setShowError(false);
@@ -621,7 +691,9 @@ export default function FlagPage() {
       label: task.label || 1,
       priority: task.priority || 3,
       isPublic: task.isPublic || false,
-      points: task.points || 0
+      points: task.points || 0,
+      startDate: task.startDate || '',
+      endDate: task.endDate || ''
     });
     setOpenDrawer(true);
   };
@@ -702,6 +774,25 @@ export default function FlagPage() {
                 const isPunched = punchedDates.includes(dateStr);
                 const isPastUnpunched = isPast && !isPunched;
                 
+                // 检查该日期是否在任何flag的日期范围内
+                const hasFlagDate = flagsWithDates.some(flag => {
+                  if (!flag.startDate) return false;
+                  const flagStartDate = new Date(flag.startDate);
+                  flagStartDate.setHours(0, 0, 0, 0);
+                  const dateTime = dateObj.getTime();
+                  
+                  // 检查是否在起止日期范围内
+                  if (dateTime < flagStartDate.getTime()) return false;
+                  
+                  if (flag.endDate) {
+                    const flagEndDate = new Date(flag.endDate);
+                    flagEndDate.setHours(0, 0, 0, 0);
+                    if (dateTime > flagEndDate.getTime()) return false;
+                  }
+                  
+                  return true;
+                });
+                
                 // 非本月日期完全隐藏
                 if (!isCurrentMonth) {
                   return (
@@ -724,7 +815,9 @@ export default function FlagPage() {
                     className={`relative ${isPastUnpunched ? 'text-slate-400' : 'text-black'} cursor-default pointer-events-none`}
                   >
                     <span>{children}</span>
-                    {isPunched && <span className="absolute left-1 right-1 bottom-1 h-[3px] rounded bg-yellow-400" />}
+                    {/* 绿杠（flag高亮）紧贴黄杠上方，且不重叠 */}
+                    {hasFlagDate && <span className="absolute left-1 right-1 bottom-2 h-[3px] rounded bg-green-500 z-10" />}
+                    {isPunched && <span className="absolute left-1 right-1 bottom-1 h-[3px] rounded bg-yellow-400 z-0" />}
                   </CalendarDayButton>
                 );
               },
@@ -870,9 +963,9 @@ export default function FlagPage() {
                         <div className="min-w-0 flex-1">
                           <div className="text-lg font-medium truncate mb-1">{t.title}</div>
                           {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 overflow-hidden">
                             {t.priority && (
-                              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded flex-shrink-0 ${
                                 t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
                                 t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
                                 t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
@@ -883,7 +976,7 @@ export default function FlagPage() {
                             )}
                             {t.label && (
                               <span 
-                                className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                                className="inline-block px-2 py-0.5 text-xs font-medium rounded flex-shrink-0"
                                 style={{ 
                                   backgroundColor: `${FLAG_LABELS[t.label].color}20`,
                                   color: FLAG_LABELS[t.label].color
@@ -893,11 +986,11 @@ export default function FlagPage() {
                               </span>
                             )}
                             {t.isPublic ? (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 flex-shrink-0">
                                 已分享
                               </span>
                             ) : (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 flex-shrink-0 truncate">
                                 未分享
                               </span>
                             )}
@@ -934,15 +1027,25 @@ export default function FlagPage() {
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-semibold text-base mb-1">{t.title}</h4>
+                        <div className="text-xs text-gray-500 mb-2">
+                          {getFlagDateStatus(t)}
+                        </div>
                         {t.detail && (
                           <p className="text-sm text-muted-foreground">{t.detail}</p>
                         )}
                       </div>
                       
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">进度</span>
-                          <span className="font-medium">{t.count}/{t.total} 次</span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">进度</span>
+                            <span className="font-medium">{t.count}/{t.total} 次</span>
+                          </div>
+                          <Progress 
+                            value={(t.count || 0) / (t.total || 1) * 100}
+                            indicatorColor="#2563eb"
+                            className="h-2"
+                          />
                         </div>
                         
                         {t.priority && (
@@ -1032,6 +1135,154 @@ export default function FlagPage() {
           </div>
         )}
 
+        {/* 预设flag列表 */}
+        {presetFlags.length > 0 && (
+          <>
+            <div className="flex items-center justify-between pt-6">
+              <h2 className="text-base font-semibold text-gray-500">预设flag</h2>
+              <div className="text-sm text-muted-foreground">
+                未到起始日期
+              </div>
+            </div>
+            <section className="space-y-2">
+              {(showAllPreset ? presetFlags : presetFlags.slice(0, 6)).map((t) => (
+                <Popover key={t.id}>
+                  <PopoverTrigger asChild>
+                    <Card className="p-3 bg-gray-50 opacity-60 rounded-xl border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="flex flex-col items-center gap-2">
+                          <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#9ca3af" showLabel={true} />
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-200 text-gray-600 whitespace-nowrap">
+                            预设中
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-lg font-medium text-gray-600 truncate mb-1">{t.title}</div>
+                          {t.detail && <div className="text-xs text-gray-500 truncate mb-2">{t.detail}</div>}
+                          <div className="text-xs text-gray-500">
+                            {getFlagDateStatus(t)}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">{t.title}</h4>
+                        <div className="text-xs text-gray-500 mb-2">
+                          {getFlagDateStatus(t)}
+                        </div>
+                        {t.detail && (
+                          <p className="text-sm text-muted-foreground">{t.detail}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">进度</span>
+                            <span className="font-medium">{t.count || 0}/{t.total || 1} 次</span>
+                          </div>
+                          <Progress 
+                            value={(t.count || 0) / (t.total || 1) * 100}
+                            indicatorColor="#9ca3af"
+                            className="h-2"
+                          />
+                        </div>
+                        {t.priority && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">优先级</span>
+                            {/* 可复用优先级标签渲染 */}
+                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${t.priority === 1 ? 'bg-red-100 text-red-700' : t.priority === 2 ? 'bg-orange-100 text-orange-700' : t.priority === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                              {FLAG_PRIORITIES[t.priority]}
+                            </span>
+                          </div>
+                        )}
+                        {t.label && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">类型标签</span>
+                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700`}>
+                              {FLAG_LABELS[t.label]?.name}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">分享状态</span>
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${t.isPublic ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {t.isPublic ? '已分享' : '未分享'}
+                          </span>
+                        </div>
+                        {t.createdAt && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">创建时间</span>
+                            <span className="text-xs">{new Date(t.createdAt).toLocaleDateString('zh-CN')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ))}
+            </section>
+            
+            {/* 预设flag展开/折叠按钮 */}
+            {presetFlags.length > 6 && (
+              <div className="flex justify-center py-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAllPreset(!showAllPreset)}
+                  className="text-xs"
+                >
+                  {showAllPreset ? (
+                    <>
+                      收起 ({presetFlags.length - 6} 个已隐藏)
+                    </>
+                  ) : (
+                    <>
+                      展开更多 ({presetFlags.length - 6} 个)
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 过期flag列表 */}
+        {expiredFlags.length > 0 && (
+          <>
+            <div className="flex items-center justify-between pt-6">
+              <h2 className="text-base font-semibold text-gray-500">过期flag</h2>
+              <div className="text-sm text-muted-foreground">
+                已过结束日期
+              </div>
+            </div>
+            
+            <section className="space-y-2">
+              {expiredFlags.slice(0, 6).map((t) => (
+                <Card key={t.id} className="p-3 bg-gray-100 opacity-50 rounded-xl border-gray-200">
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#6b7280" showLabel={true} />
+                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-300 text-gray-700 whitespace-nowrap">
+                        已过期
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-lg font-medium text-gray-500 truncate mb-1">{t.title}</div>
+                      {t.detail && <div className="text-xs text-gray-400 truncate mb-2">{t.detail}</div>}
+                      <div className="text-xs text-gray-400">
+                        {getFlagDateStatus(t)}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </section>
+          </>
+        )}
+
         {/* 已完成flag列表 */}
         {completedTasks.length > 0 && (
           <>
@@ -1044,9 +1295,7 @@ export default function FlagPage() {
             
             <section className="space-y-2">
               {completedTasks.map((t) => (
-                <Popover key={t.id}>
-                  <PopoverTrigger asChild>
-                    <Card className="p-3 opacity-60 grayscale rounded-xl cursor-pointer hover:opacity-80 transition-opacity">
+                <Card key={t.id} className="p-3 bg-green-50 rounded-xl border-green-200">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#059669" showLabel={true} />
@@ -1055,11 +1304,11 @@ export default function FlagPage() {
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-lg font-medium truncate mb-1">{t.title}</div>
-                          {t.detail && <div className="text-xs text-muted-foreground truncate mb-2">{t.detail}</div>}
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="text-lg font-medium text-green-900 truncate mb-1">{t.title}</div>
+                          {t.detail && <div className="text-xs text-green-700 truncate mb-2">{t.detail}</div>}
+                          <div className="flex items-center gap-2 overflow-hidden">
                             {t.priority && (
-                              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded flex-shrink-0 ${
                                 t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
                                 t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
                                 t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
@@ -1070,7 +1319,7 @@ export default function FlagPage() {
                             )}
                             {t.label && (
                               <span 
-                                className="inline-block px-2 py-0.5 text-xs font-medium rounded"
+                                className="inline-block px-2 py-0.5 text-xs font-medium rounded flex-shrink-0"
                                 style={{ 
                                   backgroundColor: `${FLAG_LABELS[t.label].color}20`,
                                   color: FLAG_LABELS[t.label].color
@@ -1080,11 +1329,11 @@ export default function FlagPage() {
                               </span>
                             )}
                             {t.isPublic ? (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 flex-shrink-0">
                                 已分享
                               </span>
                             ) : (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600 flex-shrink-0 truncate">
                                 未分享
                               </span>
                             )}
@@ -1110,72 +1359,6 @@ export default function FlagPage() {
                         </div>
                       </div>
                     </Card>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold text-base mb-1">{t.title}</h4>
-                        {t.detail && (
-                          <p className="text-sm text-muted-foreground">{t.detail}</p>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">进度</span>
-                          <span className="font-medium text-green-600">{t.count}/{t.total} 次 (已完成)</span>
-                        </div>
-                        
-                        {t.priority && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">优先级</span>
-                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                              t.priority === 1 ? 'bg-red-100 text-red-700' : 
-                              t.priority === 2 ? 'bg-orange-100 text-orange-700' :
-                              t.priority === 3 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
-                              {FLAG_PRIORITIES[t.priority]}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {t.label && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">类型</span>
-                            <span 
-                              className="inline-block px-2 py-0.5 text-xs font-medium rounded"
-                              style={{ 
-                                backgroundColor: `${FLAG_LABELS[t.label].color}20`,
-                                color: FLAG_LABELS[t.label].color
-                              }}
-                            >
-                              {FLAG_LABELS[t.label].name}
-                            </span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">分享状态</span>
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                            t.isPublic 
-                              ? 'bg-purple-100 text-purple-700' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {t.isPublic ? '已分享' : '未分享'}
-                          </span>
-                        </div>
-                        
-                        {t.createdAt && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">创建时间</span>
-                            <span className="text-xs">{new Date(t.createdAt).toLocaleDateString('zh-CN')}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
               ))}
             </section>
           </>
@@ -1250,10 +1433,31 @@ export default function FlagPage() {
             </div>
 
             <div>
-              <Label htmlFor="flag-date">选择日期</Label>
+              <Label htmlFor="flag-date">选择日期（可选，不选就是无限期）</Label>
               <div className="mt-1">
-                <Calendar23 />
+                <Calendar23 
+                  value={{
+                    from: newTask.startDate ? new Date(newTask.startDate) : undefined,
+                    to: newTask.endDate ? new Date(newTask.endDate) : undefined
+                  }}
+                  onChange={(range) => {
+                    setNewTask((s) => ({
+                      ...s,
+                      startDate: range?.from ? formatDateYMD(range.from) : '',
+                      endDate: range?.to ? formatDateYMD(range.to) : ''
+                    }));
+                  }}
+                />
               </div>
+              {(newTask.startDate || newTask.endDate) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {newTask.startDate && newTask.endDate
+                    ? `起止日期：${newTask.startDate} 至 ${newTask.endDate}`
+                    : newTask.startDate
+                    ? `开始日期：${newTask.startDate}`
+                    : ''}
+                </p>
+              )}
             </div>
             
             <div>

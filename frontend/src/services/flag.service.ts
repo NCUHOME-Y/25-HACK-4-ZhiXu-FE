@@ -39,7 +39,13 @@ export async function togglePunch(date: string): Promise<boolean> {
 export async function fetchTasks(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
-  return response.flags || [];
+  // 映射后端字段到前端字段
+  const flags = (response.flags || []).map(flag => ({
+    ...flag,
+    startDate: (flag as any).start_time || flag.startDate,
+    endDate: (flag as any).end_time || flag.endDate
+  }));
+  return flags;
 }
 
 /**
@@ -79,6 +85,22 @@ export async function createTask(payload: CreateTaskPayload & {
     : 3; // 默认为一般
   
   // 前后端字段已统一，直接发送
+  // 日期格式转换：YYYY-MM-DD -> RFC3339 (如果有值)
+  let startTimeISO = '';
+  let endTimeISO = '';
+  
+  if (payload.startDate) {
+    const startDate = new Date(payload.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    startTimeISO = startDate.toISOString();
+  }
+  
+  if (payload.endDate) {
+    const endDate = new Date(payload.endDate);
+    endDate.setHours(23, 59, 59, 999);
+    endTimeISO = endDate.toISOString();
+  }
+  
   const backendPayload = {
     title: payload.title || '未命名任务',
     detail: payload.detail || '',
@@ -89,8 +111,8 @@ export async function createTask(payload: CreateTaskPayload & {
     points: payload.points || 0,
     daily_limit: payload.dailyLimit || 1,
     is_recurring: payload.isRecurring || false,
-    start_time: payload.startDate || new Date().toISOString(),
-    end_time: payload.endDate || payload.dateRange || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    start_time: startTimeISO,
+    end_time: endTimeISO,
   };
   
   console.log('📤 创建Flag请求:', backendPayload);
@@ -116,6 +138,8 @@ export async function updateTask(id: string, taskData: {
   priority: number;
   total: number;
   isPublic: boolean;
+  startDate?: string;
+  endDate?: string;
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.put('/api/updateFlag', { 
@@ -125,7 +149,9 @@ export async function updateTask(id: string, taskData: {
     label: taskData.label,
     priority: taskData.priority,
     total: taskData.total,
-    is_public: taskData.isPublic
+    is_public: taskData.isPublic,
+    start_date: taskData.startDate,
+    end_date: taskData.endDate
   });
   return true;
 }
@@ -306,4 +332,43 @@ export async function deleteFlagComment(commentId: string): Promise<boolean> {
     data: { flagcomment_id: commentId }
   });
   return true;
+}
+
+// 新增：获取有日期的flag（用于日历高亮）
+export async function fetchFlagsWithDates(): Promise<Task[]> {
+  const { api } = await import('./apiClient');
+  const response = await api.get<{ flags: Task[] }>('/api/flags/with-dates');
+  // 映射后端字段到前端字段
+  const flags = (response.flags || []).map(flag => ({
+    ...flag,
+    startDate: (flag as any).start_time || flag.startDate,
+    endDate: (flag as any).end_time || flag.endDate
+  }));
+  return flags;
+}
+
+// 新增：获取预设flag（未到起始日期）
+export async function fetchPresetFlags(): Promise<Task[]> {
+  const { api } = await import('./apiClient');
+  const response = await api.get<{ flags: Task[] }>('/api/flags/preset');
+  // 映射后端字段到前端字段
+  const flags = (response.flags || []).map(flag => ({
+    ...flag,
+    startDate: (flag as any).start_time || flag.startDate,
+    endDate: (flag as any).end_time || flag.endDate
+  }));
+  return flags;
+}
+
+// 新增：获取过期flag
+export async function fetchExpiredFlags(): Promise<Task[]> {
+  const { api } = await import('./apiClient');
+  const response = await api.get<{ flags: Task[] }>('/api/flags/expired');
+  // 映射后端字段到前端字段
+  const flags = (response.flags || []).map(flag => ({
+    ...flag,
+    startDate: (flag as any).start_time || flag.startDate,
+    endDate: (flag as any).end_time || flag.endDate
+  }));
+  return flags;
 }
