@@ -216,24 +216,33 @@ export default function FlagPage() {
   useEffect(() => {
     const checkCooldowns = () => {
       const now = Date.now();
-      const newStates: Record<string, number> = {};
+      const globalCooldownKey = 'global_flag_cooldown';
+      const lastTickTimeStr = localStorage.getItem(globalCooldownKey);
+      const cooldownMs = 10 * 60 * 1000; // 10分钟
       
-      tasks.forEach(task => {
-        const cooldownKey = `flag_cooldown_${task.id}`;
-        const lastTickTimeStr = localStorage.getItem(cooldownKey);
+      if (lastTickTimeStr) {
+        const lastTickTime = parseInt(lastTickTimeStr);
+        const timePassed = now - lastTickTime;
         
-        if (lastTickTimeStr) {
-          const lastTickTime = parseInt(lastTickTimeStr);
-          const timePassed = now - lastTickTime;
-          const cooldownMs = 10 * 60 * 1000; // 10分钟
+        if (timePassed < cooldownMs) {
+          // 全局冷却中，所有任务都显示冷却状态
+          const remainingSec = Math.ceil((cooldownMs - timePassed) / 1000);
+          const newStates: Record<string, number> = {};
           
-          if (timePassed < cooldownMs) {
-            newStates[task.id] = Math.ceil((cooldownMs - timePassed) / 1000);
-          }
+          // 为所有任务设置相同的冷却时间
+          tasks.forEach(task => {
+            newStates[task.id] = remainingSec;
+          });
+          
+          setCooldownStates(newStates);
+        } else {
+          // 冷却结束，清空所有冷却状态
+          setCooldownStates({});
         }
-      });
-      
-      setCooldownStates(newStates);
+      } else {
+        // 没有冷却记录，清空状态
+        setCooldownStates({});
+      }
     };
     
     checkCooldowns();
@@ -375,10 +384,10 @@ export default function FlagPage() {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
-    // ✨ 防刷机制 1: 检查打卡冷却时间（10分钟）
+    // ✨ 防刷机制 1: 全局打卡冷却时间（10分钟）- 防止通过创建多个Flag刷积分
     const now = Date.now();
-    const cooldownKey = `flag_cooldown_${taskId}`;
-    const lastTickTimeStr = localStorage.getItem(cooldownKey);
+    const globalCooldownKey = 'global_flag_cooldown'; // 全局冷却键
+    const lastTickTimeStr = localStorage.getItem(globalCooldownKey);
     
     if (lastTickTimeStr) {
       const lastTickTime = parseInt(lastTickTimeStr);
@@ -387,7 +396,7 @@ export default function FlagPage() {
       
       if (timePassed < cooldownMs) {
         const remainingMin = Math.ceil((cooldownMs - timePassed) / 60000);
-        toast.warning(`请稍后再打卡，还需等待 ${remainingMin} 分钟 ⏱️`);
+        toast.warning(`打卡冷却中，还需等待 ${remainingMin} 分钟 ⏱️`);
         return;
       }
     }
@@ -433,16 +442,35 @@ export default function FlagPage() {
       // 接入后端
       await tickTask(taskId);
       
-      // ✨ 防刷机制 2: 记录打卡时间
-      localStorage.setItem(cooldownKey, now.toString());
+      // ✨ 防刷机制 2: 记录全局打卡时间（前3个完成的Flag不触发冷却）
+      if (willComplete) {
+        // 获取已完成的Flag数量
+        const completedFlagsKey = 'completed_flags_count';
+        const completedCount = parseInt(localStorage.getItem(completedFlagsKey) || '0');
+        
+        // 只有从第4个完成的Flag开始才触发冷却
+        if (completedCount >= 3) {
+          localStorage.setItem(globalCooldownKey, now.toString());
+        }
+        
+        // 更新完成数量
+        localStorage.setItem(completedFlagsKey, (completedCount + 1).toString());
+      }
       
       // 如果任务完成，计算并添加积分
       if (willComplete && task.points) {
         try {
-          await addUserPoints(taskId, task.points);
+          const result = await addUserPoints(taskId, task.points);
+          console.log('积分添加结果:', result);
+          
+          // 同步更新本地积分显示（如果需要）
+          // 这里可以触发全局状态更新或重新加载用户数据
+          
           toast.success(`恭喜完成！获得 ${task.points} 积分 🎉`);
         } catch (error) {
           console.error('添加积分失败:', error);
+          // 不阻塞任务完成，只是提示积分添加失败
+          toast.warning('任务已完成，但积分添加失败');
         }
       } else if (willComplete) {
         toast.success('🎉 Flag已完成！');
@@ -451,7 +479,9 @@ export default function FlagPage() {
       }
     } catch (error) {
       console.error('更新任务失败:', error);
-      toast.error('更新失败，请重试');
+      // 恢复本地状态
+      tickTaskInStore(taskId); // 再次调用以撤销
+      toast.error('更新失败，请检查网络后重试');
     } finally {
       // 恢复按钮
       if (button) button.disabled = false;

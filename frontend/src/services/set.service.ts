@@ -51,7 +51,18 @@ export const updateProfile = async (nickname: string, bio: string, avatar: strin
 // P1修复：切换头像
 export const switchAvatar = async (avatarIndex: number): Promise<void> => {
   const { api } = await import('./apiClient');
-  await api.post('/api/swithhead', { number: avatarIndex });
+  console.log('🗄️ 请求切换头像:', { avatarIndex });
+  try {
+    const response = await api.post('/api/swithhead', { number: avatarIndex });
+    console.log('✅ 头像切换成功:', response);
+  } catch (error: any) {
+    console.error('❌ 头像切换失败:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    throw error;
+  }
 };
 
 export default {

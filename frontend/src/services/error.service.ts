@@ -47,7 +47,10 @@ export function handleApiError(error: AxiosError): void {
       console.error('资源未找到:', error.response.data);
       return;
     }
-    window.location.href = '/error?status=404';
+    // 404错误也不跳转，让调用方处理
+    console.log('[错误处理] 404错误,不跳转，让调用方处理');
+    console.error('资源未找到:', error.response.data);
+    return;
   } else if (status === 400) {
     // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;

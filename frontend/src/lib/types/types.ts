@@ -108,13 +108,6 @@ export interface StudyTrendData {
   duration: number // 学习时长（分钟）
 }
 
-// 打卡类型统计（主动/被动）
-export interface PunchTypeStats {
-  week: string // 周标签
-  active: number // 主动打卡次数
-  passive: number // 被动打卡次数
-}
-
 // 打卡记录扩展（包含打卡类型）
 export interface PunchRecordExtended extends PunchRecord {
   type: 'active' | 'passive' // 主动打卡或被动打卡

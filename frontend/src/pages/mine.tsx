@@ -88,9 +88,23 @@ export default function MinePage() {
         const user = userData.user;
         setPoints(user.count || 0);
         
-        // 更新用户资料（昵称和头像）
-        const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 6) ? user.head_show - 1 : 0;
-        const avatarPath = `/src/assets/images/screenshot_20251114_${['131601', '131629', '131937', '131951', '132014', '133459'][avatarIndex]}.png`;
+        // 更新用户资料（昵称和头像）- 支持12个头像（6个screenshot + 6个微信图片）
+        const avatarList = [
+          '/src/assets/images/screenshot_20251114_131601.png',
+          '/src/assets/images/screenshot_20251114_131629.png',
+          '/src/assets/images/screenshot_20251114_131937.png',
+          '/src/assets/images/screenshot_20251114_131951.png',
+          '/src/assets/images/screenshot_20251114_132014.png',
+          '/src/assets/images/screenshot_20251114_133459.png',
+          '/src/assets/images/微信图片_20251115203432_32_227.jpg',
+          '/src/assets/images/微信图片_20251115203433_33_227.jpg',
+          '/src/assets/images/微信图片_20251115203434_34_227.jpg',
+          '/src/assets/images/微信图片_20251115203434_35_227.jpg',
+          '/src/assets/images/微信图片_20251115203435_36_227.jpg',
+          '/src/assets/images/微信图片_20251115203436_37_227.jpg'
+        ];
+        const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 12) ? user.head_show - 1 : 0;
+        const avatarPath = avatarList[avatarIndex];
         
         setProfile(prev => ({
           ...prev,
@@ -158,15 +172,40 @@ export default function MinePage() {
       const token = localStorage.getItem('auth_token');
       if (!token) {
         console.log('未登录，使用默认徽章');
+        // 设置默认未解锁徽章
+        setBadges(allBadges.map((badge, index) => ({
+          id: index,
+          name: badge.name,
+          description: '待解锁',
+          isUnlocked: false
+        })));
         return;
       }
       
       const { getUserAchievements } = await import('../services/mine.service');
       const data = await getUserAchievements();
       console.log('成就数据:', data);
-      setBadges(data.achievements || []);
+      
+      // 如果后端返回空数组或无数据，使用默认未解锁徽章
+      if (!data.achievements || data.achievements.length === 0) {
+        setBadges(allBadges.map((badge, index) => ({
+          id: index,
+          name: badge.name,
+          description: '待解锁',
+          isUnlocked: false
+        })));
+      } else {
+        setBadges(data.achievements);
+      }
     } catch (error) {
       console.error('获取成就失败:', error);
+      // 错误时也使用默认未解锁徽章
+      setBadges(allBadges.map((badge, index) => ({
+        id: index,
+        name: badge.name,
+        description: '待解锁',
+        isUnlocked: false
+      })));
     }
   };
   
@@ -238,7 +277,7 @@ export default function MinePage() {
   };
 
   /**
-   * 预设头像列表 - 使用图片路径
+   * 预设头像列表 - 使用图片路径（包含原始6个screenshot和6个微信图片）
    */
   const avatarOptions = [
     '/src/assets/images/screenshot_20251114_131601.png',
@@ -246,7 +285,13 @@ export default function MinePage() {
     '/src/assets/images/screenshot_20251114_131937.png',
     '/src/assets/images/screenshot_20251114_131951.png',
     '/src/assets/images/screenshot_20251114_132014.png',
-    '/src/assets/images/screenshot_20251114_133459.png'
+    '/src/assets/images/screenshot_20251114_133459.png',
+    '/src/assets/images/微信图片_20251115203432_32_227.jpg',
+    '/src/assets/images/微信图片_20251115203433_33_227.jpg',
+    '/src/assets/images/微信图片_20251115203434_34_227.jpg',
+    '/src/assets/images/微信图片_20251115203434_35_227.jpg',
+    '/src/assets/images/微信图片_20251115203435_36_227.jpg',
+    '/src/assets/images/微信图片_20251115203436_37_227.jpg'
   ];
 
   // ========== 事件处理器 ==========
@@ -259,7 +304,8 @@ export default function MinePage() {
       await updateUserProfile({ 
         nickname, 
         bio, 
-        avatar 
+        avatar,
+        originalNickname: profile.nickname // 传递原始用户名
       });
       setProfile({ nickname, bio, avatar });
       setEditDialogOpen(false);
@@ -279,12 +325,19 @@ export default function MinePage() {
     if (avatarIndex !== -1) {
       try {
         const { switchAvatar } = await import('../services/set.service');
-        await switchAvatar(avatarIndex);
+        // 后端需要的1-12的索引，所以要+1
+        await switchAvatar(avatarIndex + 1);
         setAvatar(selectedAvatar);
+        setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
+        
+        // 重新加载用户数据以同步头像
+        await loadUserStats();
+        
+        toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
-        alert('切换头像失败，请重试');
+        toast.error('切换头像失败，请重试');
       }
     }
   };

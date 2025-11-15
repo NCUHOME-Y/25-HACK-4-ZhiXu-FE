@@ -16,9 +16,9 @@ export const getUserProfile = () =>
  * 更新用户个人信息
  * 注意：后端没有统一的profile更新接口，需要分别调用
  */
-export const updateUserProfile = async (data: Partial<User>) => {
-  // 更新用户名（逐个调用以便捕获具体错误）
-  if (data.nickname) {
+export const updateUserProfile = async (data: Partial<User> & { originalNickname?: string }) => {
+  // 更新用户名（只在用户名实际改变时调用，避免重复错误导致无法只改头像）
+  if (data.nickname && data.nickname !== data.originalNickname) {
     try {
       await api.put('/updateUsername', { new_name: data.nickname });
     } catch (error) {

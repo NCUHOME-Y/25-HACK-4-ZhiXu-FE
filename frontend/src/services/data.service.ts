@@ -3,7 +3,6 @@ import type {
   MonthlyStats,
   FlagStats,
   StudyTrendData,
-  PunchTypeStats,
   FlagLabel,
   // ApiResponse,
 } from '../lib/types/types';
@@ -136,27 +135,6 @@ export async function getStudyTrend(period: 'weekly' | 'monthly' | 'yearly'): Pr
   }
 }
 
-/**
- * 获取打卡类型统计（主动/被动打卡对比）
- * 返回最近5周的数据
- */
-export async function getPunchTypeStats(): Promise<PunchTypeStats[]> {
-  // TODO: 接入后端 API
-  // const response = await apiClient.get<ApiResponse<PunchTypeStats[]>>('/stats/punch-type');
-  // if (!response.data.success || !response.data.data) {
-  //   throw new Error(response.data.message || '获取打卡类型统计失败');
-  // }
-  // return response.data.data;
-
-  // 默认空数据 - 5周的空数据
-  return [
-    { week: '第1周', active: 0, passive: 0 },
-    { week: '第2周', active: 0, passive: 0 },
-    { week: '第3周', active: 0, passive: 0 },
-    { week: '第4周', active: 0, passive: 0 },
-    { week: '第5周', active: 0, passive: 0 }
-  ];
-}
 
 // P1修复:获取标签系统(Flag标签分类统计)
 export async function getFlagLabels(): Promise<Array<{ label: number; count: number; name: string }>> {

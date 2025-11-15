@@ -153,8 +153,20 @@ export async function deleteTask(id: string): Promise<boolean> {
  */
 export async function tickTask(id: string): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.put('/api/doneFlag', { id: parseInt(id) });
-  return true;
+  console.log('👍 请求打卡Flag:', { id: parseInt(id) });
+  try {
+    await api.put('/api/doneFlag', { id: parseInt(id) });
+    console.log('✅ Flag打卡成功');
+    return true;
+  } catch (error: any) {
+    console.error('❌ Flag打卡失败:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      id
+    });
+    throw error;
+  }
 }
 
 // ==================== 学习计时相关 ====================
@@ -189,14 +201,23 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
 export async function addUserPoints(taskId: string, points: number): Promise<{ success: boolean; totalPoints: number }> {
   try {
     const { api } = await import('./apiClient');
+    console.log('💰 请求添加积分:', { task_id: parseInt(taskId), points });
+    
     const response = await api.post<{ total_points: number }>('/api/addPoints', {
       task_id: parseInt(taskId),
       points: points
     });
+    
     console.log('✅ 添加积分成功:', response);
     return { success: true, totalPoints: response.total_points || 0 };
-  } catch (error) {
-    console.error('❗ 添加积分失败:', error);
+  } catch (error: any) {
+    console.error('❌ 添加积分失败:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      taskId,
+      points
+    });
     throw error;
   }
 }

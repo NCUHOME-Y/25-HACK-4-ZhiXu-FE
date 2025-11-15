@@ -1,23 +1,41 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, Clock, Flag, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, Flag, TrendingUp, Trophy } from 'lucide-react';
 import { 
   BottomNav, 
   Card, 
   ChartRadialStacked,
   setChartData,
   ChartAreaDefault, 
-  ChartBarMultiple,
   ChartPieLabel,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent
 } from '../components';
-import { getStudyTrend, getPunchTypeStats } from '../services';
+import { ProgressRing } from '../components/feature/ProgressRing';
+import { getStudyTrend } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
-import type { StudyTrendData, PunchTypeStats, FlagLabel } from '../lib/types/types';
+import { calculateMonthlyPunches } from '../lib/helpers/helpers';
+import type { StudyTrendData, FlagLabel } from '../lib/types/types';
 
+/**
+ * 打卡进度环形图组件
+ */
+const PunchChart = ({ monthlyPunches }: { monthlyPunches: number }) => {
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return (
+    <ProgressRing
+      current={monthlyPunches}
+      total={daysInMonth}
+      size={68}
+      color="hsl(var(--chart-2))"
+      labelTop={String(monthlyPunches)}
+      labelBottom="本月"
+    />
+  );
+};
 
 /**
  * 数据统计页面
@@ -30,8 +48,40 @@ export default function DataPage() {
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed); // 每日学习时长（秒）
   const [studyTrendPeriod, setStudyTrendPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly'); // 学习趋势周期
   const [studyTrendData, setStudyTrendData] = useState<Array<{ label: string; value: number }>>([]); // 学习趋势数据
-  const [punchTypeData, setPunchTypeData] = useState<Array<{ category: string; value1: number; value2: number }>>([]); // 打卡类型数据
   const [loading, setLoading] = useState(true); // 加载状态
+  
+  // 计算本月打卡天数
+  const monthlyPunches = useMemo(() => calculateMonthlyPunches(punchedDates), [punchedDates]);
+  
+  // 计算连续打卡天数
+  const streak = useMemo(() => {
+    if (punchedDates.length === 0) return 0;
+    const sorted = [...punchedDates].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let count = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const date = new Date(sorted[i]);
+      date.setHours(0, 0, 0, 0);
+      const expectedDate = new Date(today);
+      expectedDate.setDate(today.getDate() - i);
+      expectedDate.setHours(0, 0, 0, 0);
+      if (date.getTime() === expectedDate.getTime()) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }, [punchedDates]);
+
+  // 格式化学习时长
+  const formatDailyTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h > 0) return `${h}h${m}m`;
+    return `${m}min`;
+  };
 
   // P1修复：从后端加载标签统计数据和用户数据
   useEffect(() => {
@@ -102,30 +152,6 @@ export default function DataPage() {
     };
     loadStudyTrend();
   }, [studyTrendPeriod]);
-
-  /**
-   * 加载打卡类型统计数据
-   */
-  useEffect(() => {
-    const loadPunchTypeStats = async () => {
-      try {
-        const data = await getPunchTypeStats();
-        const formattedData = data.map((item: PunchTypeStats) => ({
-          category: item.week,
-          value1: item.active,
-          value2: item.passive
-        }));
-        setPunchTypeData(formattedData);
-        setLoading(false);
-        // TODO: 接入后端 await getPunchTypeStats()
-      } catch (err) {
-        console.error('加载打卡类型统计失败:', err);
-        setPunchTypeData([]);
-        setLoading(false);
-      }
-    };
-    loadPunchTypeStats();
-  }, []);
 
 
   // ========== 计算属性 ========== 
@@ -306,6 +332,38 @@ export default function DataPage() {
           </Card>
         </section>
 
+        {/* 数据统计模块 - 从 Flag 页面移动过来 */}
+        <section className="px-4">
+          <h2 className="text-lg font-semibold mb-3">学习数据</h2>
+          <Card className="p-4">
+            <div className="grid grid-cols-3 gap-4">
+              {/* 连续打卡 */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
+                <Trophy className="h-7 w-7 text-amber-600 mb-2" />
+                <div className="text-xs text-muted-foreground mb-1">已连续坚持</div>
+                <div className="text-3xl font-bold text-amber-600">{streak}</div>
+                <div className="text-xs text-muted-foreground mt-1">天</div>
+              </div>
+              
+              {/* 本月打卡进度 */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
+                <Calendar className="h-7 w-7 text-blue-600 mb-2" />
+                <div className="text-xs text-muted-foreground mb-2">本月打卡进度</div>
+                <PunchChart monthlyPunches={monthlyPunches} />
+              </div>
+              
+              {/* 今日学习时长 */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
+                <Clock className="h-7 w-7 text-green-600 mb-2" />
+                <div className="text-xs text-muted-foreground mb-1">今日累计学习</div>
+                <div className="text-3xl font-bold text-green-600 tabular-nums">
+                  {formatDailyTime(dailyElapsed)}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </section>
+
         {/* Flag完成度 */}
         {flagStats && (
           <section className="px-4">
@@ -418,23 +476,6 @@ export default function DataPage() {
               </TabsContent>
             </Tabs>
           </Card>
-        </section>
-
-        {/* 打卡习惯 */}
-        <section className="px-4">
-          <h2 className="text-lg font-semibold mb-3">打卡习惯</h2>
-          <ChartBarMultiple 
-            data={punchTypeData}
-            title="打卡类型对比"
-            description="最近5周主动 vs 被动打卡"
-            value1Label="主动打卡"
-            value2Label="被动打卡"
-            showFooter={true}
-          />
-          <div className="mt-2 text-xs text-muted-foreground px-1">
-            <p>💡 主动打卡：在提醒时间前主动完成打卡</p>
-            <p>⏰ 被动打卡：收到提醒后才完成打卡</p>
-          </div>
         </section>
       </div>
       <BottomNav />
