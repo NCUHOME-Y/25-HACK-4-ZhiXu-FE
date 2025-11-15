@@ -50,30 +50,62 @@ export async function fetchTasks(): Promise<Task[]> {
  * P1修复：调用后端创建Flag（已统一字段名）
  */
 export async function createTask(payload: CreateTaskPayload & {
-  label?: string;
+  label?: number | string;
   priority?: number;
   points?: number;
+  dailyLimit?: number;     // 每日完成次数限制
+  startDate?: string;      // 开始日期
+  endDate?: string;        // 结束日期
+  isRecurring?: boolean;   // 是否循环任务
 }): Promise<Task> {
   const { api } = await import('./apiClient');
   
-  // label应该是数字类型（1-5）
-  const labelNum = parseInt(payload.label || '2') || 2;
+  // 统一转换label为数字类型（1-5）
+  let labelNum: number;
+  if (typeof payload.label === 'number') {
+    labelNum = payload.label;
+  } else if (typeof payload.label === 'string') {
+    labelNum = parseInt(payload.label) || 1;
+  } else {
+    labelNum = 1; // 默认为学习类
+  }
+  
+  // 确保label在有效范围内
+  if (labelNum < 1 || labelNum > 5) {
+    console.warn(`Invalid label: ${labelNum}, defaulting to 1`);
+    labelNum = 1;
+  }
+  
+  // 确保priority在有效范围内
+  const priorityNum = payload.priority && payload.priority >= 1 && payload.priority <= 4 
+    ? payload.priority 
+    : 3; // 默认为一般
   
   // 前后端字段已统一，直接发送
   const backendPayload = {
-    title: payload.title,
+    title: payload.title || '未命名任务',
     detail: payload.detail || '',
     is_public: false,
-    label: labelNum,  // 发送数字而不是字符串
-    priority: payload.priority || 1,
-    total: payload.total || 1,
+    label: labelNum,
+    priority: priorityNum,
+    total: payload.total && payload.total > 0 ? payload.total : 1,
     points: payload.points || 0,
-    start_time: new Date().toISOString(),
-    end_time: payload.dateRange || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    daily_limit: payload.dailyLimit || 1,
+    is_recurring: payload.isRecurring || false,
+    start_time: payload.startDate || new Date().toISOString(),
+    end_time: payload.endDate || payload.dateRange || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   };
   
-  const response = await api.post<{ flag: Task }>('/api/addFlag', backendPayload);
-  return response.flag;
+  console.log('📤 创建Flag请求:', backendPayload);
+  
+  try {
+    const response = await api.post<{ flag: Task }>('/api/addFlag', backendPayload);
+    console.log('✅ 创建Flag成功:', response.flag);
+    return response.flag;
+  } catch (error) {
+    console.error('❌ 创建Flag失败:', error);
+    throw error;
+  }
 }
 
 /**

@@ -109,18 +109,23 @@ export default function AuthPage() {
    * 发送验证码
    */
   const handleSendOTP = async () => {
-    const value = otpPhone.trim()
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    // 防止重复发送
+    if (sendingOTP || resendCooldown > 0) {
+      return;
+    }
+    
+    const value = otpPhone.trim();
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     
     if (!value) {
-      setAlertMessage("请先输入邮箱")
-      setShowAlertDialog(true)
-      return
+      setAlertMessage("请先输入邮箱");
+      setShowAlertDialog(true);
+      return;
     }
     if (!isValidEmail) {
-      setAlertMessage("请输入有效的邮箱地址")
-      setShowAlertDialog(true)
-      return
+      setAlertMessage("请输入有效的邮箱地址");
+      setShowAlertDialog(true);
+      return;
     }
     
     setSendingOTP(true)

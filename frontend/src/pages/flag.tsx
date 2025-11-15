@@ -100,45 +100,59 @@ export default function FlagPage() {
   const togglePunchTodayInStore = useTaskStore((s) => s.togglePunchToday);
   
   // P1修复：从后端加载任务和打卡数据
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // 检查是否登录
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          console.log('未登录，跳过加载数据');
-          return;
-        }
-        
-        // 加载任务列表
-        const { fetchTasks, fetchPunchDates } = await import('../services/flag.service');
-        const [tasksData, punchData] = await Promise.all([
-          fetchTasks(),
-          fetchPunchDates()
-        ]);
-        
-        console.log('加载到的任务数据:', tasksData);
-        console.log('加载到的打卡数据:', punchData);
-        
-        // 更新store
-        useTaskStore.setState({ 
-          tasks: tasksData,
-          punchedDates: punchData
-        });
-      } catch (error) {
-        console.error('加载数据失败:', error);
-        // 如果是401错误，可能token过期，跳转到登录页
-        if (error && typeof error === 'object' && 'response' in error) {
-          const axiosError = error as { response?: { status?: number } };
-          if (axiosError.response?.status === 401) {
-            console.log('Token过期，需要重新登录');
-            localStorage.removeItem('auth_token');
-            navigate('/auth');
-          }
+  const loadData = async () => {
+    try {
+      // 检查是否登录
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('未登录，跳过加载数据');
+        return;
+      }
+      
+      // 加载任务列表
+      const { fetchTasks, fetchPunchDates } = await import('../services/flag.service');
+      const [tasksData, punchData] = await Promise.all([
+        fetchTasks(),
+        fetchPunchDates()
+      ]);
+      
+      console.log('加载到的任务数据:', tasksData);
+      console.log('加载到的打卡数据:', punchData);
+      
+      // 更新store
+      useTaskStore.setState({ 
+        tasks: tasksData,
+        punchedDates: punchData
+      });
+    } catch (error) {
+      console.error('加载数据失败:', error);
+      // 如果是401错误，可能token过期，跳转到登录页
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 401) {
+          console.log('Token过期，需要重新登录');
+          localStorage.removeItem('auth_token');
+          navigate('/auth');
         }
       }
-    };
+    }
+  };
+  
+  useEffect(() => {
     loadData();
+  }, [navigate]);
+  
+  // 监听页面可见性，实时更新数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[Flag] 页面可见，重新加载数据');
+        loadData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [navigate]);
   const studying = useTaskStore((s) => s.studying);
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
@@ -359,10 +373,11 @@ export default function FlagPage() {
       });
     } else {
       // 如果没有设置积分，自动计算
-      const points = calculateTaskPoints({
+      const { calculateTaskCompletionPoints } = await import('../lib/helpers/points-system');
+      const points = calculateTaskCompletionPoints({
         total: newTask.total || 1,
         priority: newTask.priority || 3,
-        difficulty: 'medium'
+        label: newTask.label || 1
       });
       
       const created = { 
@@ -490,12 +505,26 @@ export default function FlagPage() {
    * 切换今日打卡状态
    */
   const togglePunchToday = async () => {
-    togglePunchTodayInStore();
-    // 接入后端
+    // 防止重复打卡
+    if (isPunchedToday) {
+      toast.info('今日已打卡，明天再来！');
+      return;
+    }
+    
     try {
+      togglePunchTodayInStore();
       await togglePunch(formatDateYMD(new Date()));
+      
+      // 计算打卡积分：基础分10 + 连续奖励（每7天+5）
+      const newStreak = streak + 1;
+      const basePoints = 10;
+      const bonusPoints = Math.floor(newStreak / 7) * 5;
+      const totalPoints = Math.min(basePoints + bonusPoints, 30); // 最高30分
+      
+      toast.success(`打卡成功！获得 ${totalPoints} 积分 🎉${bonusPoints > 0 ? ` (连续${newStreak}天奖励+${bonusPoints})` : ''}`);
     } catch (error) {
       console.error('打卡失败:', error);
+      toast.error('打卡失败，请重试');
     }
   };
 

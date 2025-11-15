@@ -1,5 +1,5 @@
-import { Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useState, useLayoutEffect } from 'react';
 import { authService } from '../services/auth.service';
 
 /**
@@ -7,37 +7,50 @@ import { authService } from '../services/auth.service';
  * 需要登录才能访问的页面
  */
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  // 立即进行同步检查，没有token直接返回登录重定向
-  const hasToken = authService.isAuthenticated();
-  
-  const [isChecking, setIsChecking] = useState(hasToken);
+  const location = useLocation();
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // 如果没有token，不需要异步验证
+  
+  // 使用 useLayoutEffect 在浏览器绘制前同步检查
+  useLayoutEffect(() => {
+    const hasToken = authService.isAuthenticated();
     if (!hasToken) {
-      setIsChecking(false);
+      console.log('[ProtectedRoute] 没有token，阻止渲染并重定向');
+      setShouldRedirect(true);
       setIsAuthenticated(false);
+      setIsChecking(false);
       return;
     }
-
+    
+    // 有token，继续异步验证
     const checkAuth = async () => {
-      // 调用后端API验证token是否真实有效
       try {
         const user = await authService.getCurrentUser();
-        setIsAuthenticated(!!user);
+        if (user) {
+          setIsAuthenticated(true);
+          setShouldRedirect(false);
+        } else {
+          setIsAuthenticated(false);
+          setShouldRedirect(true);
+        }
       } catch (error) {
-        console.error('验证token失败:', error);
+        console.error('[ProtectedRoute] 验证token失败:', error);
         setIsAuthenticated(false);
-        // token无效，清除
+        setShouldRedirect(true);
         localStorage.removeItem('auth_token');
       } finally {
         setIsChecking(false);
       }
     };
-
+    
     checkAuth();
-  }, [hasToken]);
+  }, [location.pathname]);
+  
+  // 如果需要重定向，立即返回Navigate，不渲染任何内容
+  if (shouldRedirect) {
+    return <Navigate to="/auth" replace />;
+  }
 
   // 显示加载状态
   if (isChecking) {

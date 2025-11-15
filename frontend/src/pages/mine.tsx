@@ -63,14 +63,13 @@ export default function MinePage() {
   const [badges, setBadges] = useState<Array<{id: number; isUnlocked: boolean}>>([]);
   
   // P1修复：从后端加载用户统计数据
-  useEffect(() => {
-    const loadUserStats = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          console.log('未登录，跳过加载数据');
-          return;
-        }
+  const loadUserStats = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('未登录，跳过加载数据');
+        return;
+      }
         
         const { api } = await import('../services/apiClient');
         const userData = await api.get<{ 
@@ -113,11 +112,28 @@ export default function MinePage() {
         console.log('我的页面-打卡数据:', punchData);
         useTaskStore.setState({ punchedDates: punchData });
         
-      } catch (error) {
-        console.error('加载用户统计失败:', error);
+    } catch (error) {
+      console.error('加载用户统计失败:', error);
+    }
+  };
+  
+  useEffect(() => {
+    loadUserStats();
+  }, []);
+  
+  // 监听页面可见性，实时更新数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[Mine] 页面可见，重新加载数据');
+        loadUserStats();
+        // 重新加载成就数据
+        loadAchievementsData();
       }
     };
-    loadUserStats();
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
   
   // 所有徽章配置
@@ -137,24 +153,25 @@ export default function MinePage() {
   ];
   
   // P1修复：加载用户成就系统
-  useEffect(() => {
-    const loadAchievements = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          console.log('未登录，使用默认徽章');
-          return;
-        }
-        
-        const { getUserAchievements } = await import('../services/mine.service');
-        const data = await getUserAchievements();
-        console.log('成就数据:', data);
-        setBadges(data.achievements || []);
-      } catch (error) {
-        console.error('获取成就失败:', error);
+  const loadAchievementsData = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('未登录，使用默认徽章');
+        return;
       }
-    };
-    loadAchievements();
+      
+      const { getUserAchievements } = await import('../services/mine.service');
+      const data = await getUserAchievements();
+      console.log('成就数据:', data);
+      setBadges(data.achievements || []);
+    } catch (error) {
+      console.error('获取成就失败:', error);
+    }
+  };
+  
+  useEffect(() => {
+    loadAchievementsData();
   }, []);
   
   /** 已获得徽章数 */

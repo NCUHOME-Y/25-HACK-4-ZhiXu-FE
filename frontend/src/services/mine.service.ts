@@ -71,16 +71,30 @@ export async function logout() {
   return { success: true };
 }
 
-// 获取用户成就/徽章系统（后端已统一格式）
+// 获取用户成就/徽章系统
+// 后端返回格式: {徽章名称: 0或1 }，0=未解锁，1=已解锁
 export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }> => {
-  const response = await api.get<{ 
-    achievements: Array<{ 
-      id: number; 
-      name: string; 
-      description: string;
-      isUnlocked: boolean;
-    }> 
-  }>('/api/getUserAchievement');
-  
-  return { achievements: response.achievements || [] };
+  try {
+    const response = await api.get<Record<string, number>>('/api/getUserAchievement');
+    
+    // 徽章名称映射
+    const badgeNames = [
+      '新手启程', '坚持不懈', '任务大师', '目标达成', '学习之星',
+      '效率达人', '专注大师', '早起鸟', '夜猫子', '完美主义', '全能选手', '待解锁'
+    ];
+    
+    // 转换后端数据格式
+    const achievements = Object.entries(response).map(([name, status], index) => ({
+      id: index,
+      name: badgeNames[index] || name,
+      description: `${name}成就`,
+      isUnlocked: status === 1
+    }));
+    
+    return { achievements };
+  } catch (error) {
+    console.error('获取成就失败:', error);
+    // 返回默认空数组
+    return { achievements: [] };
+  }
 };

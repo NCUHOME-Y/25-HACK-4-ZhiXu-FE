@@ -25,11 +25,11 @@ class AuthService {
       throw new Error('No valid token');
     }
     try {
-      const response = await api.get<{ username: string; phone: string; id: number }>('/api/getUser');
+      const response = await api.get<{ user: { user_id: number; name: string; email: string } }>('/api/getUser');
       return {
-        id: String(response.id),
-        name: response.username,
-        phone: response.phone,
+        id: String(response.user.user_id),
+        name: response.user.name,
+        phone: response.user.email,
       };
     } catch (error) {
       console.error('获取用户信息失败:', error);

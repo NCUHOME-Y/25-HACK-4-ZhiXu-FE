@@ -13,16 +13,35 @@ const apiClient = axios.create({
 });
 
 // 请求拦截器 - 添加认证 token
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // 响应拦截器 - 使用error.service处理错误
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 401错误：token无效或过期，立即清除并跳转
+    if (error.response?.status === 401) {
+      const currentPath = window.location.pathname;
+      // 如果不在认证页面，清除token并跳转
+      if (currentPath !== '/auth' && currentPath !== '/') {
+        console.log('[apiClient] 401错误，清除token并跳转到登录页');
+        localStorage.removeItem('auth_token');
+        window.location.href = '/auth';
+        return Promise.reject(error);
+      }
+    }
+    
     handleApiError(error);
     return Promise.reject(error);
   }

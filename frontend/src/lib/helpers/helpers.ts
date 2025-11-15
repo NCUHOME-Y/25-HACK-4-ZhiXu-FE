@@ -210,28 +210,24 @@ export const calculateTaskPoints = (params: {
   priority: 1 | 2 | 3 | 4;
   difficulty?: 'easy' | 'medium' | 'hard';
 }): number => {
-  const { total, priority, difficulty = 'medium' } = params;
+  const { total, priority } = params;
   
-  // 基础分数：根据难度
-  const basePoints: Record<string, number> = {
-    easy: 10,
-    medium: 20,
-    hard: 35,
+  // 使用新的积分系统 - 基础积分
+  const BASE_COMPLETE = 15;
+  
+  // 难度系数（根据优先级）
+  const diffMultiplier: Record<number, number> = {
+    1: 2.0,   // 急切
+    2: 1.6,   // 较急
+    3: 1.3,   // 一般
+    4: 1.0,   // 不急
   };
   
-  // 任务量系数：总数越多，积分越高
-  const volumeMultiplier = 1 + Math.log10(total);
-  
-  // 优先级系数：优先级越高（数字越小），积分越高
-  const priorityMultiplier: Record<number, number> = {
-    1: 1.5,  // 急切
-    2: 1.3,  // 较急
-    3: 1.1,  // 一般
-    4: 1.0,  // 不急
-  };
+  // 任务量系数：防止拆分任务刷分
+  const volumeMultiplier = 1 + Math.log10(total) * 0.2;
   
   const points = Math.round(
-    basePoints[difficulty] * volumeMultiplier * priorityMultiplier[priority]
+    BASE_COMPLETE * diffMultiplier[priority] * volumeMultiplier
   );
   
   return points;
