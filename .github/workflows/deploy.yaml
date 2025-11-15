@@ -1,0 +1,37 @@
+name: Build and Deploy To S3
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DIST_DIR: frontend/dist
+  BUCKET_NAME: 25-hack-4-fe
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          package-manager-cache: false
+
+      - name: Build dist
+        run: |
+          corepack enable
+          cd frontend
+          pnpm i
+          pnpm build
+
+      - name: Sync to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: https://s3.ncuos.com
+          AWS_MAX_ATTEMPTS: 10
+        run: |
+          aws s3 sync ${{ env.DIST_DIR }}/ s3://$BUCKET_NAME/ --delete
