@@ -8,9 +8,9 @@ import { scrollToBottom } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
 
 /**
- * 私聊页面
+ * 私聊发送页面
  */
-export default function PrivatePage() {
+export default function SendPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = location.state?.user || { id: '', name: '用户', avatar: '' };
@@ -21,6 +21,17 @@ export default function PrivatePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
+  // 验证是否有用户信息
+  useEffect(() => {
+    if (!user.id) {
+      console.error('❌ 没有用户信息,返回上一页');
+      alert('未选择聊天对象,请从消息列表选择用户');
+      navigate('/receive');
+    } else {
+      console.log('✅ 用户信息正常:', user);
+    }
+  }, [user.id, user, navigate]);
+
   useEffect(() => {
     const loadUser = async () => {
       const currentUser = await authService.getCurrentUser();
@@ -30,6 +41,66 @@ export default function PrivatePage() {
     };
     loadUser();
   }, []);
+
+  // 加载历史消息
+  useEffect(() => {
+    const loadHistoryMessages = async () => {
+      if (!currentUserId || !user.id) {
+        console.log('⏭️ 跳过加载历史消息，缺少用户信息:', { currentUserId, targetUserId: user.id });
+        return;
+      }
+      
+      try {
+        const token = authService.getToken();
+        if (!token) {
+          console.error('❌ 没有token，无法加载历史消息');
+          return;
+        }
+        
+        console.log('📡 开始加载历史消息...', { currentUserId, targetUserId: user.id });
+        const response = await fetch(
+          `http://192.168.12.88:8080/api/private-chat/history?target_user_id=${user.id}&limit=50`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📦 API返回数据:', data);
+          
+          if (data.messages && Array.isArray(data.messages)) {
+            const historyMessages: PrivateMessage[] = data.messages.map((msg: any) => ({
+              id: String(msg.id || msg.ID),
+              message: msg.content,
+              time: new Date(msg.created_at).toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }),
+              isMe: String(msg.from_user_id) === currentUserId,
+              avatar: String(msg.from_user_id) === currentUserId ? undefined : user.avatar,
+              userName: String(msg.from_user_id) === currentUserId ? '我' : user.name,
+            }));
+            
+            setMessages(historyMessages);
+            console.log('✅ 历史消息加载成功，共', historyMessages.length, '条');
+          } else {
+            console.log('ℹ️ 没有历史消息');
+          }
+        } else {
+          const errorText = await response.text();
+          console.error('❌ 加载历史消息失败:', response.status, errorText);
+        }
+      } catch (error) {
+        console.error('❌ 加载历史消息异常:', error);
+      }
+    };
+    
+    loadHistoryMessages();
+  }, [currentUserId, user.id, user.avatar, user.name]);
 
   useEffect(() => {
     scrollToBottom(messagesEndRef);
@@ -45,19 +116,24 @@ export default function PrivatePage() {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//localhost:8080/ws/chat?token=${token}`;
+    // 私聊使用相同的WebSocket端点，但不需要room_id参数
+    // 使用实际服务器IP地址，支持局域网访问
+    const wsUrl = `${protocol}//192.168.12.88:8080/ws/chat?token=${token}`;
     
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('私聊WebSocket连接已建立', { targetUserId: user.id });
+      console.log('✅ 私聊WebSocket连接已建立', { targetUserId: user.id });
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (String(data.from) === user.id || String(data.from) === currentUserId) {
+        console.log('📨 收到私聊消息:', data);
+        
+        // 只接收来自目标用户的消息（自己的消息已经在发送时显示）
+        if (String(data.from) === user.id && String(data.to) === currentUserId) {
           const newMessage: PrivateMessage = {
             id: `${data.from}-${Date.now()}`,
             message: data.content,
@@ -65,11 +141,13 @@ export default function PrivatePage() {
               hour: '2-digit', 
               minute: '2-digit' 
             }),
-            isMe: String(data.from) === currentUserId,
-            avatar: String(data.from) === currentUserId ? undefined : user.avatar,
-            userName: String(data.from) === currentUserId ? '我' : user.name,
+            isMe: false,
+            avatar: user.avatar,
+            userName: user.name,
           };
           setMessages((prev) => [...prev, newMessage]);
+        } else if (String(data.from) === currentUserId) {
+          console.log('⏭️ 跳过自己的私聊消息');
         }
       } catch (error) {
         console.error('解析私聊消息失败:', error);
@@ -105,9 +183,7 @@ export default function PrivatePage() {
     console.log('私聊WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
     
     if (wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(messageData));
-      console.log('私聊消息已发送');
-      
+      // 立即在本地显示
       const newMessage: PrivateMessage = {
         id: `${currentUserId}-${Date.now()}`,
         message: message.trim(),
@@ -119,6 +195,10 @@ export default function PrivatePage() {
         userName: '我',
       };
       setMessages((prev) => [...prev, newMessage]);
+      
+      // 发送到服务器
+      wsRef.current.send(JSON.stringify(messageData));
+      console.log('✅ 私聊消息已发送并显示:', messageData);
       setMessage('');
     } else {
       console.error('私聊WebSocket未连接，状态:', wsRef.current.readyState);

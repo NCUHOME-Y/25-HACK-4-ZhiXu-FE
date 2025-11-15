@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon, Plus } from 'lucide-react';
+import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon, Plus, Inbox } from 'lucide-react';
 import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea } from "../components";
 import contactService from '../services/contact.service';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
@@ -31,6 +31,7 @@ export default function ContactPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   // ========== 事件处理器 ==========
   /**
@@ -62,6 +63,50 @@ export default function ContactPage() {
       });
   }, [loading, hasMore, page]);
 
+  /**
+   * 检查是否有未读消息/评论
+   */
+  const checkUnreadMessages = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      
+      const user = JSON.parse(userStr);
+      const lastReadTime = localStorage.getItem(`lastReadTime_${user.id}`);
+      
+      if (!lastReadTime) {
+        setHasUnreadMessages(true);
+        return;
+      }
+
+      // 检查是否有新的私聊消息
+      const conversationsResponse = await contactService.getPrivateConversations();
+      const hasNewPrivateMsg = conversationsResponse?.conversations?.some((conv: any) => 
+        new Date(conv.last_message_at) > new Date(lastReadTime)
+      ) || false;
+
+      // 检查是否有新的评论
+      const postsResponse = await contactService.getAllPosts();
+      const posts = postsResponse?.data || [];
+      let hasNewComment = false;
+      
+      posts.forEach((post: any) => {
+        if (String(post.user_id) === String(user.id) && post.comments) {
+          post.comments.forEach((comment: any) => {
+            if (String(comment.userId) !== String(user.id) && 
+                new Date(comment.created_at) > new Date(lastReadTime)) {
+              hasNewComment = true;
+            }
+          });
+        }
+      });
+
+      setHasUnreadMessages(hasNewPrivateMsg || hasNewComment);
+    } catch (error) {
+      console.error('检查未读消息失败:', error);
+    }
+  };
+
   // ========== 副作用 ==========
   /**
    * 初始加载和搜索触发
@@ -72,6 +117,9 @@ export default function ContactPage() {
     setHasMore(true);
     setLoading(true);
     setError(null);
+    
+    // 检查未读消息
+    checkUnreadMessages();
     
     if (activeSearchQuery.trim()) {
       contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE })
@@ -301,25 +349,43 @@ export default function ContactPage() {
         </div>
 
         {/* 顶部导航模块 */}
-        <section className="grid grid-cols-2 gap-3 mb-4 px-4">
+        <section className="grid grid-cols-3 gap-3 mb-4 px-4">
           <Card 
-            className="p-6 flex items-center justify-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
+            className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
             onClick={() => navigate('/rank')}
           >
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-              <Trophy className="h-7 w-7 text-white" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+              <Trophy className="h-6 w-6 text-white" />
             </div>
-            <div className="text-xl font-bold">排行榜</div>
+            <div className="text-sm font-bold">排行榜</div>
           </Card>
           
           <Card 
-            className="p-6 flex items-center justify-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
+            className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
             onClick={() => navigate('/chat-rooms')}
           >
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="h-7 w-7 text-white" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <MessageCircle className="h-6 w-6 text-white" />
             </div>
-            <div className="text-xl font-bold">聊天室</div>
+            <div className="text-sm font-bold">聊天室</div>
+          </Card>
+          
+          <Card 
+            className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
+            onClick={() => {
+              setHasUnreadMessages(false);
+              navigate('/receive');
+            }}
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center flex-shrink-0">
+              <Inbox className="h-6 w-6 text-white" />
+            </div>
+            <div className="text-sm font-bold relative inline-block">
+              收到的消息/评论
+              {hasUnreadMessages && (
+                <div className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </div>
           </Card>
         </section>
 
@@ -411,7 +477,15 @@ export default function ContactPage() {
                       <Button 
                         size="sm"
                         className="w-full rounded-full h-8"
-                        onClick={() => navigate('/private', { state: { user } })}
+                        onClick={() => navigate('/send', { 
+                          state: { 
+                            user: {
+                              id: user.userId,  // 使用userId而不是id
+                              name: user.name,
+                              avatar: user.avatar
+                            }
+                          } 
+                        })}
                       >
                         <Send className="h-3 w-3 mr-1" />
                         发消息

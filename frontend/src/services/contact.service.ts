@@ -213,6 +213,16 @@ const contactService = {
     const response = await api.post<{ users: SearchUserResult[] }>('/api/searchUser', { username: query });
     return response.users || [];
   },
+
+  // 获取所有帖子（不分页）
+  getAllPosts: async () => {
+    return api.get<{ success: boolean; posts: Post[]; total: number }>('/api/getAllPosts');
+  },
+
+  // 获取私聊会话列表
+  getPrivateConversations: async () => {
+    return api.get<{ conversations: any[] }>('/api/private-chat/conversations');
+  },
 };
 
 export default contactService;

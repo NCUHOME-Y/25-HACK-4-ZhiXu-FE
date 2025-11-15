@@ -179,6 +179,7 @@ export const adaptPostToUser = (post: {
   createdAt?: string;
 }): import('../types/types').ContactUser => ({
   id: String(post.id || '0'),
+  userId: String(post.user_id || '0'),  // 添加用户ID映射
   name: post.userName || '用户',
   avatar: post.userAvatar || '',
   message: post.content || '',

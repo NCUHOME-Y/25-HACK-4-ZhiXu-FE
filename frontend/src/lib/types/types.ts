@@ -116,7 +116,8 @@ export interface PunchRecordExtended extends PunchRecord {
 // ========== 社交相关类型 ==========
 // 社交用户类型（联系页面使用）
 export interface ContactUser {
-  id: string;
+  id: string;          // 帖子ID
+  userId: string;      // 发帖人的用户ID
   name: string;        // 映射自 API 的 userName
   avatar: string;      // 映射自 API 的 userAvatar
   message: string;     // 映射自 API 的 content

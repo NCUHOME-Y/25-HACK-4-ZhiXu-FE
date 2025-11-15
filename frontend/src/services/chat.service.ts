@@ -53,7 +53,7 @@ class PrivateChatService {
     this.disconnect();
 
     this.currentTargetUserId = targetUserId;
-    const wsUrl = `ws://localhost:8080/ws/private-chat?target_user_id=${targetUserId}&token=${token}`;
+    const wsUrl = `ws://192.168.12.88:8080/ws/private-chat?target_user_id=${targetUserId}&token=${token}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
@@ -161,7 +161,7 @@ class PublicChatService {
     this.disconnect();
 
     // 修复：后端路由是 /ws/chat
-    const wsUrl = `ws://localhost:8080/ws/chat?token=${token}`;
+    const wsUrl = `ws://192.168.12.88:8080/ws/chat?token=${token}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

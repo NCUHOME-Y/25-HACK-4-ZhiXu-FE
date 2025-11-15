@@ -87,7 +87,8 @@ export default function PublicPage() {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//localhost:8080/ws/chat?room_id=${roomId}&token=${token}`;
+    // 使用实际服务器IP地址，支持局域网访问
+    const wsUrl = `${protocol}//192.168.12.88:8080/ws/chat?room_id=${roomId}&token=${token}`;
     
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -99,6 +100,14 @@ export default function PublicPage() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('📨 收到消息:', data);
+        
+        // 跳过自己发送的消息（因为已经在本地显示了）
+        if (String(data.from) === currentUserId) {
+          console.log('⏭️ 跳过自己的消息');
+          return;
+        }
+        
         const newMessage: ChatMessage = {
           id: `${data.from}-${Date.now()}`,
           userId: String(data.from),
@@ -109,7 +118,7 @@ export default function PublicPage() {
             hour: '2-digit', 
             minute: '2-digit' 
           }),
-          isMe: String(data.from) === currentUserId,
+          isMe: false,
         };
         setMessages((prev) => [...prev, newMessage]);
       } catch (error) {
@@ -146,8 +155,24 @@ export default function PublicPage() {
     console.log('WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
     
     if (wsRef.current.readyState === WebSocket.OPEN) {
+      // 立即在本地显示自己的消息
+      const newMessage: ChatMessage = {
+        id: `local-${Date.now()}`,
+        userId: currentUserId,
+        userName: '我',
+        avatar: '',
+        message: message.trim(),
+        time: new Date().toLocaleTimeString('zh-CN', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+        isMe: true,
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      
+      // 发送到服务器
       wsRef.current.send(JSON.stringify(messageData));
-      console.log('消息已发送');
+      console.log('✅ 消息已发送并显示');
       setMessage('');
     } else {
       console.error('WebSocket未连接，状态:', wsRef.current.readyState);

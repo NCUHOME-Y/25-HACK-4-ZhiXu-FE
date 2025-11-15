@@ -9,7 +9,8 @@ import MinePage from '../pages/mine';
 import SetPage from '../pages/set';
 import RankPage from '../pages/rank';
 import PublicPage from '../pages/public';
-import PrivatePage from '../pages/private';
+import SendPage from '../pages/send';
+import ReceivePage from '../pages/receive';
 import ChatRoomsPage from '../pages/chat-rooms';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -96,10 +97,26 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: '/private',
+    path: '/send',
     element: (
       <ProtectedRoute>
-        <PrivatePage />
+        <SendPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/receive',
+    element: (
+      <ProtectedRoute>
+        <ReceivePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/comments-received',
+    element: (
+      <ProtectedRoute>
+        <ReceivePage />
       </ProtectedRoute>
     ),
   },
