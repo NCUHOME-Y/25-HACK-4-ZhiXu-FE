@@ -60,7 +60,7 @@ export default function MinePage() {
   
   /** 积分数据 - 从后端API获取 */
   const [points, setPoints] = useState(0);
-  const [badges, setBadges] = useState<Array<{id: number; isUnlocked: boolean}>>([]);
+  const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
   
   // P1修复：从后端加载用户统计数据
   const loadUserStats = async () => {

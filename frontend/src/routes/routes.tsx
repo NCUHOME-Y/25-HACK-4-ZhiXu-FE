@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router-dom';
+import StartPage from '../pages/start';
 import AuthPage from '../pages/auth';
 import ErrorPage from '../pages/error';
 import FlagPage from '../pages/flag';
@@ -18,7 +19,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 export const routes: RouteObject[] = [
   {
     path: '/',
-    element: <AuthPage />,
+    element: <StartPage />,
   },
   {
     path: '/auth',

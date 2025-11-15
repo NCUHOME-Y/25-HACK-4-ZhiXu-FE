@@ -45,7 +45,7 @@ import {
 } from '../components';
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
-import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, calculateTaskPoints } from '../lib/helpers/helpers';
+import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { PunchChartProps, TaskRingProps, FlagLabel, FlagPriority } from '../lib/types/types';
 import contactService from '../services/contact.service';
@@ -159,7 +159,7 @@ export default function FlagPage() {
   const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
   const startStudy = useTaskStore((s) => s.startStudy);
   const stopStudy = useTaskStore((s) => s.stopStudy);
-  const increaseDailyElapsed = useTaskStore((s) => s.increaseDailyElapsed);
+  // const increaseDailyElapsed = useTaskStore((s) => s.increaseDailyElapsed); // 暂未使用
 
   // 本地 UI 状态
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);

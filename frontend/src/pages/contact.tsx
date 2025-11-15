@@ -87,7 +87,7 @@ export default function ContactPage() {
 
       // 检查是否有新的评论
       const postsResponse = await contactService.getAllPosts();
-      const posts = postsResponse?.data || [];
+      const posts = postsResponse?.posts || [];
       let hasNewComment = false;
       
       posts.forEach((post: any) => {
