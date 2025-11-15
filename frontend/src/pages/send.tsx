@@ -6,6 +6,7 @@ import { Separator } from "../components/ui/separator";
 import type { PrivateMessage } from '../lib/types/types';
 import { scrollToBottom } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
+import { API_BASE, makeWsUrl } from '../services/apiClient';
 
 /**
  * 私聊发送页面
@@ -59,7 +60,7 @@ export default function SendPage() {
         
         console.log('📡 开始加载历史消息...', { currentUserId, targetUserId: user.id });
         const response = await fetch(
-          `http://192.168.12.88:8080/api/private-chat/history?target_user_id=${user.id}&limit=50`,
+          `${API_BASE}/api/private-chat/history?target_user_id=${user.id}&limit=50`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -115,11 +116,8 @@ export default function SendPage() {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // 私聊使用相同的WebSocket端点，但不需要room_id参数
-    // 使用实际服务器IP地址，支持局域网访问
-    const wsUrl = `${protocol}//192.168.12.88:8080/ws/chat?token=${token}`;
-    
+    // 使用统一的 API_BASE / makeWsUrl 来生成 WS 地址
+    const wsUrl = makeWsUrl(`/ws/chat?token=${token}`);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

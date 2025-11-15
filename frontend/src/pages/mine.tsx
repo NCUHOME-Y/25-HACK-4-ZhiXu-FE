@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, UserPen, Settings, Trophy, Flame, Target, Star, MessageSquare, User } from 'lucide-react';
 import { 
@@ -135,23 +135,8 @@ export default function MinePage() {
     loadUserStats();
   }, []);
   
-  // 监听页面可见性，实时更新数据
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('[Mine] 页面可见，重新加载数据');
-        loadUserStats();
-        // 重新加载成就数据
-        loadAchievementsData();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-  
-  // 所有徽章配置
-  const allBadges = [
+  // 所有徽章配置 - 使用useMemo以避免每次渲染都重新创建
+  const allBadges = useMemo(() => [
     { id: 0, name: '首次完成', icon: Trophy, color: 'blue' },
     { id: 1, name: '7天连卡', icon: Flame, color: 'green' },
     { id: 2, name: '任务大师', icon: Trophy, color: 'yellow' },
@@ -164,10 +149,10 @@ export default function MinePage() {
     { id: 9, name: '夜猫子', icon: Star, color: 'cyan' },
     { id: 10, name: '完美主义', icon: Target, color: 'amber' },
     { id: 11, name: '全能选手', icon: Trophy, color: 'lime' },
-  ];
+  ], []);
   
-  // P1修复：加载用户成就系统
-  const loadAchievementsData = async () => {
+  // P1修复：加载用户成就系统（支持实时刷新）
+  const loadAchievementsData = useCallback(async () => {
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
@@ -184,10 +169,11 @@ export default function MinePage() {
       
       const { getUserAchievements } = await import('../services/mine.service');
       const data = await getUserAchievements();
-      console.log('成就数据:', data);
+      console.log('✅ 成就数据加载成功:', data);
       
       // 如果后端返回空数组或无数据，使用默认未解锁徽章
       if (!data.achievements || data.achievements.length === 0) {
+        console.log('后端返回空数据，使用默认徽章');
         setBadges(allBadges.map((badge, index) => ({
           id: index,
           name: badge.name,
@@ -195,10 +181,12 @@ export default function MinePage() {
           isUnlocked: false
         })));
       } else {
+        // 后端返回了12个成就数据
+        console.log(`✅ 加载了 ${data.achievements.length} 个成就`);
         setBadges(data.achievements);
       }
     } catch (error) {
-      console.error('获取成就失败:', error);
+      console.error('❌ 获取成就失败:', error);
       // 错误时也使用默认未解锁徽章
       setBadges(allBadges.map((badge, index) => ({
         id: index,
@@ -207,11 +195,26 @@ export default function MinePage() {
         isUnlocked: false
       })));
     }
-  };
+  }, [allBadges]);
   
   useEffect(() => {
     loadAchievementsData();
-  }, []);
+  }, [loadAchievementsData]);
+  
+  // 监听页面可见性，实时更新数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[Mine] 页面可见，重新加载数据');
+        loadUserStats();
+        // 重新加载成就数据
+        loadAchievementsData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [loadAchievementsData]);
   
   /** 已获得徽章数 */
   const achievedBadges = badges.filter(b => b.isUnlocked).length;
@@ -406,6 +409,13 @@ export default function MinePage() {
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="badges" className="border-none">
                 <div className="space-y-3">
+                  {/* 展开/收起按钮 - 放在顶部 */}
+                  <AccordionTrigger className="hover:no-underline p-0 pb-3">
+                    <span className="text-sm text-blue-600">
+                      查看全部徽章 ({totalBadges}个)
+                    </span>
+                  </AccordionTrigger>
+
                   {/* 前3个徽章 - 始终显示 */}
                   <div className="grid grid-cols-3 gap-4">
                     {displayBadges.slice(0, 3).map((badge) => {
@@ -420,7 +430,8 @@ export default function MinePage() {
                               <span className="text-xs text-center">{badge.isUnlocked ? badge.name : '待解锁'}</span>
                             </div>
                           </PopoverTrigger>
-                          {badge.isUnlocked && badge.description && (
+                          {/* 无论是否解锁都弹出说明 */}
+                          {badge.description && (
                             <PopoverContent>
                               <div className="space-y-2">
                                 <h4 className="font-semibold">{badge.name}</h4>
@@ -432,13 +443,6 @@ export default function MinePage() {
                       );
                     })}
                   </div>
-
-                  {/* 展开/收起按钮 */}
-                  <AccordionTrigger className="hover:no-underline p-0 pt-2">
-                    <span className="text-sm text-blue-600">
-                      查看全部徽章
-                    </span>
-                  </AccordionTrigger>
 
                   {/* 展开后显示的剩余徽章 */}
                   <AccordionContent>
@@ -455,7 +459,8 @@ export default function MinePage() {
                                 <span className="text-xs text-center">{badge.isUnlocked ? badge.name : '待解锁'}</span>
                               </div>
                             </PopoverTrigger>
-                            {badge.isUnlocked && badge.description && (
+                            {/* 无论是否解锁都弹出说明 */}
+                            {badge.description && (
                               <PopoverContent>
                                 <div className="space-y-2">
                                   <h4 className="font-semibold">{badge.name}</h4>

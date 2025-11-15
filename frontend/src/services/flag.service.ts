@@ -201,23 +201,48 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
 export async function addUserPoints(taskId: string, points: number): Promise<{ success: boolean; totalPoints: number }> {
   try {
     const { api } = await import('./apiClient');
-    console.log('💰 请求添加积分:', { task_id: parseInt(taskId), points });
     
-    const response = await api.post<{ total_points: number }>('/api/addPoints', {
-      task_id: parseInt(taskId),
-      points: points
+    // 问题2修复：确保points为数字类型
+    const pointsValue = typeof points === 'number' ? points : parseInt(String(points));
+    if (isNaN(pointsValue) || pointsValue <= 0) {
+      throw new Error(`无效的积分值: ${points}`);
+    }
+    
+    console.log('💰 请求添加积分:', { points: pointsValue, type: typeof pointsValue });
+    
+    // 问题1&3修复：使用正确的字段名(小写)和JSON结构
+    const response = await api.put<{ message: string; count: number }>('/api/addPoints', {
+      points: pointsValue
     });
     
-    console.log('✅ 添加积分成功:', response);
-    return { success: true, totalPoints: response.total_points || 0 };
+    console.log('✅ 添加积分成功:', { message: response.message, newCount: response.count });
+    return { success: true, totalPoints: response.count || 0 };
   } catch (error: any) {
-    console.error('❌ 添加积分失败:', {
+    // 问题4&9修复：详细的错误日志和提示
+    const errorDetails = {
       status: error.response?.status,
+      statusText: error.response?.statusText,
       data: error.response?.data,
       message: error.message,
       taskId,
-      points
-    });
+      points: pointsValue,
+      url: '/api/addPoints',
+      method: 'PUT'
+    };
+    
+    console.error('❌ 添加积分失败 - 详细信息:', errorDetails);
+    
+    // 根据错误类型给出具体提示
+    if (error.response?.status === 400) {
+      throw new Error('参数错误：请检查积分值是否有效');
+    } else if (error.response?.status === 401) {
+      throw new Error('未登录或登录已过期，请重新登录');
+    } else if (error.response?.status === 404) {
+      throw new Error('接口不存在：/api/addPoints');
+    } else if (error.response?.status === 500) {
+      throw new Error('服务器错误：积分添加失败');
+    }
+    
     throw error;
   }
 }

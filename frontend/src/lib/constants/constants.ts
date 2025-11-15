@@ -1,6 +1,8 @@
 // 环境变量
 export const ENV = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
+  // 支持两种变量：优先使用 VITE_API_BASE_URL（包含 /api 路径），
+  // 否则使用 VITE_API_BASE 并追加 `/api`，最后回退到本地默认值。
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.VITE_API_BASE ? `${import.meta.env.VITE_API_BASE}/api` : "http://localhost:8080/api"),
   APP_NAME: import.meta.env.VITE_APP_NAME || "App",
   DEBUG: import.meta.env.VITE_DEBUG === "true",
 } as const;

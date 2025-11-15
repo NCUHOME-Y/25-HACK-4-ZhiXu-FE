@@ -6,7 +6,7 @@ import { Separator } from "../components/ui/separator";
 import type { ChatMessage } from '../lib/types/types';
 import { scrollToBottom } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
-import { api } from '../services/apiClient';
+import { api, makeWsUrl } from '../services/apiClient';
 
 /**
  * 群聊室页面
@@ -86,10 +86,7 @@ export default function PublicPage() {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // 使用实际服务器IP地址，支持局域网访问
-    const wsUrl = `${protocol}//192.168.12.88:8080/ws/chat?room_id=${roomId}&token=${token}`;
-    
+    const wsUrl = makeWsUrl(`/ws/chat?room_id=${roomId}&token=${token}`);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

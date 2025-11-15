@@ -49,6 +49,7 @@ export default function DataPage() {
   const [studyTrendPeriod, setStudyTrendPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly'); // 学习趋势周期
   const [studyTrendData, setStudyTrendData] = useState<Array<{ label: string; value: number }>>([]); // 学习趋势数据
   const [loading, setLoading] = useState(true); // 加载状态
+  const [userPoints, setUserPoints] = useState(0); // 用户积分
   
   // 计算本月打卡天数
   const monthlyPunches = useMemo(() => calculateMonthlyPunches(punchedDates), [punchedDates]);
@@ -116,8 +117,10 @@ export default function DataPage() {
         
         // 加载用户统计数据
         const { api } = await import('../services/apiClient');
-        const userData = await api.get<{ month_learn_time: number }>('/api/getUser');
+        const userData = await api.get<{ month_learn_time: number; count: number }>('/api/getUser');
         console.log('用户学习时长:', userData.month_learn_time);
+        console.log('用户积分:', userData.count);
+        setUserPoints(userData.count || 0);
         useTaskStore.setState({
           dailyElapsed: (userData.month_learn_time || 0) * 60 // 分钟转秒
         });
@@ -332,24 +335,25 @@ export default function DataPage() {
           </Card>
         </section>
 
-        {/* 数据统计模块 - 从 Flag 页面移动过来 */}
+        {/* 数据统计模块 */}
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">学习数据</h2>
           <Card className="p-4">
-            <div className="grid grid-cols-3 gap-4">
-              {/* 连续打卡 */}
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
-                <Trophy className="h-7 w-7 text-amber-600 mb-2" />
-                <div className="text-xs text-muted-foreground mb-1">已连续坚持</div>
-                <div className="text-3xl font-bold text-amber-600">{streak}</div>
-                <div className="text-xs text-muted-foreground mt-1">天</div>
-              </div>
-              
-              {/* 本月打卡进度 */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* 打卡进度 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
                 <Calendar className="h-7 w-7 text-blue-600 mb-2" />
                 <div className="text-xs text-muted-foreground mb-2">本月打卡进度</div>
                 <PunchChart monthlyPunches={monthlyPunches} />
+              </div>
+              
+              {/* 今日获得积分 */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
+                <Trophy className="h-7 w-7 text-purple-600 mb-2" />
+                <div className="text-xs text-muted-foreground mb-1">今日获得积分</div>
+                <div className="text-3xl font-bold text-purple-600 tabular-nums">
+                  {userPoints}
+                </div>
               </div>
               
               {/* 今日学习时长 */}

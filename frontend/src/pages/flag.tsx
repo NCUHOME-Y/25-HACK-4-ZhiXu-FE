@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
+import { ProgressRing } from '../components/feature/ProgressRing';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Check, CheckCircle2, Plus, CheckSquare } from 'lucide-react';
+import { Pencil, Check, CheckCircle2, Plus, CheckSquare, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -42,49 +44,14 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  Progress,
 } from '../components';
-import { ProgressRing } from '../components/feature/ProgressRing';
 import { useTaskStore } from '../lib/stores/stores';
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
-import type { PunchChartProps, TaskRingProps, FlagLabel, FlagPriority } from '../lib/types/types';
+import type { FlagLabel, FlagPriority } from '../lib/types/types';
 import contactService from '../services/contact.service';
 import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
-
-
-/**
- * 打卡进度环形图组件
- * @param monthlyPunches 本月打卡天数
- */
-const PunchChart = ({ monthlyPunches }: PunchChartProps) => {
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  return (
-    <ProgressRing
-      current={monthlyPunches}
-      total={daysInMonth}
-      size={56}
-      color="hsl(var(--chart-2))"
-      labelTop={String(monthlyPunches)}
-      labelBottom="本月"
-    />
-  );
-};
-
-/**
- * 任务进度环组件
- * @param count 当前完成数
- * @param total 总数
- */
-const TaskRing = ({ count = 0, total = 1 }: TaskRingProps) => (
-  <ProgressRing
-    current={count}
-    total={total}
-    size={44}
-    color="hsl(var(--chart-1))"
-    showLabel={true}
-  />
-);
 
 
 export default function FlagPage() {
@@ -98,9 +65,8 @@ export default function FlagPage() {
   const tickTaskInStore = useTaskStore((s) => s.tickTask);
   const punchedDates = useTaskStore((s) => s.punchedDates);
   const togglePunchTodayInStore = useTaskStore((s) => s.togglePunchToday);
-  
   // P1修复：从后端加载任务和打卡数据
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // 检查是否登录
       const token = localStorage.getItem('auth_token');
@@ -108,31 +74,25 @@ export default function FlagPage() {
         console.log('未登录，跳过加载数据');
         return;
       }
-      
       // 加载任务列表
       const { fetchTasks, fetchPunchDates, deleteTask } = await import('../services/flag.service');
       const [tasksData, punchData] = await Promise.all([
         fetchTasks(),
         fetchPunchDates()
       ]);
-      
       console.log('加载到的任务数据:', tasksData);
       console.log('加载到的打卡数据:', punchData);
-      
       // 自动清理过期且未完成的Flag
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayTime = today.getTime();
-      
       const expiredFlags = tasksData.filter(task => {
         if (task.completed) return false; // 已完成的不删除
         if (!task.endDate) return false; // 没有结束日期的不删除
-        
         const endDate = new Date(task.endDate);
         endDate.setHours(0, 0, 0, 0);
         return endDate.getTime() < todayTime; // 结束日期已过
       });
-      
       if (expiredFlags.length > 0) {
         console.log('🗑️ 检测到过期未完成的Flag:', expiredFlags.map(f => f.title));
         // 批量删除过期Flag
@@ -163,11 +123,11 @@ export default function FlagPage() {
         }
       }
     }
-  };
+  }, [navigate]);
   
   useEffect(() => {
     loadData();
-  }, [navigate]);
+  }, [loadData]);
   
   // 监听页面可见性，实时更新数据
   useEffect(() => {
@@ -180,7 +140,7 @@ export default function FlagPage() {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [navigate]);
+  }, [loadData]);
   const studying = useTaskStore((s) => s.studying);
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
   const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
@@ -206,7 +166,8 @@ export default function FlagPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   // 冷却状态（用于实时更新UI）
-  const [cooldownStates, setCooldownStates] = useState<Record<string, number>>({});
+  // 全局冷却剩余秒数（冷却期间所有flag禁用）
+  const [globalCooldown, setGlobalCooldown] = useState<number>(0);
   
   // 未完成Flag展开状态
   const [showAllIncomplete, setShowAllIncomplete] = useState(false);
@@ -214,40 +175,25 @@ export default function FlagPage() {
   // ========== 副作用 ========== 
   // 错误提示动画副作用
   useEffect(() => {
-    const checkCooldowns = () => {
-      const now = Date.now();
-      const globalCooldownKey = 'global_flag_cooldown';
-      const lastTickTimeStr = localStorage.getItem(globalCooldownKey);
-      const cooldownMs = 10 * 60 * 1000; // 10分钟
-      
-      if (lastTickTimeStr) {
-        const lastTickTime = parseInt(lastTickTimeStr);
-        const timePassed = now - lastTickTime;
-        
-        if (timePassed < cooldownMs) {
-          // 全局冷却中，所有任务都显示冷却状态
-          const remainingSec = Math.ceil((cooldownMs - timePassed) / 1000);
-          const newStates: Record<string, number> = {};
-          
-          // 为所有任务设置相同的冷却时间
-          tasks.forEach(task => {
-            newStates[task.id] = remainingSec;
-          });
-          
-          setCooldownStates(newStates);
+    // 检查全局冷却状态
+    const checkGlobalCooldown = () => {
+      const cooldownKey = 'flag_global_cooldown_until';
+      const untilStr = localStorage.getItem(cooldownKey);
+      if (untilStr) {
+        const until = parseInt(untilStr);
+        const now = Date.now();
+        if (now < until) {
+          setGlobalCooldown(Math.ceil((until - now) / 1000));
         } else {
-          // 冷却结束，清空所有冷却状态
-          setCooldownStates({});
+          setGlobalCooldown(0);
+          localStorage.removeItem(cooldownKey);
         }
       } else {
-        // 没有冷却记录，清空状态
-        setCooldownStates({});
+        setGlobalCooldown(0);
       }
     };
-    
-    checkCooldowns();
-    const interval = setInterval(checkCooldowns, 1000); // 每秒更新
-    
+    checkGlobalCooldown();
+    const interval = setInterval(checkGlobalCooldown, 1000);
     return () => clearInterval(interval);
   }, [tasks]);
 
@@ -278,34 +224,7 @@ export default function FlagPage() {
   }, [alertVisible, alertHiding]);
   
   // 定时检查冷却状态
-  useEffect(() => {
-    const checkCooldowns = () => {
-      const now = Date.now();
-      const newStates: Record<string, number> = {};
-      
-      tasks.forEach(task => {
-        const cooldownKey = `flag_cooldown_${task.id}`;
-        const lastTickTimeStr = localStorage.getItem(cooldownKey);
-        
-        if (lastTickTimeStr) {
-          const lastTickTime = parseInt(lastTickTimeStr);
-          const timePassed = now - lastTickTime;
-          const cooldownMs = 10 * 60 * 1000; // 10分钟
-          
-          if (timePassed < cooldownMs) {
-            newStates[task.id] = Math.ceil((cooldownMs - timePassed) / 1000);
-          }
-        }
-      });
-      
-      setCooldownStates(newStates);
-    };
-    
-    checkCooldowns();
-    const interval = setInterval(checkCooldowns, 1000); // 每秒更新
-    
-    return () => clearInterval(interval);
-  }, [tasks]);
+  // 旧的每flag冷却逻辑已废弃，已用新全局冷却逻辑替代
 
   // ========== 计算属性 ========== 
   /** 连续打卡天数 */
@@ -322,9 +241,9 @@ export default function FlagPage() {
     [tasks]
   );
   
-  /** 显示的未完成Flag（最多10个） */
+  /** 显示的未完成Flag（最多6个） */
   const displayedIncompleteTasks = useMemo(() => 
-    showAllIncomplete ? incompleteTasks : incompleteTasks.slice(0, 10),
+    showAllIncomplete ? incompleteTasks : incompleteTasks.slice(0, 6),
     [incompleteTasks, showAllIncomplete]
   );
   /** 已完成flag列表 - 只显示最近10个 */
@@ -337,7 +256,7 @@ export default function FlagPage() {
         const bTime = b.completedAt || b.createdAt || '0';
         return bTime.localeCompare(aTime); // 降序，最新的在前
       })
-      .slice(0, 10), // 只取前10个
+      .slice(0, 6), // 只取前6个
     [tasks]
   );
   /** 已完成flag数量 */
@@ -381,25 +300,38 @@ export default function FlagPage() {
    * 任务记次
    */
   const handleTickTask = async (taskId: string) => {
+      // 每日积分上限逻辑
+      const todayDateStr = formatDateYMD(new Date());
+      const dailyPointsKey = `flag_daily_points_${todayDateStr}`;
+      const dailyPoints = parseInt(localStorage.getItem(dailyPointsKey) || '0');
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    
-    // ✨ 防刷机制 1: 全局打卡冷却时间（10分钟）- 防止通过创建多个Flag刷积分
-    const now = Date.now();
-    const globalCooldownKey = 'global_flag_cooldown'; // 全局冷却键
-    const lastTickTimeStr = localStorage.getItem(globalCooldownKey);
-    
-    if (lastTickTimeStr) {
-      const lastTickTime = parseInt(lastTickTimeStr);
-      const timePassed = now - lastTickTime;
-      const cooldownMs = 10 * 60 * 1000; // 10分钟冷却
-      
-      if (timePassed < cooldownMs) {
-        const remainingMin = Math.ceil((cooldownMs - timePassed) / 60000);
-        toast.warning(`打卡冷却中，还需等待 ${remainingMin} 分钟 ⏱️`);
-        return;
-      }
+    // 检查全局冷却
+    if (globalCooldown > 0) {
+      toast.warning(`冷却中，还需等待 ${Math.ceil(globalCooldown / 60)} 分钟 ⏱️`);
+      return;
     }
+    // 记录flag完成时间，判断是否触发冷却
+    const now = Date.now();
+    const completeTimesKey = 'flag_complete_times';
+    let completeTimes: number[] = [];
+    try {
+      completeTimes = JSON.parse(localStorage.getItem(completeTimesKey) || '[]');
+    } catch { completeTimes = []; }
+    // 只保留最近1分钟内的完成记录
+    completeTimes = completeTimes.filter(t => now - t < 60 * 1000);
+    // 判断是否触发冷却
+    if (completeTimes.length >= 2) {
+      // 本次为第3个，触发10分钟冷却
+      localStorage.setItem('flag_global_cooldown_until', String(now + 10 * 60 * 1000));
+      localStorage.setItem(completeTimesKey, JSON.stringify([]));
+      setGlobalCooldown(10 * 60);
+      toast.warning('一分钟内完成3个flag，已进入10分钟冷却 ⏱️');
+      return;
+    }
+    // 记录本次完成时间
+    completeTimes.push(now);
+    localStorage.setItem(completeTimesKey, JSON.stringify(completeTimes));
     
     // 检查日期范围
     const today = new Date();
@@ -442,35 +374,34 @@ export default function FlagPage() {
       // 接入后端
       await tickTask(taskId);
       
-      // ✨ 防刷机制 2: 记录全局打卡时间（前3个完成的Flag不触发冷却）
-      if (willComplete) {
-        // 获取已完成的Flag数量
-        const completedFlagsKey = 'completed_flags_count';
-        const completedCount = parseInt(localStorage.getItem(completedFlagsKey) || '0');
-        
-        // 只有从第4个完成的Flag开始才触发冷却
-        if (completedCount >= 3) {
-          localStorage.setItem(globalCooldownKey, now.toString());
-        }
-        
-        // 更新完成数量
-        localStorage.setItem(completedFlagsKey, (completedCount + 1).toString());
-      }
+      // ✨ 防刷机制已重构为一分钟内完成3个flag触发10分钟冷却，旧逻辑已移除
       
       // 如果任务完成，计算并添加积分
       if (willComplete && task.points) {
-        try {
-          const result = await addUserPoints(taskId, task.points);
-          console.log('积分添加结果:', result);
-          
-          // 同步更新本地积分显示（如果需要）
-          // 这里可以触发全局状态更新或重新加载用户数据
-          
-          toast.success(`恭喜完成！获得 ${task.points} 积分 🎉`);
-        } catch (error) {
-          console.error('添加积分失败:', error);
-          // 不阻塞任务完成，只是提示积分添加失败
-          toast.warning('任务已完成，但积分添加失败');
+        // 判断是否超过每日积分上限
+        if (dailyPoints >= 100) {
+          toast.success('今日通过flag已获得100积分，后续完成不再累计积分');
+        } else {
+          // 本次积分
+          const addPoints = Math.min(task.points, 100 - dailyPoints);
+          try {
+            const result = await addUserPoints(taskId, addPoints);
+            console.log('✅ 积分添加结果:', result);
+            // 更新本地积分累计
+            localStorage.setItem(dailyPointsKey, String(dailyPoints + addPoints));
+            // 问题8修复：积分更新后重新加载用户数据
+            try {
+              const { api } = await import('../services/apiClient');
+              const userData = await api.get<{ user: { count: number } }>('/api/getUser');
+              console.log('✅ 用户数据已刷新，最新积分:', userData.user.count);
+            } catch (refreshError) {
+              console.warn('⚠️ 刷新用户数据失败:', refreshError);
+            }
+            toast.success(`恭喜完成！获得 ${addPoints} 积分 🎉`);
+          } catch (error) {
+            console.error('❌ 添加积分失败:', error);
+            toast.warning('任务已完成，但积分添加失败');
+          }
         }
       } else if (willComplete) {
         toast.success('🎉 Flag已完成！');
@@ -709,12 +640,16 @@ export default function FlagPage() {
       togglePunchTodayInStore();
       await togglePunch(formatDateYMD(new Date()));
       
-      // 计算打卡积分：基础分10 + 连续奖励（每7天+5）
+      // 计算打卡积分：基础分20 + 连续奖励（满4天+5，满10天+10）
       const newStreak = streak + 1;
-      const basePoints = 10;
-      const bonusPoints = Math.floor(newStreak / 7) * 5;
-      const totalPoints = Math.min(basePoints + bonusPoints, 30); // 最高30分
-      
+      const basePoints = 20;
+      let bonusPoints = 0;
+      if (newStreak >= 10) {
+        bonusPoints = 10;
+      } else if (newStreak >= 4) {
+        bonusPoints = 5;
+      }
+      const totalPoints = basePoints + bonusPoints;
       toast.success(`打卡成功！获得 ${totalPoints} 积分 🎉${bonusPoints > 0 ? ` (连续${newStreak}天奖励+${bonusPoints})` : ''}`);
     } catch (error) {
       console.error('打卡失败:', error);
@@ -758,13 +693,29 @@ export default function FlagPage() {
             components={{
               DayButton: ({ children, modifiers, day, ...props }) => {
                 const dateObj = day.date;
+                const now = new Date();
+                const isCurrentMonth = dateObj.getMonth() === now.getMonth() && dateObj.getFullYear() === now.getFullYear();
                 const dateStr = formatDateYMD(dateObj);
                 const today = new Date();
                 const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                 const isPast = dateObj < startOfToday;
                 const isPunched = punchedDates.includes(dateStr);
                 const isPastUnpunched = isPast && !isPunched;
-
+                
+                // 非本月日期完全隐藏
+                if (!isCurrentMonth) {
+                  return (
+                    <CalendarDayButton
+                      day={day}
+                      modifiers={modifiers}
+                      {...props}
+                      className="invisible"
+                    >
+                      <span>{children}</span>
+                    </CalendarDayButton>
+                  );
+                }
+                
                 return (
                   <CalendarDayButton
                     day={day}
@@ -781,58 +732,92 @@ export default function FlagPage() {
           />
         </section>
 
-        {/* 打卡三模块 */}
-        <section className="grid grid-cols-4 gap-3 h-24">
+        {/* 打卡与计时模块 */}
+        <section className="grid grid-cols-2 gap-3">
+          {/* 打卡模块 */}
           <Card 
-            className={`col-span-1 px-2 py-3 flex flex-col items-center justify-center gap-1.5 transition-all border-transparent rounded-xl ${
-              isPunchedToday ? 'shadow-none pointer-events-none cursor-default' : 'cursor-pointer active:scale-[0.98]'
+            className={`p-3 flex flex-col justify-between gap-2 min-h-[120px] transition-all rounded-xl border-slate-200 shadow-sm ${
+              isPunchedToday 
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 cursor-default' 
+                : 'bg-gradient-to-br from-blue-50 to-cyan-50 cursor-pointer hover:shadow-md active:scale-[0.98]'
             }`}
             onClick={isPunchedToday ? undefined : togglePunchToday}
           >
-            <div className="text-xs font-medium text-center">每日打卡</div>
-            <div className="text-sm font-semibold text-center leading-tight">
-              今日<br />{isPunchedToday ? '已打卡' : '未打卡'}
-            </div>
-            {isPunchedToday && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />}
-          </Card>
-
-          <div className="col-span-2 px-2 py-2 flex flex-col justify-center gap-2 bg-white rounded-lg">
-            <div className="w-full flex items-center justify-between">
-              <div className="text-xs text-muted-foreground text-center leading-tight">已连续<br />坚持</div>
-              <div className="flex-shrink-0">
-                <PunchChart monthlyPunches={monthlyPunches} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">每日打卡</span>
               </div>
-              <div className="text-xs text-muted-foreground text-center leading-tight">今日累计<br />学习时长</div>
+              {isPunchedToday && (
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              )}
             </div>
             
-            <div className="w-full flex items-center justify-between px-1">
-              <div className="text-base font-bold">{streak}天</div>
-              <div className="text-base font-bold tabular-nums">
-                {formatDailyTime(dailyElapsed)}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">本月进度</span>
+                <span className={`font-semibold ${isPunchedToday ? 'text-green-600' : 'text-blue-600'}`}>
+                  {monthlyPunches}/{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()}天
+                </span>
+              </div>
+              <Progress 
+                value={(monthlyPunches / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * 100}
+                indicatorColor={isPunchedToday ? '#059669' : '#2563eb'}
+                className="h-2"
+              />
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">连续坚持</span>
+                <span className="font-bold text-amber-600">{streak}天</span>
               </div>
             </div>
-          </div>
+          </Card>
 
+          {/* 学习计时模块 */}
           <Card 
-            className={`col-span-1 px-2 py-2 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-[0.98] transition-all border-transparent ${
-              studying ? 'shadow-none' : ''
+            className={`p-3 flex flex-col justify-between gap-2 min-h-[120px] cursor-pointer transition-all rounded-xl border-slate-200 shadow-sm hover:shadow-md active:scale-[0.98] ${
+              studying 
+                ? 'bg-gradient-to-br from-orange-50 to-red-50' 
+                : 'bg-gradient-to-br from-purple-50 to-pink-50'
             }`}
             onClick={() => (studying ? stopStudy() : startStudy())}
           >
-            <div className="text-xs font-medium text-center leading-tight">学习计时</div>
-            {studying ? (
-              <div className="text-xl font-bold tabular-nums leading-tight">{minutes}:{seconds}</div>
-            ) : sessionElapsed > 0 ? (
-              <>
-                <div className="text-xs font-semibold leading-tight">学习中止</div>
-                <div className="text-[10px] text-muted-foreground leading-tight">本次学习时长:</div>
-                <div className={`font-bold tabular-nums leading-tight ${formatSessionTime(sessionElapsed).isLong ? 'text-xs' : 'text-base'}`}>
-                  {formatSessionTime(sessionElapsed).time}
-                </div>
-              </>
-            ) : (
-              <div className="text-sm font-semibold leading-tight">学习开始</div>
-            )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className={`h-4 w-4 ${studying ? 'text-orange-600' : 'text-purple-600'}`} />
+                <span className="text-sm font-semibold">学习计时</span>
+              </div>
+              {studying && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                </span>
+              )}
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                {studying ? '本次学习' : sessionElapsed > 0 ? '上次学习' : '今日累计'}
+              </div>
+              <div className={`font-bold tabular-nums ${
+                studying ? 'text-2xl text-orange-600' : 
+                sessionElapsed > 0 ? 'text-xl text-purple-600' : 
+                'text-xl text-purple-600'
+              }`}>
+                {studying 
+                  ? `${minutes}:${seconds}` 
+                  : sessionElapsed > 0 
+                    ? formatSessionTime(sessionElapsed).time
+                    : formatDailyTime(dailyElapsed).split(':').slice(0, 2).join(':')
+                }
+              </div>
+            </div>
+            
+            <div className={`text-xs font-medium text-center py-0.5 rounded-full ${
+              studying 
+                ? 'bg-orange-100 text-orange-700' 
+                : 'bg-purple-100 text-purple-700'
+            }`}>
+              {studying ? '点击停止' : sessionElapsed > 0 ? '点击继续' : '点击开始'}
+            </div>
           </Card>
         </section>
 
@@ -877,7 +862,7 @@ export default function FlagPage() {
                     <Card className="p-3 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
-                          <TaskRing count={t.count} total={t.total} />
+                          <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#2563eb" showLabel={true} />
                           <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 whitespace-nowrap">
                             未完成
                           </span>
@@ -932,11 +917,11 @@ export default function FlagPage() {
                             size="icon"
                             className="h-8 w-8 rounded-lg relative"
                             onClick={() => handleTickTask(t.id)}
-                            title={cooldownStates[t.id] ? `冷却中: ${Math.floor(cooldownStates[t.id] / 60)}分${cooldownStates[t.id] % 60}秒` : "记一次"}
-                            disabled={!!cooldownStates[t.id]}
+                            title={globalCooldown > 0 ? `冷却中: ${Math.floor(globalCooldown / 60)}分${globalCooldown % 60}秒` : "记一次"}
+                            disabled={globalCooldown > 0}
                           >
-                            {cooldownStates[t.id] ? (
-                              <span className="text-xs font-bold">{Math.floor(cooldownStates[t.id] / 60)}'</span>
+                            {globalCooldown > 0 ? (
+                              <span className="text-xs font-bold">{Math.floor(globalCooldown / 60)}'</span>
                             ) : (
                               <Check className="h-4 w-4" />
                             )}
@@ -1026,7 +1011,7 @@ export default function FlagPage() {
         </section>
         
         {/* 展开/折叠未完成Flag按钮 */}
-        {incompleteTasks.length > 10 && (
+        {incompleteTasks.length > 6 && (
           <div className="flex justify-center py-2">
             <Button
               variant="outline"
@@ -1036,11 +1021,11 @@ export default function FlagPage() {
             >
               {showAllIncomplete ? (
                 <>
-                  收起 ({incompleteTasks.length - 10} 个已隐藏)
+                  收起 ({incompleteTasks.length - 6} 个已隐藏)
                 </>
               ) : (
                 <>
-                  展开更多 ({incompleteTasks.length - 10} 个)
+                  展开更多 ({incompleteTasks.length - 6} 个)
                 </>
               )}
             </Button>
@@ -1064,7 +1049,7 @@ export default function FlagPage() {
                     <Card className="p-3 opacity-60 grayscale rounded-xl cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
-                          <TaskRing count={t.count} total={t.total} />
+                          <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#059669" showLabel={true} />
                           <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 whitespace-nowrap">
                             已完成
                           </span>

@@ -72,26 +72,21 @@ export async function logout() {
 }
 
 // 获取用户成就/徽章系统
-// 后端返回格式: {徽章名称: 0或1 }，0=未解锁，1=已解锁
+// 后端返回格式: { message: string, achievements: Array<{id, name, description, isUnlocked}> }
 export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }> => {
   try {
-    const response = await api.get<Record<string, number>>('/api/getUserAchievement');
+    const response = await api.get<{ message: string; achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }>('/api/getUserAchievement');
     
-    // 徽章名称映射
-    const badgeNames = [
-      '新手启程', '坚持不懈', '任务大师', '目标达成', '学习之星',
-      '效率达人', '专注大师', '早起鸟', '夜猫子', '完美主义', '全能选手', '待解锁'
-    ];
+    console.log('🏆 获取成就数据:', response);
     
-    // 转换后端数据格式
-    const achievements = Object.entries(response).map(([name, status], index) => ({
-      id: index,
-      name: badgeNames[index] || name,
-      description: `${name}成就`,
-      isUnlocked: status === 1
-    }));
+    // 后端返回的就是正确格式的数组
+    if (response.achievements && Array.isArray(response.achievements)) {
+      return { achievements: response.achievements };
+    }
     
-    return { achievements };
+    // 如果格式不对，返回空数组
+    console.warn('成就数据格式不正确:', response);
+    return { achievements: [] };
   } catch (error) {
     console.error('获取成就失败:', error);
     // 返回默认空数组

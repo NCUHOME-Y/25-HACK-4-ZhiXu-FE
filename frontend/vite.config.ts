@@ -1,25 +1,32 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    host: '0.0.0.0', // 允许外部访问
-    port: 5173,
-    proxy: {
-      // 代理API请求到后端服务器
-      '/api': {
-        target: 'http://192.168.12.88:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      // WebSocket代理
-      '/ws': {
-        target: 'ws://192.168.12.88:8080',
-        ws: true,
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  // 使用 .env 文件中的 VITE_API_BASE
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiBase = env.VITE_API_BASE || 'http://localhost:8080';
+  const wsBase = apiBase.replace(/^http/, 'ws');
+
+  return {
+    plugins: [react()],
+    server: {
+      host: '0.0.0.0', // 允许外部访问
+      port: 5173,
+      proxy: {
+        // 代理API请求到后端服务器
+        '/api': {
+          target: apiBase,
+          changeOrigin: true,
+          secure: false,
+        },
+        // WebSocket代理
+        '/ws': {
+          target: wsBase,
+          ws: true,
+          changeOrigin: true,
+        },
       },
     },
-  },
+  }
 })

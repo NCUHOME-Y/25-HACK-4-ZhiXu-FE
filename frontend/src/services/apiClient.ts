@@ -6,8 +6,22 @@ import { createApiWrapper } from '../lib/helpers/api-helpers';
  * API 客户端配置
  * 包含请求拦截器和响应拦截器
  */
+// 后端地址通过 Vite 环境变量 `VITE_API_BASE_URL` 注入，回退到本地开发默认值
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+
+/**
+ * 将 http(s) 地址转换为 ws(s) 地址并拼接路径
+ */
+export function makeWsUrl(path: string) {
+  let origin = API_BASE;
+  if (origin.endsWith('/')) origin = origin.slice(0, -1);
+  // http -> ws, https -> wss
+  origin = origin.replace(/^http/, 'ws');
+  return `${origin}${path}`;
+}
+
 const apiClient = axios.create({
-  baseURL:'http://192.168.12.88:8080',
+  baseURL: API_BASE,
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 });
