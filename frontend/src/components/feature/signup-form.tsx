@@ -39,8 +39,8 @@ export function SignupForm({ onSwitchToLogin, onSwitchToOTP, error, ...props }: 
               </div>
             )}
             <Field>
-              <FieldLabel htmlFor="name">姓名</FieldLabel>
-              <Input id="name" type="text" placeholder="请输入姓名" required />
+              <FieldLabel htmlFor="name">名称</FieldLabel>
+              <Input id="name" type="text" placeholder="请输入名称" required />
             </Field>
             <Field>
               <FieldLabel htmlFor="email">邮箱</FieldLabel>

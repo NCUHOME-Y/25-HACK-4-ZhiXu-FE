@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Target, Loader2, User, BookOpen } from 'lucide-react';
-import { CalendarDays, Repeat, Timer, ListChecks } from 'lucide-react';
+import { CalendarDays, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -147,10 +147,8 @@ export default function AIPage() {
         label: flag.label,
         priority: flag.priority,
         points: flag.points,
-        dailyLimit: flag.dailyLimit,
         startDate: flag.startDate,
         endDate: flag.endDate,
-        isRecurring: flag.isRecurring,
       });
       
       // 标记为已添加
@@ -207,10 +205,8 @@ export default function AIPage() {
             label: flag.label,
             priority: flag.priority,
             points: flag.points,
-            dailyLimit: flag.dailyLimit,
             startDate: flag.startDate,
             endDate: flag.endDate,
-            isRecurring: flag.isRecurring,
           });
           
           // 标记为已添加
@@ -505,24 +501,23 @@ export default function AIPage() {
                                           )}
                                         </div>
                                       </div>
+                                      {/* 任务详情描述 */}
+                                      {flag.detail && (
+                                        <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                          {flag.detail}
+                                        </p>
+                                      )}
                                       {/* 精简信息展示 */}
-                                      <div className="flex items-center gap-3 text-xs">
+                                      <div className="flex items-center gap-2 text-xs flex-wrap">
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
-                                          <ListChecks className="w-4 h-4" /> {flag.total}次
+                                          <CalendarDays className="w-3.5 h-3.5" /> 每日{flag.total}次
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-full font-medium">
+                                          <Timer className="w-3.5 h-3.5" /> {totalDays}天
                                         </span>
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
-                                          <CalendarDays className="w-4 h-4" /> 每日{flag.dailyLimit}次
+                                          {flag.priority === 1 ? '急切' : flag.priority === 2 ? '较急' : flag.priority === 3 ? '一般' : '不急'}
                                         </span>
-                                        {!flag.isRecurring && (
-                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-full font-medium">
-                                            <Timer className="w-4 h-4" /> {totalDays}天
-                                          </span>
-                                        )}
-                                        {flag.isRecurring && (
-                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
-                                            <Repeat className="w-4 h-4" /> 循环
-                                          </span>
-                                        )}
                                       </div>
                                       {/* 添加按钮 */}
                                       {!isAdded && (

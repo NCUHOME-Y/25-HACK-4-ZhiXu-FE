@@ -7,14 +7,12 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export interface GeneratedFlag {
   title: string;
   detail: string;
-  total: number;
+  total: number;  // 每日所需完成次数
   label: FlagLabel;
   priority: FlagPriority;
   points: number;
-  dailyLimit: number;  // 每日完成次数限制
-  startDate: string;   // 开始日期
-  endDate: string;     // 结束日期
-  isRecurring: boolean; // 是否为循环任务
+  startDate: string;   // 开始日期 (ISO格式)
+  endDate: string;     // 结束日期 (ISO格式，用于自动过期)
 }
 
 export interface StudyPlan {
@@ -51,34 +49,43 @@ function inferLabel(text: string): FlagLabel {
 /**
  * 计算任务的时间安排
  */
+/**
+ * 计算任务的开始日期和结束日期
+ * 根据任务序号、优先级和难度，设置合理的起始时间和持续天数
+ */
 function calculateTaskSchedule(
-  difficulty: Difficulty,
   priority: FlagPriority,
   taskIndex: number,
-  baseTotal: number
+  difficulty: Difficulty
 ): {
   startDate: string;
   endDate: string;
-  dailyLimit: number;
-  isRecurring: boolean;
 } {
   const now = new Date();
   const startDate = new Date(now);
   
-  // 根据任务顺序设置开始日期（前面的任务先开始）
-  startDate.setDate(startDate.getDate() + Math.floor(taskIndex / 3));
+  // 根据任务顺序和优先级设置开始日期
+  // 急切的任务立即开始，不急的任务延后
+  const priorityDelay = {
+    1: 0,  // 急切：立即开始
+    2: 1,  // 较急：延后1天
+    3: 2,  // 一般：延后2天
+    4: 3,  // 不急：延后3天
+  }[priority];
   
-  // 根据难度和优先级计算持续天数
-  let durationDays: number;
+  // 根据任务序号错开开始时间（每3个任务错开1天）
+  const indexDelay = Math.floor(taskIndex / 3);
   
-  // 基础天数
-  const baseDays = {
-    easy: 7,    // 简单：1周
-    medium: 14, // 中等：2周
-    hard: 21,   // 困难：3周
+  startDate.setDate(startDate.getDate() + priorityDelay + indexDelay);
+  
+  // 根据难度设置基础持续天数
+  const baseDurationDays = {
+    'easy': 3,    // 入门级：1-3天
+    'medium': 10, // 进阶级：1-2周
+    'hard': 40,   // 专家级：1-2月
   }[difficulty];
   
-  // 优先级调整（急切的任务时间更短，不急的更长）
+  // 根据优先级调整持续时间（急切的任务时间更紧，不急的更宽松）
   const priorityMultiplier = {
     1: 0.7,  // 急切：缩短30%
     2: 0.85, // 较急：缩短15%
@@ -86,25 +93,14 @@ function calculateTaskSchedule(
     4: 1.3,  // 不急：延长30%
   }[priority];
   
-  durationDays = Math.round(baseDays * priorityMultiplier);
-  
-  // 确保至少3天
-  durationDays = Math.max(3, durationDays);
+  const durationDays = Math.max(2, Math.round(baseDurationDays * priorityMultiplier));
   
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + durationDays);
   
-  // 每日完成次数限制（根据总次数和天数计算）
-  const dailyLimit = Math.max(1, Math.ceil(baseTotal / durationDays));
-  
-  // 判断是否为循环任务（不急的任务且total较小的设为循环）
-  const isRecurring = priority === 4 && baseTotal <= 5;
-  
   return {
     startDate: startDate.toISOString(),
-    endDate: isRecurring ? '' : endDate.toISOString(), // 循环任务无结束日期
-    dailyLimit,
-    isRecurring,
+    endDate: endDate.toISOString(),
   };
 }
 
@@ -155,11 +151,11 @@ export async function generateStudyPlan(
   }
 
   // 映射难度到后端参数
-  const difficultyMap: Record<Difficulty, number> = {
-    easy: 50,
-    medium: 150,
-    hard: 200,
-  };
+    const difficultyMap: Record<Difficulty, number> = {
+      easy: 100,
+      medium: 200,
+      hard: 300,
+    };
 
   try {
     const response = await api.post<{
@@ -182,9 +178,9 @@ export async function generateStudyPlan(
     const { phases, flags } = parsePlanAndGenerateFlags(response.plan, difficulty);
 
     const descriptions: Record<Difficulty, string> = {
-      easy: '循序渐进，轻松达成目标。建议每天30-45分钟，3-4周完成。',
-      medium: '稳步前进，平衡挑战与成长。建议每天1-1.5小时，4-6周完成。',
-      hard: '全力冲刺，突破自我极限。建议每天2-3小时，6-8周完成。',
+        easy: '入门级：100分，建议1-3天完成，3-5个简单任务。每天30-45分钟，快速掌握基础。',
+        medium: '进阶级：200分，建议1-2周完成，5-6个中等任务。每天1小时，系统提升能力。',
+        hard: '专家级：300分，建议1-2月完成，6-8个高难度任务。每天2小时，深度突破自我。',
     };
 
     return {
@@ -196,7 +192,7 @@ export async function generateStudyPlan(
       flags,
     };
   } catch (error) {
-    console.error('AI生成失败:', error);
+    console.error('AI接口异常', error);
     throw error;
   }
 }
@@ -214,30 +210,51 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
   // 按行分割
   const lines = planText.split(/[\n\r]+/).map(l => l.trim()).filter(l => l.length > 0);
   
-  // 根据难度设置默认参数
-  const baseTotal = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15;
-  
-  // 根据难度设置最大flag数量
-  const maxFlags = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 6 : 8;
+  // 根据难度设置默认参数（与后端一致：100分=1-3天，200分=1-2周，300分=1-2月）
+  // baseTotal表示每日完成次数，不宜过高避免用户压力过大
+  // 专家级通过增加任务数量(maxFlags)和任务持续时间来达到300分左右的总积分
+    let baseTotal = 1, maxFlags = 5;
+    if (difficulty === 'easy') {
+      baseTotal = 1;  // 入门级：每天1次，轻松入门
+      maxFlags = 5;   // 3-5个任务
+    } else if (difficulty === 'medium') {
+      baseTotal = 2;  // 进阶级：每天2次，稳步提升
+      maxFlags = 6;   // 5-6个任务
+    } else if (difficulty === 'hard') {
+      baseTotal = 3;  // 专家级：每天3次，高强度训练
+      maxFlags = 8;   // 6-8个任务，配合更长的持续时间达到300分
+    }
   
   let currentPhase = '';
+  let currentPhaseContent: string[] = [];  // 保存当前阶段的完整内容
   let flagsInCurrentPhase: string[] = [];
   
   for (const line of lines) {
     // 识别阶段标题（如"阶段一"、"第一阶段"、"Phase 1"等）
     if (/^(阶段|第.*阶段|Phase\s*\d|步骤\s*\d|Step\s*\d)/i.test(line)) {
-      // 保存上一个阶段
-      if (currentPhase && !phases.includes(currentPhase)) {
-        phases.push(currentPhase);
+      // 保存上一个阶段（包含完整内容）
+      if (currentPhase && currentPhaseContent.length > 0) {
+        phases.push(currentPhaseContent.join('\n'));
       }
+      // 开始新阶段
       currentPhase = line;
+      currentPhaseContent = [line];  // 保存阶段标题
       flagsInCurrentPhase = [];
       continue;
     }
     
-    // 识别任务行（以数字、符号开头）- 修复正则表达式转义
-    if (/^[\d.\-*+】)]\s*/.test(line) && line.length > 5) {
-      const taskTitle = line.replace(/^[\d.\-*+】)]\s*/, '').trim();
+    // 识别任务行（必须是"数字."或"数字)"开头，且包含"每日完成"字样）
+    // 这样可以区分任务行和学习要点（学习要点只是"-"开头）
+    const isTaskLine = /^\d+[.。)）]\s*.+/.test(line) && line.length > 5;
+    
+    // 如果在某个阶段内，保存该行内容（除了任务行）
+    if (currentPhase && !isTaskLine) {
+      currentPhaseContent.push(line);
+    }
+    
+    // 处理任务行
+    if (isTaskLine) {
+      const taskTitle = line.replace(/^\d+[.。)）]\s*/, '').trim();
       
       // 跳过太短的行或纯数字行
       if (taskTitle.length < 3 || /^\d+$/.test(taskTitle)) continue;
@@ -248,52 +265,58 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
       const label = inferLabel(taskTitle);
       const priority = inferPriority(taskTitle, flags.length, maxFlags);
       
+      // 计算任务开始日期和结束日期
+      const { startDate, endDate } = calculateTaskSchedule(
+        priority, 
+        flags.length,
+        difficulty
+      );
+      
       // 使用新的积分系统计算
-      const points = calculateTaskCompletionPoints({
+      // 对于专家级，增加持续时间的积分权重
+      const durationDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const durationBonus = difficulty === 'hard' ? Math.min(durationDays * 0.5, 20) : 0; // 专家级每天额外0.5分，最多20分
+      
+      const basePoints = calculateTaskCompletionPoints({
         priority,
         label,
         total: baseTotal,
       });
       
-      // 构建详细描述
-      let detail = taskTitle;
+      const points = Math.round(basePoints + durationBonus);
+      
+      // 构建详细描述 - 保留原始任务行（包含每日完成次数）
+      const originalTaskLine = line; // 保留完整的任务描述，包括（每日完成：X次）
+      let detail = originalTaskLine;
+      
+      // 如果有阶段信息，添加阶段上下文
       if (currentPhase) {
-        const phaseName = currentPhase.split('\n')[0]; // 只取阶段标题，不包含描述
-        detail = `${phaseName} - ${taskTitle}`;
+        const phaseName = currentPhase.split('\n')[0]; // 只取阶段标题
+        detail = `${phaseName}\n${originalTaskLine}`;
       }
       
-      // 根据难度和优先级计算日期范围
-      const { startDate, endDate, dailyLimit, isRecurring } = calculateTaskSchedule(
-        difficulty, 
-        priority, 
-        flags.length,
-        baseTotal
-      );
+      // 提取纯净的标题（用于显示）
+      const cleanTitle = taskTitle.replace(/[（(]每日完成.*?[）)]/g, '').trim();
       
       flags.push({
-        title: taskTitle.length > 50 ? taskTitle.substring(0, 47) + '...' : taskTitle,
+        title: cleanTitle.length > 50 ? cleanTitle.substring(0, 47) + '...' : cleanTitle,
         detail: detail.length > 150 ? detail.substring(0, 147) + '...' : detail,
         total: baseTotal,
         label,
         priority,
         points,
-        dailyLimit,
         startDate,
         endDate,
-        isRecurring,
       });
       
       // 限制flag数量
       if (flags.length >= maxFlags) break;
-    } else if (currentPhase && line.length > 10 && !line.startsWith('#')) {
-      // 非任务行但有内容，可能是阶段描述（排除标题）
-      currentPhase += '\n' + line;
     }
   }
   
-  // 保存最后一个阶段
-  if (currentPhase && !phases.includes(currentPhase)) {
-    phases.push(currentPhase);
+  // 保存最后一个阶段（包含完整内容）
+  if (currentPhase && currentPhaseContent.length > 0) {
+    phases.push(currentPhaseContent.join('\n'));
   }
   
   // 如果没有识别到阶段，尝试简单分段
@@ -318,18 +341,22 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
         const label = inferLabel(cleanSentence);
         const priority = inferPriority(cleanSentence, index, validSentences.length);
         
-        const points = calculateTaskCompletionPoints({
+        const { startDate, endDate } = calculateTaskSchedule(
+          priority,
+          index,
+          difficulty
+        );
+        
+        const durationDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const durationBonus = difficulty === 'hard' ? Math.min(durationDays * 0.5, 20) : 0;
+        
+        const basePoints = calculateTaskCompletionPoints({
           priority,
           label,
           total: baseTotal,
         });
         
-        const { startDate, endDate, dailyLimit, isRecurring } = calculateTaskSchedule(
-          difficulty,
-          priority,
-          index,
-          baseTotal
-        );
+        const points = Math.round(basePoints + durationBonus);
         
         flags.push({
           title: cleanSentence.length > 50 ? cleanSentence.substring(0, 47) + '...' : cleanSentence,
@@ -338,10 +365,8 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
           label,
           priority,
           points,
-          dailyLimit,
           startDate,
           endDate,
-          isRecurring,
         });
       });
     } else {
@@ -351,18 +376,22 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
         const label = inferLabel(segment);
         const priority = inferPriority(segment, index, lineSegments.length);
         
-        const points = calculateTaskCompletionPoints({
+        const { startDate, endDate } = calculateTaskSchedule(
+          priority,
+          index,
+          difficulty
+        );
+        
+        const durationDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const durationBonus = difficulty === 'hard' ? Math.min(durationDays * 0.5, 20) : 0;
+        
+        const basePoints = calculateTaskCompletionPoints({
           priority,
           label,
           total: baseTotal,
         });
         
-        const { startDate, endDate, dailyLimit, isRecurring } = calculateTaskSchedule(
-          difficulty,
-          priority,
-          index,
-          baseTotal
-        );
+        const points = Math.round(basePoints + durationBonus);
         
         flags.push({
           title: segment.length > 50 ? segment.substring(0, 47) + '...' : segment,
@@ -371,10 +400,8 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
           label,
           priority,
           points,
-          dailyLimit,
           startDate,
           endDate,
-          isRecurring,
         });
       });
     }
@@ -391,12 +418,22 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
     
     for (let i = flags.length; i < Math.min(3, maxFlags); i++) {
       const task = defaultTasks[i] || defaultTasks[2];
-      const { startDate, endDate, dailyLimit, isRecurring } = calculateTaskSchedule(
-        difficulty,
+      const { startDate, endDate } = calculateTaskSchedule(
         task.priority as FlagPriority,
         i,
-        baseTotal
+        difficulty
       );
+      
+      const durationDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const durationBonus = difficulty === 'hard' ? Math.min(durationDays * 0.5, 20) : 0;
+      
+      const basePoints = calculateTaskCompletionPoints({
+        priority: task.priority as FlagPriority,
+        label: 1,
+        total: baseTotal,
+      });
+      
+      const points = Math.round(basePoints + durationBonus);
       
       flags.push({
         title: task.title,
@@ -404,15 +441,9 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
         total: baseTotal,
         label: 1,
         priority: task.priority as FlagPriority,
-        points: calculateTaskCompletionPoints({
-          priority: task.priority as FlagPriority,
-          label: 1,
-          total: baseTotal,
-        }),
-        dailyLimit,
+        points,
         startDate,
         endDate,
-        isRecurring,
       });
     }
   }

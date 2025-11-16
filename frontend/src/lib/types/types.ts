@@ -30,7 +30,7 @@ export interface Task {
   id: string
   title: string // 对应后端 flag
   detail?: string // 对应后端 plan_content
-  total?: number // 对应后端 plan_done_number
+  total?: number // 对应后端 daily_total (每日所需完成次数)
   count?: number // 对应后端 done_number
   completed?: boolean // 对应后端 had_done
   label?: FlagLabel // 类型标签 1-5

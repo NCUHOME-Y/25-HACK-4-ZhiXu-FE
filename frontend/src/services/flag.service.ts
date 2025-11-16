@@ -107,7 +107,7 @@ export async function createTask(payload: CreateTaskPayload & {
     is_public: false,
     label: labelNum,
     priority: priorityNum,
-    total: payload.total && payload.total > 0 ? payload.total : 1,
+    total: payload.total && payload.total > 0 ? payload.total : 1, // 每日所需完成次数
     points: payload.points || 0,
     daily_limit: payload.dailyLimit || 1,
     is_recurring: payload.isRecurring || false,
@@ -136,7 +136,7 @@ export async function updateTask(id: string, taskData: {
   detail: string;
   label: number;
   priority: number;
-  total: number;
+  total: number; // 每日所需完成次数
   isPublic: boolean;
   startDate?: string;
   endDate?: string;
