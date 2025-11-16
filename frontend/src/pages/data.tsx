@@ -28,6 +28,7 @@ export default function DataPage() {
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed); // 每日学习时长（秒）
   const [loading, setLoading] = useState(true); // 加载状态
   const [userPoints, setUserPoints] = useState(0); // 用户积分
+  const [todayPoints, setTodayPoints] = useState(0); // 今日获得积分
   const [studyPeriod, setStudyPeriod] = useState<'week' | 'month' | 'year'>('week'); // 学习趋势周期：周(最近7天)/月(当前月份)/年(最近6个月)
   // 新增：本月累计学习时长（秒）
   const [monthLearnTime, setMonthLearnTime] = useState(0);
@@ -103,17 +104,20 @@ export default function DataPage() {
   const refreshUserData = async () => {
     try {
       const { api } = await import('../services/apiClient');
-      const [userData, todayData] = await Promise.all([
+      const [userData, todayData, todayPointsResp] = await Promise.all([
         api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
-        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime'),
+        api.get<{ today_points: number }>('/api/getTodayPoints')
       ]);
-      
+
       console.log('用户学习时长:', userData.month_learn_time);
       console.log('今日学习时长:', todayData.today_learn_time);
       console.log('用户积分:', userData.count);
-      
+      console.log('今日获得积分:', todayPointsResp && todayPointsResp.today_points);
+
       setUserPoints(userData.count || 0);
-      
+      setTodayPoints((todayPointsResp && todayPointsResp.today_points) || 0);
+
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
       const todayTime = todayData.today_learn_time || 0; // 今日学习时长（秒）
       const monthTime = userData.month_learn_time || 0; // 本月累计学习时长（秒）
@@ -319,7 +323,7 @@ export default function DataPage() {
                 <Trophy className="h-7 w-7 text-purple-600 mb-2" />
                 <div className="text-xs text-muted-foreground mb-1">今日获得积分</div>
                 <div className="text-3xl font-bold text-purple-600 tabular-nums">
-                  {userPoints}
+                  {todayPoints}
                 </div>
               </div>
               

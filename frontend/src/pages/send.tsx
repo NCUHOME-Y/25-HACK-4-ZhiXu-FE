@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
@@ -11,10 +11,19 @@ import { API_BASE, makeWsUrl } from '../services/apiClient';
 /**
  * 私聊发送页面
  */
+// API返回的私聊消息类型
+interface PrivateMessageApi {
+  id?: string | number;
+  ID?: string | number;
+  content: string;
+  created_at: string;
+  from_user_id: string | number;
+}
+
 export default function SendPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = location.state?.user || { id: '', name: '用户', avatar: '' };
+  const user = useMemo(() => location.state?.user || { id: '', name: '用户', avatar: '' }, [location.state]);
   
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
@@ -31,7 +40,7 @@ export default function SendPage() {
     } else {
       console.log('✅ 用户信息正常:', user);
     }
-  }, [user.id, user, navigate]);
+  }, [user, navigate]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -74,7 +83,7 @@ export default function SendPage() {
           console.log('📦 API返回数据:', data);
           
           if (data.messages && Array.isArray(data.messages)) {
-            const historyMessages: PrivateMessage[] = data.messages.map((msg: any) => ({
+              const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => ({
               id: String(msg.id || msg.ID),
               message: msg.content,
               time: new Date(msg.created_at).toLocaleTimeString('zh-CN', { 
@@ -206,7 +215,7 @@ export default function SendPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <nav className="bg-white sticky top-0 z-10 border-b">
+      <nav className="sticky top-0 z-10 bg-transparent">
         <div className="px-4 py-4 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -215,7 +224,7 @@ export default function SendPage() {
             <AvatarImage src={user.avatar} />
             <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
           </Avatar>
-          <h1 className="text-lg font-semibold">{user.name}</h1>
+          <h1 className="text-lg font-semibold bg-transparent shadow-none border-none m-0 p-0">{user.name}</h1>
         </div>
       </nav>
 

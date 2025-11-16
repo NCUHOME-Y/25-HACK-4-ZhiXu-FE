@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, UserPen, Settings, Trophy, Flame, Target, Star, MessageSquare, User } from 'lucide-react';
+import { Heart, CheckCircle, Award } from 'lucide-react';
 import { 
   BottomNav, 
   Card, 
@@ -38,7 +39,6 @@ export default function MinePage() {
   // ========== 本地状态 ========== 
   // Zustand 全局状态
   const tasks = useTaskStore((s) => s.tasks);
-  const punchedDates = useTaskStore((s) => s.punchedDates);
   
   // 本地UI状态
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -55,14 +55,14 @@ export default function MinePage() {
   // ========== 计算属性 ========== 
   /** 已完成flag数量 */
   const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
-  /** 打卡总天数 */
-  const totalPunchDays = useMemo(() => punchedDates.length, [punchedDates]);
   
   /** 积分数据 - 从后端API获取 */
   const [points, setPoints] = useState(0);
   const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
   
   // P1修复：从后端加载用户统计数据
+  // 点赞总数
+  const [totalLikes, setTotalLikes] = useState(0);
   const loadUserStats = async () => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -70,62 +70,67 @@ export default function MinePage() {
         console.log('未登录，跳过加载数据');
         return;
       }
-        
-        const { api } = await import('../services/apiClient');
-        const userData = await api.get<{ 
-          user: {
-            count: number; 
-            daka: number; 
-            month_learn_time: number;
-            name: string;
-            email: string;
-            head_show: number;
-          }
-        }>('/api/getUser');
-        
-        console.log('我的页面-用户数据:', userData);
-        
-        const user = userData.user;
-        setPoints(user.count || 0);
-        
-        // 更新用户资料（昵称和头像）- 支持12个头像（6个screenshot + 6个微信图片）
-        const avatarList = [
-          '/src/assets/images/screenshot_20251114_131601.png',
-          '/src/assets/images/screenshot_20251114_131629.png',
-          '/src/assets/images/screenshot_20251114_131937.png',
-          '/src/assets/images/screenshot_20251114_131951.png',
-          '/src/assets/images/screenshot_20251114_132014.png',
-          '/src/assets/images/screenshot_20251114_133459.png',
-          '/src/assets/images/微信图片_20251115203432_32_227.jpg',
-          '/src/assets/images/微信图片_20251115203433_33_227.jpg',
-          '/src/assets/images/微信图片_20251115203434_34_227.jpg',
-          '/src/assets/images/微信图片_20251115203434_35_227.jpg',
-          '/src/assets/images/微信图片_20251115203435_36_227.jpg',
-          '/src/assets/images/微信图片_20251115203436_37_227.jpg'
-        ];
-        const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 12) ? user.head_show - 1 : 0;
-        const avatarPath = avatarList[avatarIndex];
-        
-        setProfile(prev => ({
-          ...prev,
-          nickname: user.name || prev.nickname,
-          avatar: avatarPath
-        }));
-        
-        setNickname(user.name || '');
-        setAvatar(avatarPath);
-        
-        // 更新store中的打卡和学习时长数据
-        useTaskStore.setState({
-          dailyElapsed: (user.month_learn_time || 0) * 60 // 分钟转秒
-        });
-        
-        // 加载打卡数据
-        const { fetchPunchDates } = await import('../services/flag.service');
-        const punchData = await fetchPunchDates();
-        console.log('我的页面-打卡数据:', punchData);
-        useTaskStore.setState({ punchedDates: punchData });
-        
+      // 获取用户基本信息
+      const { api } = await import('../services/apiClient');
+      const userData = await api.get<{ 
+        user: {
+          count: number; 
+          daka: number; 
+          month_learn_time: number;
+          name: string;
+          email: string;
+          head_show: number;
+        }
+      }>('/api/getUser');
+      console.log('我的页面-用户数据:', userData);
+      const user = userData.user;
+      setPoints(user.count || 0);
+      // 更新用户资料（昵称和头像）
+      const avatarList = [
+        '/src/assets/head/screenshot_20251114_131601.png',
+        '/src/assets/head/screenshot_20251114_131629.png',
+        '/src/assets/head/screenshot_20251114_131937.png',
+        '/src/assets/head/screenshot_20251114_131951.png',
+        '/src/assets/head/screenshot_20251114_132014.png',
+        '/src/assets/head/screenshot_20251114_133459.png',
+        '/src/assets/head/微信图片_20251115203432_32_227.jpg',
+        '/src/assets/head/微信图片_20251115203433_33_227.jpg',
+        '/src/assets/head/微信图片_20251115203434_34_227.jpg',
+        '/src/assets/head/微信图片_20251115203434_35_227.jpg',
+        '/src/assets/head/微信图片_20251115203435_36_227.jpg',
+        '/src/assets/head/微信图片_20251115203436_37_227.jpg',
+        '/src/assets/head/微信图片_20251116131024_45_227.jpg',
+        '/src/assets/head/微信图片_20251116131024_46_227.jpg',
+        '/src/assets/head/微信图片_20251116131025_47_227.jpg',
+        '/src/assets/head/微信图片_20251116131026_48_227.jpg',
+        '/src/assets/head/微信图片_20251116131027_49_227.jpg',
+        '/src/assets/head/微信图片_20251116131028_50_227.jpg',
+        '/src/assets/head/微信图片_20251116131029_51_227.jpg',
+        '/src/assets/head/微信图片_20251116131030_52_227.jpg',
+        '/src/assets/head/微信图片_20251116131031_53_227.jpg'
+      ];
+      const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 21) ? user.head_show - 1 : 0;
+      const avatarPath = avatarList[avatarIndex];
+      setProfile(prev => ({
+        ...prev,
+        nickname: user.name || prev.nickname,
+        avatar: avatarPath
+      }));
+      setNickname(user.name || '');
+      setAvatar(avatarPath);
+      // 更新store中的学习时长
+      useTaskStore.setState({
+        dailyElapsed: (user.month_learn_time || 0) * 60 // 分钟转秒
+      });
+      // 获取点赞总数
+      const contactService = (await import('../services/contact.service')).default;
+      const likedPostIds = await contactService.getUserLikedPosts();
+      setTotalLikes(likedPostIds.length);
+      // 加载打卡数据（保留原逻辑）
+      const { fetchPunchDates } = await import('../services/flag.service');
+      const punchData = await fetchPunchDates();
+      console.log('我的页面-打卡数据:', punchData);
+      useTaskStore.setState({ punchedDates: punchData });
     } catch (error) {
       console.error('加载用户统计失败:', error);
     }
@@ -294,7 +299,15 @@ export default function MinePage() {
     '/src/assets/head/微信图片_20251115203434_34_227.jpg',
     '/src/assets/head/微信图片_20251115203434_35_227.jpg',
     '/src/assets/head/微信图片_20251115203435_36_227.jpg',
-    '/src/assets/head/微信图片_20251115203436_37_227.jpg'
+    '/src/assets/head/微信图片_20251115203436_37_227.jpg',
+    '/src/assets/head/微信图片_20251116131024_45_227.jpg',
+    '/src/assets/head/微信图片_20251116131024_46_227.jpg',
+    '/src/assets/head/微信图片_20251116131025_47_227.jpg',
+    '/src/assets/head/微信图片_20251116131026_48_227.jpg',
+    '/src/assets/head/微信图片_20251116131027_49_227.jpg',
+    '/src/assets/head/微信图片_20251116131028_50_227.jpg',
+    '/src/assets/head/微信图片_20251116131029_51_227.jpg',
+    '/src/assets/head/微信图片_20251116131031_53_227.jpg'
   ];
 
   // ========== 事件处理器 ==========
@@ -387,17 +400,20 @@ export default function MinePage() {
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-3">数据统计</h2>
           <div className="grid grid-cols-3 gap-3">
-            <Card className="p-4 rounded-xl bg-blue-50 border-blue-200">
-              <div className="text-2xl font-bold text-blue-600 mb-1">{totalPunchDays}</div>
-              <div className="text-xs text-muted-foreground">打卡总天数</div>
+            <Card className="p-4 rounded-xl bg-pink-50 border-pink-200 flex flex-col items-center">
+              <Heart className="h-7 w-7 mb-2 text-pink-400" />
+              <div className="text-2xl font-bold text-pink-600 mb-1 text-center">{totalLikes}</div>
+              <div className="text-xs text-muted-foreground text-center">获得点赞总数</div>
             </Card>
-            <Card className="p-4 rounded-xl bg-green-50 border-green-200">
-              <div className="text-2xl font-bold text-green-600 mb-1">{completedCount}</div>
-              <div className="text-xs text-muted-foreground">完成flag数</div>
+            <Card className="p-4 rounded-xl bg-green-50 border-green-200 flex flex-col items-center">
+              <CheckCircle className="h-7 w-7 mb-2 text-green-400" />
+              <div className="text-2xl font-bold text-green-600 mb-1 text-center">{completedCount}</div>
+              <div className="text-xs text-muted-foreground text-center">完成flag数</div>
             </Card>
-            <Card className="p-4 rounded-xl bg-orange-50 border-orange-200">
-              <div className="text-2xl font-bold text-orange-600 mb-1">{points}</div>
-              <div className="text-xs text-muted-foreground">总积分</div>
+            <Card className="p-4 rounded-xl bg-orange-50 border-orange-200 flex flex-col items-center">
+              <Award className="h-7 w-7 mb-2 text-orange-400" />
+              <div className="text-2xl font-bold text-orange-600 mb-1 text-center">{points}</div>
+              <div className="text-xs text-muted-foreground text-center">总积分</div>
             </Card>
           </div>
         </section>
@@ -548,30 +564,38 @@ export default function MinePage() {
             <div className="space-y-2">
               <Label>头像</Label>
               <div className="flex items-center gap-4">
-                <Popover open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0">
-                      <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 rounded-2xl">
-                    <div className="grid grid-cols-3 gap-3">
+                {/* 头像选择 - 使用居中 Dialog 替代 Popover，确保水平垂直居中 */}
+                <button
+                  onClick={() => setAvatarPopoverOpen(true)}
+                  className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0"
+                >
+                  <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
+                </button>
+
+                <Dialog open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
+                  <DialogContent className="sm:max-w-[480px] w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto rounded-2xl p-4">
+                    <DialogHeader>
+                      <DialogTitle>选择头像</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-3 gap-3 py-2">
                       {avatarOptions.map((option) => (
                         <button
                           key={option}
-                          onClick={() => handleSelectAvatar(option)}
-                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${
-                            avatar === option 
-                              ? 'ring-2 ring-blue-500' 
-                              : 'hover:ring-2 hover:ring-slate-300'
-                          }`}
+                          onClick={async () => {
+                            await handleSelectAvatar(option);
+                            setAvatarPopoverOpen(false);
+                          }}
+                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'}`}
                         >
                           <img src={option} alt="Avatar option" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
-                  </PopoverContent>
-                </Popover>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setAvatarPopoverOpen(false)} className="rounded-full">取消</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 <div className="flex-1 min-w-0">
                   <Label htmlFor="nickname" className="text-sm font-medium mb-2 block">昵称</Label>
                   <Input

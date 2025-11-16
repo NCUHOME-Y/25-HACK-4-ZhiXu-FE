@@ -4,6 +4,10 @@ import authService from '../services/auth.service';
 import startImage from '../assets/start/start.png';
 import zhixuImage from '../assets/start/zhixu.png';
 import yanImage from '../assets/start/yan.png';
+import leaf1 from '../assets/start/leaf1.png';
+import leaf2 from '../assets/start/leaf2.png';
+import leaf3 from '../assets/start/leaf3.png';
+import leaf4 from '../assets/start/leaf4.png';
 
 export default function StartPage() {
   const navigate = useNavigate();
@@ -25,9 +29,9 @@ export default function StartPage() {
             if (user) {
               console.log('✅ Token有效，自动登录成功:', user.name);
               
-              // 确保至少显示2秒开屏页面
+              // 确保至少显示3秒开屏页面
               const elapsed = Date.now() - startTime;
-              const remainingTime = Math.max(0, 2000 - elapsed);
+              const remainingTime = Math.max(0, 3000 - elapsed);
               
               setTimeout(() => {
                 navigate('/flag', { replace: true });
@@ -40,9 +44,9 @@ export default function StartPage() {
           }
         }
         
-        // 无token或token无效，等待2秒后跳转登录页
+        // 无token或token无效，等待3秒后跳转登录页
         const elapsed = Date.now() - startTime;
-        const remainingTime = Math.max(0, 2000 - elapsed);
+        const remainingTime = Math.max(0, 3000 - elapsed);
         
         setTimeout(() => {
           navigate('/auth', { replace: true });
@@ -50,9 +54,9 @@ export default function StartPage() {
         
       } catch (error) {
         console.error('❌ 初始化失败:', error);
-        // 即使出错也要等待2秒
+        // 即使出错也要等待3秒
         const elapsed = Date.now() - startTime;
-        const remainingTime = Math.max(0, 2000 - elapsed);
+        const remainingTime = Math.max(0, 3000 - elapsed);
         
         setTimeout(() => {
           navigate('/auth', { replace: true });
@@ -66,9 +70,16 @@ export default function StartPage() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 flex flex-col items-center justify-between overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 flex flex-col items-center justify-between overflow-hidden relative">
+      {/* 枫叶装饰，四角分布 */}
+      {/* 枫叶装饰，四角但不贴边且避开主图 */}
+      <img src={leaf1} alt="leaf1" className="absolute left-8 top-16 w-16 h-16 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      <img src={leaf2} alt="leaf2" className="absolute right-10 top-24 w-20 h-20 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      <img src={leaf3} alt="leaf3" className="absolute left-12 bottom-72 w-20 h-20 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      <img src={leaf4} alt="leaf4" className="absolute right-16 bottom-64 w-16 h-16 opacity-80 animate-fade-in" style={{zIndex:1}} />
+
       {/* 居中图片区域 */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 relative">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">
         {/* zhixu图片正中央 */}
         <img
           src={zhixuImage}
@@ -77,12 +88,12 @@ export default function StartPage() {
           style={{ position: 'relative', zIndex: 2 }}
         />
         {/* yan图片紧贴zhixu下方 */}
-          <img
-            src={yanImage}
-            alt="yan"
-            className="w-3/5 h-auto object-contain mx-auto animate-fade-in mt-8"
-            style={{ position: 'relative', zIndex: 1 }}
-          />
+        <img
+          src={yanImage}
+          alt="yan"
+          className="w-3/5 h-auto object-contain mx-auto animate-fade-in mt-8"
+          style={{ position: 'relative', zIndex: 1 }}
+        />
         {/* 加载动画 */}
         {isChecking && (
           <div className="flex space-x-2 mt-6">
@@ -93,7 +104,7 @@ export default function StartPage() {
         )}
       </div>
       {/* start图片在屏幕中下位置 */}
-      <div className="w-full mb-8">
+      <div className="w-full mb-8 z-10">
         <img
           src={startImage}
           alt="start"

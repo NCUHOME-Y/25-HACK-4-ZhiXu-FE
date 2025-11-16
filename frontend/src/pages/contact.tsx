@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon, Plus, Inbox } from 'lucide-react';
-import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea } from "../components";
-import contactService from '../services/contact.service';
+import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea, Tabs, TabsList, TabsTrigger, TabsContent } from "../components";
+import contactService, { type SearchUserResult } from '../services/contact.service';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser } from '../lib/helpers/helpers';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
@@ -16,6 +16,7 @@ export default function ContactPage() {
 
   // ========== 本地状态 ==========
   const [displayedPosts, setDisplayedPosts] = useState<User[]>([]);
+  const [searchUserResults, setSearchUserResults] = useState<SearchUserResult[]>([]); // 用户搜索结果
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
@@ -31,7 +32,12 @@ export default function ContactPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(() => {
+    const userId = localStorage.getItem('currentUserId');
+    const commentsUnread = localStorage.getItem(`commentsRead_${userId}`) !== 'true';
+    const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
+    return commentsUnread || privateUnread;
+  });
 
   // ========== 事件处理器 ==========
   /**
@@ -50,6 +56,16 @@ export default function ContactPage() {
         } else {
           const adaptedPosts = response.data.map(adaptPostToUser);
           setDisplayedPosts(prev => [...prev, ...adaptedPosts]);
+          // 合并已点赞状态（确保翻页时也能标注已点赞）
+          contactService.getUserLikedPosts()
+            .then((ids) => {
+              setLikedPosts(prev => {
+                const s = new Set(prev);
+                ids.forEach(id => s.add(String(id)));
+                return s;
+              });
+            })
+            .catch((e) => console.warn('无法获取已点赞帖子', e));
           setPage(prev => prev + 1);
           setHasMore(response.hasMore);
         }
@@ -81,7 +97,7 @@ export default function ContactPage() {
 
       // 检查是否有新的私聊消息
       const conversationsResponse = await contactService.getPrivateConversations();
-      const hasNewPrivateMsg = conversationsResponse?.conversations?.some((conv: any) => 
+      const hasNewPrivateMsg = conversationsResponse?.conversations?.some((conv: { last_message_at: string }) => 
         new Date(conv.last_message_at) > new Date(lastReadTime)
       ) || false;
 
@@ -90,11 +106,14 @@ export default function ContactPage() {
       const posts = postsResponse?.posts || [];
       let hasNewComment = false;
       
-      posts.forEach((post: any) => {
-        if (String(post.user_id) === String(user.id) && post.comments) {
-          post.comments.forEach((comment: any) => {
+      posts.forEach((post) => {
+        // 断言 post 结构，保证类型安全
+        const p = post as unknown as { user_id?: string; comments?: Array<{ userId: string; created_at?: string }> };
+        if (p.user_id && String(p.user_id) === String(user.id) && p.comments) {
+          p.comments.forEach((comment) => {
+            // 兼容 comment.created_at 可能不存在的情况
             if (String(comment.userId) !== String(user.id) && 
-                new Date(comment.created_at) > new Date(lastReadTime)) {
+                comment.created_at && new Date(comment.created_at) > new Date(lastReadTime)) {
               hasNewComment = true;
             }
           });
@@ -122,17 +141,30 @@ export default function ContactPage() {
     checkUnreadMessages();
     
     if (activeSearchQuery.trim()) {
-      contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE })
-        .then((response) => {
-          if (response && Array.isArray(response.data)) {
-            const adaptedPosts = response.data.map(adaptPostToUser);
+      // 同时搜索帖子和用户
+      Promise.all([
+        contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE }),
+        contactService.searchUsers(searchQuery)
+      ])
+        .then(([postsResponse, usersResponse]) => {
+          // 处理帖子搜索结果
+          if (postsResponse && Array.isArray(postsResponse.data)) {
+            const adaptedPosts = postsResponse.data.map(adaptPostToUser);
             setDisplayedPosts(adaptedPosts);
             setPage(2);
-            setHasMore(response.hasMore);
+            setHasMore(postsResponse.hasMore);
           } else {
             setDisplayedPosts([]);
             setHasMore(false);
           }
+          
+          // 处理用户搜索结果
+          if (usersResponse && Array.isArray(usersResponse)) {
+            setSearchUserResults(usersResponse);
+          } else {
+            setSearchUserResults([]);
+          }
+          
           setLoading(false);
         })
         .catch((error: unknown) => {
@@ -149,6 +181,16 @@ export default function ContactPage() {
             setDisplayedPosts(adaptedPosts);
             setPage(2);
             setHasMore(response.hasMore);
+              // 加载当前用户的已点赞帖子并设置状态
+              contactService.getUserLikedPosts()
+                .then((ids) => {
+                  const setIds = new Set(ids.map(id => String(id)));
+                  setLikedPosts(setIds);
+                })
+                .catch((e) => console.warn('无法获取已点赞帖子', e));
+              contactService.getUserLikedPosts()
+                .then((ids) => setLikedPosts(new Set(ids.map(id => String(id)))))
+                .catch((e) => console.warn('无法获取已点赞帖子', e));
           } else {
             setDisplayedPosts([]);
             setHasMore(false);
@@ -162,7 +204,7 @@ export default function ContactPage() {
           setHasMore(false);
         });
     }
-  }, [activeSearchQuery]);
+  }, [activeSearchQuery, searchQuery]);
 
   /**
    * 滚动监听(触发分页加载)
@@ -374,6 +416,8 @@ export default function ContactPage() {
             className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
             onClick={() => {
               setHasUnreadMessages(false);
+              const userId = localStorage.getItem('currentUserId');
+              localStorage.setItem(`commentsRead_${userId}`, 'true');
               navigate('/receive');
             }}
           >
@@ -394,8 +438,204 @@ export default function ContactPage() {
           <h2 className="text-base font-semibold">翰林院论</h2>
         </div>
 
-        {/* 用户动态列表 */}
-        <section className="space-y-3">
+        {/* 搜索结果：有搜索关键词时显示 Tabs */}
+        {activeSearchQuery.trim() ? (
+          <section className="px-4">
+            <Tabs defaultValue="posts" className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="posts">相关帖子 ({displayedPosts.length})</TabsTrigger>
+                <TabsTrigger value="users">相关用户 ({searchUserResults.length})</TabsTrigger>
+              </TabsList>
+              
+              {/* 帖子结果 Tab */}
+              <TabsContent value="posts" className="space-y-3 mt-3">
+                {displayedPosts.length === 0 && !loading ? (
+                  <Card className="p-8 text-center text-muted-foreground">
+                    <p>没有找到相关帖子</p>
+                  </Card>
+                ) : (
+                  displayedPosts.map((user) => (
+                    <Card key={user.id} className="p-3 rounded-xl border-x-0">
+                      {/* ...existing code... 帖子卡片内容保持不变 */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <div className="cursor-pointer flex-shrink-0">
+                              <Avatar className="h-11 w-11">
+                                <AvatarImage src={user.avatar} />
+                                <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+                              </Avatar>
+                            </div>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-12 w-12">
+                                  <AvatarImage src={user.avatar} />
+                                  <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm truncate">{user.name}</h4>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div className="text-center">
+                                  <div className="font-semibold text-base">{user.totalDays}</div>
+                                  <div className="text-muted-foreground text-[10px]">打卡天数</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-base">{user.completedFlags}</div>
+                                  <div className="text-muted-foreground text-[10px]">完成flag</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-base">{user.totalPoints}</div>
+                                  <div className="text-muted-foreground text-[10px]">总积分</div>
+                                </div>
+                              </div>
+                              <Button 
+                                size="sm"
+                                className="w-full rounded-full h-8"
+                                onClick={() => navigate('/send', { 
+                                  state: { 
+                                    user: {
+                                      id: user.userId,
+                                      name: user.name,
+                                      avatar: user.avatar
+                                    }
+                                  } 
+                                })}
+                              >
+                                <Send className="h-3 w-3 mr-1" />
+                                发消息
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-sm">{user.name}</span>
+                        </div>
+                        {user.comments.length > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {user.comments[user.comments.length - 1].time}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm mb-2 break-words px-1">{user.message}</p>
+                      <div className="flex items-center gap-3 mb-2 px-1">
+                        <ToggleGroup 
+                          type="multiple" 
+                          size="sm"
+                          onValueChange={(value) => handleLike(user.id, value)}
+                        >
+                          <ToggleGroupItem 
+                            value="liked" 
+                            aria-label="点赞" 
+                            className={`h-7 px-2 gap-1 ${likedPosts.has(user.id) ? 'text-red-500 data-[state=on]:text-red-500' : ''}`}
+                          >
+                            <Heart className={`h-3 w-3 ${likedPosts.has(user.id) ? 'fill-red-500' : ''}`} />
+                            <span className="text-xs">{user.likes}</span>
+                          </ToggleGroupItem>
+                        </ToggleGroup>
+                        <button 
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-500 transition-colors h-7 px-2"
+                          onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                          <span>{user.comments.length}</span>
+                        </button>
+                      </div>
+                      {showComments[user.id] && user.comments.length > 0 && (
+                        <div className="space-y-3 mb-2 pl-2 border-l-2 border-slate-100">
+                          {user.comments.map((comment) => (
+                            <div key={comment.id} className="flex gap-2">
+                              <Avatar className="h-9 w-9 flex-shrink-0">
+                                <AvatarImage src={comment.userAvatar} />
+                                <AvatarFallback>{comment.userName.slice(0, 2)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="font-medium text-sm">{comment.userName}</span>
+                                  <span className="text-[10px] text-muted-foreground">{comment.time}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-0.5">{comment.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {showComments[user.id] && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Input
+                            value={newComment[user.id] || ''}
+                            onChange={(e) => setNewComment({ ...newComment, [user.id]: e.target.value })}
+                            placeholder="写评论..."
+                            className="h-7 text-xs"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddComment(user.id);
+                              }
+                            }}
+                          />
+                          <Button 
+                            size="sm" 
+                            className="h-7 px-3 text-xs"
+                            onClick={() => handleAddComment(user.id)}
+                          >
+                            发送
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+              
+              {/* 用户结果 Tab */}
+              <TabsContent value="users" className="space-y-3 mt-3">
+                {searchUserResults.length === 0 && !loading ? (
+                  <Card className="p-8 text-center text-muted-foreground">
+                    <p>没有找到相关用户</p>
+                  </Card>
+                ) : (
+                  searchUserResults.map((searchUser) => (
+                    <Card key={searchUser.id} className="p-4 rounded-xl">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
+                          <AvatarImage src={searchUser.avatar} alt="Avatar" />
+                          <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">
+                            {searchUser.name.slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-xl font-bold truncate">{searchUser.name}</h2>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">{searchUser.email}</p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          className="rounded-full h-8 px-4"
+                          onClick={() => navigate('/send', { 
+                            state: { 
+                              user: {
+                                id: String(searchUser.id),
+                                name: searchUser.name,
+                                avatar: searchUser.avatar
+                              }
+                            } 
+                          })}
+                        >
+                          <Send className="h-3 w-3 mr-1" />
+                          发消息
+                        </Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
+          </section>
+        ) : (
+          /* 无搜索时：显示常规帖子列表 */
+          <section className="space-y-3">
           {/* 错误提示 */}
           {error && (
             <Card className="p-6 mx-4 bg-red-50 border-red-200">
@@ -616,7 +856,8 @@ export default function ContactPage() {
               没有更多内容了
             </div>
           )}
-        </section>
+          </section>
+        )}
       </div>
       
       {/* 发布帖子按钮 - 固定在右下角 */}

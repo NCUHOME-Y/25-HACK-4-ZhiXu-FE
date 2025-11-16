@@ -58,6 +58,10 @@ export default function ReceivePage() {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<PrivateConversation[]>([]);
   const [comments, setComments] = useState<CommentNotification[]>([]);
+  const [commentsRedDot, setCommentsRedDot] = useState(() => {
+    const userId = localStorage.getItem('currentUserId');
+    return localStorage.getItem(`commentsRead_${userId}`) !== 'true';
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCommentDetails, setShowCommentDetails] = useState(false);
@@ -67,11 +71,11 @@ export default function ReceivePage() {
       try {
         const user = await authService.getCurrentUser();
         if (user) {
+          localStorage.setItem('currentUserId', user.id);
           await Promise.all([
             loadPrivateConversations(user.id),
             loadComments(user.id)
           ]);
-          // 标记消息为已读
           localStorage.setItem(`lastReadTime_${user.id}`, new Date().toISOString());
         }
       } catch (error) {
@@ -109,6 +113,11 @@ export default function ReceivePage() {
         lastMessageTime: conv.last_message_at,
         unreadCount: conv.unread_count || 0,
       }));
+
+      // 统计所有未读私聊消息数
+      const totalPrivateUnread = conversationList.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+      const userId = localStorage.getItem('currentUserId');
+      localStorage.setItem(`privateUnread_${userId}`, String(totalPrivateUnread));
 
       console.log('✅ 转换后的会话列表:', conversationList);
       setConversations(conversationList);
@@ -198,8 +207,10 @@ export default function ReceivePage() {
   };
 
   const handleCommentsClick = () => {
-    // 切换评论详情显示状态
     setShowCommentDetails(!showCommentDetails);
+    setCommentsRedDot(false);
+    const userId = localStorage.getItem('currentUserId');
+    localStorage.setItem(`commentsRead_${userId}`, 'true');
   };
 
   const formatTime = (timestamp: string) => {
@@ -224,9 +235,9 @@ export default function ReceivePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* 顶部导航栏 */}
-      <nav className="bg-white sticky top-0 z-10 border-b">
+      <nav className="bg-white sticky top-0 z-10">
         <div className="px-4 py-4 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -294,7 +305,7 @@ export default function ReceivePage() {
                 </p>
               </div>
 
-              {comments.length > 0 && (
+              {comments.length > 0 && commentsRedDot && (
                 <div className="flex-shrink-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {comments.length}
                 </div>

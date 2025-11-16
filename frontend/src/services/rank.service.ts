@@ -1,4 +1,5 @@
 import { api } from './apiClient';
+import { PRESET_AVATARS } from '../lib/constants/constants';
 
 // 排行榜用户数据
 export interface RankUser {
@@ -41,13 +42,12 @@ const rankService = {
     
     const response = await api.get<{ data: RankUser[] }>(endpoint);
     
-    // 转换为前端格式
-    const avatarMap = ['screenshot_20251114_131601.png', 'screenshot_20251114_131629.png', 'screenshot_20251114_131937.png', 'screenshot_20251114_131951.png', 'screenshot_20251114_132014.png', 'screenshot_20251114_133459.png'];
+    // 转换为前端格式，使用全局 PRESET_AVATARS
     return response.data.map((user, index) => ({
       id: user.user_id.toString(),
       rank: index + 1,
       name: user.name,
-      avatar: user.head_show && user.head_show >= 1 && user.head_show <= 6 ? `/src/assets/images/${avatarMap[user.head_show - 1]}` : undefined,
+      avatar: user.head_show && user.head_show >= 1 && user.head_show <= PRESET_AVATARS.length ? PRESET_AVATARS[user.head_show - 1] : undefined,
       totalDays: user.daka || 0,
       completedFlags: user.flag_number || 0,
       totalPoints: user.count || 0
@@ -79,12 +79,11 @@ const rankService = {
       }
       
       // 如果不在前 20 名，手动构造数据
-      const avatarMap = ['screenshot_20251114_131601.png', 'screenshot_20251114_131629.png', 'screenshot_20251114_131937.png', 'screenshot_20251114_131951.png', 'screenshot_20251114_132014.png', 'screenshot_20251114_133459.png'];
       return {
         id: user.user_id.toString(),
         rank: rankList.length + 1,
         name: user.name,
-        avatar: user.head_show && user.head_show >= 1 && user.head_show <= 6 ? `/src/assets/images/${avatarMap[user.head_show - 1]}` : undefined,
+        avatar: user.head_show && user.head_show >= 1 && user.head_show <= PRESET_AVATARS.length ? PRESET_AVATARS[user.head_show - 1] : undefined,
         totalDays: user.daka || 0,
         completedFlags: user.flag_number || 0,
         totalPoints: user.count || 0

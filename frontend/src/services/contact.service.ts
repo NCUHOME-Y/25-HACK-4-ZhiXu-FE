@@ -208,10 +208,48 @@ const contactService = {
       data: { task_id: taskId }
     }),
 
-  // P1修复：搜索用户
+  // P1修复：搜索用户（支持21个头像映射）
   searchUsers: async (query: string): Promise<SearchUserResult[]> => {
-    const response = await api.post<{ users: SearchUserResult[] }>('/api/searchUser', { username: query });
-    return response.users || [];
+    const response = await api.post<{ users: Array<{
+      id: number;
+      name: string;
+      email: string;
+      head_show?: number;
+    }> }>('/api/searchUser', { username: query });
+    
+    // 头像路径映射（支持21个头像）
+    const avatarList = [
+      '/src/assets/head/screenshot_20251114_131601.png',
+      '/src/assets/head/screenshot_20251114_131629.png',
+      '/src/assets/head/screenshot_20251114_131937.png',
+      '/src/assets/head/screenshot_20251114_131951.png',
+      '/src/assets/head/screenshot_20251114_132014.png',
+      '/src/assets/head/screenshot_20251114_133459.png',
+      '/src/assets/head/微信图片_20251115203432_32_227.jpg',
+      '/src/assets/head/微信图片_20251115203433_33_227.jpg',
+      '/src/assets/head/微信图片_20251115203434_34_227.jpg',
+      '/src/assets/head/微信图片_20251115203434_35_227.jpg',
+      '/src/assets/head/微信图片_20251115203435_36_227.jpg',
+      '/src/assets/head/微信图片_20251115203436_37_227.jpg',
+      '/src/assets/head/微信图片_20251116131024_45_227.jpg',
+      '/src/assets/head/微信图片_20251116131024_46_227.jpg',
+      '/src/assets/head/微信图片_20251116131025_47_227.jpg',
+      '/src/assets/head/微信图片_20251116131026_48_227.jpg',
+      '/src/assets/head/微信图片_20251116131027_49_227.jpg',
+      '/src/assets/head/微信图片_20251116131028_50_227.jpg',
+      '/src/assets/head/微信图片_20251116131029_51_227.jpg',
+      '/src/assets/head/微信图片_20251116131030_52_227.jpg',
+      '/src/assets/head/微信图片_20251116131031_53_227.jpg'
+    ];
+    
+    return (response.users || []).map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar: (user.head_show && user.head_show >= 1 && user.head_show <= 21) 
+        ? avatarList[user.head_show - 1] 
+        : avatarList[0]
+    }));
   },
 
   // 获取所有帖子（不分页）
@@ -222,6 +260,12 @@ const contactService = {
   // 获取私聊会话列表
   getPrivateConversations: async () => {
     return api.get<{ conversations: any[] }>('/api/private-chat/conversations');
+  },
+
+  // 获取当前用户点过赞的帖子ID列表
+  getUserLikedPosts: async (): Promise<number[]> => {
+    const response = await api.get<{ liked_post_ids: number[] }>('/api/getUserLikedPosts');
+    return response.liked_post_ids || [];
   },
 };
 

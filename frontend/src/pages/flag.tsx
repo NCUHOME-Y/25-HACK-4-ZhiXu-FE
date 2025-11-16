@@ -1507,13 +1507,13 @@ export default function FlagPage() {
                 </Label>
               </div>
               <div className="flex items-center gap-2">
-                {/* 寻太傅按钮 */}
+                {/* 太傅按钮 */}
                 <Button
                   type="button"
-                  className="h-7 px-6 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-none"
+                  className="font-bold h-7 px-4 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-none"
                   onClick={() => navigate('/ai')}
                 >
-                  寻太傅
+                  太傅
                 </Button>
                 {/* 删除按钮（仅编辑时显示） */}
                 {editingTaskId && (

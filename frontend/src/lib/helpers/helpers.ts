@@ -180,15 +180,15 @@ export const adaptPostToUser = (post: {
 }): import('../types/types').ContactUser => ({
   id: String(post.id || '0'),
   userId: String(post.user_id || '0'),  // 添加用户ID映射
-  name: post.userName || '用户',
-  avatar: post.userAvatar || '',
+  name: post.userName || post.user_name || '用户',
+  avatar: post.userAvatar || post.user_avatar || '',
   message: post.content || '',
   likes: post.likes || post.like || 0,
   comments: (post.comments || []).map(c => ({
     id: String(c.id || '0'),
     userId: String(c.userId || c.user_id || '0'),
-    userName: c.userName || '用户',
-    userAvatar: c.userAvatar || '',
+    userName: c.userName || c.user_name || '用户',
+    userAvatar: c.userAvatar || c.user_avatar || '',
     content: c.content || '',
     time: formatTimeAgo(c.createdAt || c.created_at || new Date().toISOString())
   })),
