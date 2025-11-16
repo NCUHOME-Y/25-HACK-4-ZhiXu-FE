@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Target, Loader2, User, BookOpen } from 'lucide-react';
+import { CalendarDays, Repeat, Timer, ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -13,6 +14,7 @@ import {
   Separator,
 } from '../components';
 import { generateStudyPlan, type StudyPlan, type Difficulty } from '../services/ai.service';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion';
 import { FLAG_LABELS } from '../lib/constants/constants';
 
 // 本地存储键
@@ -106,8 +108,8 @@ export default function AIPage() {
       // 调用AI服务生成学习计划
       const plan = await generateStudyPlan(goal, background, selectedDifficulty);
       
-      // 添加到计划列表
-      const newPlans = [plan, ...generatedPlans];
+      // 添加到计划列表，最多保留3个
+      const newPlans = [plan, ...generatedPlans].slice(0, 3);
       setGeneratedPlans(newPlans);
       localStorage.setItem(STORAGE_KEYS.GENERATED_PLANS, JSON.stringify(newPlans));
       
@@ -389,7 +391,6 @@ export default function AIPage() {
             <Target className="h-5 w-5 text-blue-500" />
             已生成学习计划
           </h2>
-          
           {generatedPlans.length === 0 ? (
             <Card className="p-8 text-center">
               <div className="flex flex-col items-center gap-2">
@@ -399,13 +400,13 @@ export default function AIPage() {
               </div>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {generatedPlans.map((plan, planIndex) => (
-                <Card key={planIndex} className="overflow-hidden">
-                  {/* 计划头部 - 合并目标和计划 */}
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-b">
-                    <div className="space-y-3">
-                      {/* 目标信息 */}
+              <div className="flex flex-col gap-6">
+                {/* 只显示最近的三个学习计划 */}
+                {generatedPlans.slice(0, 3).map((plan, planIndex) => {
+                  return (
+                  <div key={planIndex} className="rounded-2xl shadow-lg bg-white border border-blue-100 overflow-hidden">
+                    {/* 目标信息区域 */}
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Target className="h-5 w-5 text-blue-600" />
@@ -414,132 +415,146 @@ export default function AIPage() {
                             {difficulties.find(d => d.value === plan.difficulty)?.label}
                           </Badge>
                         </div>
-                        <p className="text-sm text-blue-700 pl-7">{plan.description}</p>
+                        <p className="text-sm text-blue-700 pl-7">{typeof plan.description === 'string' ? plan.description : ''}</p>
                         {plan.background && (
-                          <p className="text-xs text-blue-600 pl-7">背景: {plan.background}</p>
+                          <p className="text-xs text-blue-600 pl-7">背景: {typeof plan.background === 'string' ? plan.background : ''}</p>
                         )}
                       </div>
-
-                      {/* 学习计划阶段 - 最多显示3个 */}
+                      {/* Accordion 折叠具体计划阶段 */}
                       {plan.phases && plan.phases.length > 0 && (
-                        <div className="pl-7 space-y-2 pt-2 border-t border-blue-200">
-                          <h4 className="text-sm font-semibold text-purple-900 flex items-center gap-1">
-                            <BookOpen className="h-4 w-4" />
-                            学习计划 {plan.phases.length > 3 && `(显示前3个，共${plan.phases.length}个)`}
-                          </h4>
-                          <div className="space-y-2">
-                            {plan.phases.slice(0, 3).map((phase, phaseIndex) => (
-                              <div key={phaseIndex} className="bg-white/80 rounded-lg p-2.5 border border-purple-200/60">
-                                <div className="flex items-start gap-2">
-                                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">
-                                    {phaseIndex + 1}
+                        <Accordion type="single" collapsible>
+                          <AccordionItem value={`phase-${planIndex}`}> 
+                            <AccordionTrigger>
+                              <div className="flex items-center gap-1">
+                                <BookOpen className="h-4 w-4 text-purple-400" />
+                                <span>具体计划 {plan.phases.length > 3 && `(显示前3个，共${plan.phases.length}个)`}</span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-0.5">
+                                {plan.phases.slice(0, 3).map((phase, phaseIndex) => (
+                                  <div key={phaseIndex} className="bg-white rounded-lg p-0.5 border border-purple-200/30">
+                                    <div className="flex items-start gap-2">
+                                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">
+                                        {phaseIndex + 1}
+                                      </div>
+                                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{typeof phase === 'string' ? phase : ''}</p>
+                                    </div>
                                   </div>
-                                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{phase}</p>
-                                </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Flag列表 */}
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-gray-700">🎯 具体Flag ({plan.flags.length}个)</h4>
-                      <Button
-                        onClick={() => handleAddToFlags(plan)}
-                        size="sm"
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-xs h-8"
-                      >
-                        添加全部到Flag
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {plan.flags.map((flag, flagIndex) => {
-                        const flagKey = `${plan.goal}_${flag.title}`;
-                        const isAdded = addedFlags.has(flagKey);
-                        const startDate = new Date(flag.startDate);
-                        const endDate = new Date(flag.endDate);
-                        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-                        
-                        return (
-                        <div key={flagIndex} className={`p-4 rounded-2xl border-2 transition-all ${
-                          isAdded 
-                            ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-400 shadow-sm' 
-                            : 'bg-gradient-to-br from-white to-gray-50 border-gray-200 hover:border-blue-300 hover:shadow-md'
-                        }`}>
-                          <div className="space-y-3">
-                            {/* 标题和标签 */}
-                            <div className="flex items-start justify-between gap-2">
-                              <h5 className={`font-semibold text-sm flex-1 ${
-                                isAdded ? 'text-green-700' : 'text-gray-800'
-                              }`}>
-                                {isAdded && '✓ '}{flag.title}
-                              </h5>
-                              <div className="flex gap-1.5 flex-shrink-0">
-                                <Badge 
-                                  style={{ backgroundColor: FLAG_LABELS[flag.label].color }}
-                                  className="text-xs text-white font-medium px-2.5 py-1 rounded-full"
-                                >
-                                  {FLAG_LABELS[flag.label].name}
-                                </Badge>
-                                {flag.points && (
-                                  <Badge className="text-xs bg-gradient-to-r from-orange-100 to-yellow-100 text-orange-700 font-bold px-2.5 py-1 rounded-full border-0">
-                                    {flag.points}分
-                                  </Badge>
-                                )}
+                      {/* 具体Flag - 作为同一模块的一部分 */}
+                      <div className="mt-1 pt-0.5">
+                        <Accordion type="single" collapsible>
+                          <AccordionItem value={`flags-${planIndex}`}>
+                            <AccordionTrigger>
+                            <div className="flex items-center justify-between w-full pr-4">
+                              <h4 className="text-sm font-semibold text-gray-700">🎯 具体Flag ({plan.flags.length}个)</h4>
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToFlags(plan);
+                                }}
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-3 py-1 rounded bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-xs h-8 text-white cursor-pointer"
+                                role="button"
+                                tabIndex={0}
+                              >
+                                添加全部Flag
                               </div>
                             </div>
-                            
-                            {/* 精简信息展示 */}
-                            <div className="flex items-center gap-3 text-xs">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
-                                🎯 {flag.total}次
-                              </span>
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
-                                📅 每日{flag.dailyLimit}次
-                              </span>
-                              {!flag.isRecurring && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-full font-medium">
-                                  ⏱️ {totalDays}天
-                                </span>
-                              )}
-                              {flag.isRecurring && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
-                                  🔁 循环
-                                </span>
-                              )}
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-2">
+                              {plan.flags.map((flag, flagIndex) => {
+                                const flagKey = `${plan.goal}_${flag.title}`;
+                                const isAdded = addedFlags.has(flagKey);
+                                const startDate = new Date(flag.startDate);
+                                const endDate = new Date(flag.endDate);
+                                const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                                return (
+                                  <div
+                                    key={flagIndex}
+                                    className={
+                                      `p-4 rounded-xl transition-all shadow-sm ` +
+                                      (isAdded
+                                        ? 'bg-gradient-to-br from-green-50 to-emerald-50 text-green-700'
+                                        : 'bg-white border border-gray-200 hover:border-blue-300 hover:shadow-md text-gray-800')
+                                    }
+                                  >
+                                    <div className="space-y-3">
+                                      {/* 标题和标签 */}
+                                      <div className="flex items-start justify-between gap-2">
+                                        <h5 className="font-semibold text-sm flex-1">
+                                          {isAdded && '✓ '}{flag.title}
+                                        </h5>
+                                        <div className="flex gap-1.5 flex-shrink-0">
+                                          <Badge 
+                                            style={{ backgroundColor: FLAG_LABELS[flag.label].color }}
+                                            className="text-xs text-white font-medium px-2.5 py-1 rounded-full"
+                                          >
+                                            {FLAG_LABELS[flag.label].name}
+                                          </Badge>
+                                          {flag.points && (
+                                            <Badge className="text-xs bg-gradient-to-r from-orange-100 to-yellow-100 text-orange-700 font-bold px-2.5 py-1 rounded-full border-0">
+                                              {flag.points}分
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {/* 精简信息展示 */}
+                                      <div className="flex items-center gap-3 text-xs">
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                                          <ListChecks className="w-4 h-4" /> {flag.total}次
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
+                                          <CalendarDays className="w-4 h-4" /> 每日{flag.dailyLimit}次
+                                        </span>
+                                        {!flag.isRecurring && (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-full font-medium">
+                                            <Timer className="w-4 h-4" /> {totalDays}天
+                                          </span>
+                                        )}
+                                        {flag.isRecurring && (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
+                                            <Repeat className="w-4 h-4" /> 循环
+                                          </span>
+                                        )}
+                                      </div>
+                                      {/* 添加按钮 */}
+                                      {!isAdded && (
+                                          <div
+                                            onClick={() => handleAddSingleFlag(plan, flagIndex)}
+                                            className="w-full text-xs h-8 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl flex items-center justify-center cursor-pointer"
+                                            role="button"
+                                            tabIndex={0}
+                                          >
+                                            添加到Flag
+                                          </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            
-                            {/* 添加按钮 */}
-                            {!isAdded && (
-                              <Button
-                                onClick={() => handleAddSingleFlag(plan, flagIndex)}
-                                size="sm"
-                                className="w-full text-xs h-8 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl"
-                              >
-                                ➕ 添加到Flag
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* 总积分统计 */}
-                    <div className="pt-3 border-t flex items-center justify-between">
-                      <span className="text-sm text-gray-600">完成全部可获得:</span>
-                      <span className="text-lg font-bold text-orange-600">
-                        {plan.flags.reduce((sum, f) => sum + (f.points || 0), 0)} 积分
-                      </span>
+                            {/* 总积分统计 */}
+                            <div className="pt-3 mt-3 border-t border-gray-300/40 flex items-center justify-between">
+                              <span className="text-sm text-gray-600">完成全部可获得:</span>
+                              <span className="text-lg font-bold text-orange-600">
+                                {plan.flags.reduce((sum, f) => sum + (f.points || 0), 0)} 积分
+                              </span>
+                            </div>
+                          </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      </div>
                     </div>
                   </div>
-                </Card>
-              ))}
+                );
+                })}
             </div>
           )}
         </section>

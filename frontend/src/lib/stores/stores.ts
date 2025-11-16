@@ -89,7 +89,7 @@ export const useTaskStore = create<TaskState>(
 		
 		set({ studying: true, sessionElapsed: 0 });
 	},
-	stopStudy: () => {
+	stopStudy: async () => {
 		// 清除全局计时器
 		if (globalTimerId !== null) {
 			window.clearInterval(globalTimerId);
@@ -101,6 +101,17 @@ export const useTaskStore = create<TaskState>(
 			studying: false,
 			dailyElapsed: get().dailyElapsed + session
 		});
+		
+		// 🔧 新增：将学习时长写入后端
+		if (session > 0) {
+			try {
+				const { stopStudySession } = await import('../../services/flag.service');
+				await stopStudySession('', session);
+				console.log('✅ 学习时长已保存到后端(秒):', session);
+			} catch (error) {
+				console.error('❌ 保存学习时长失败:', error);
+			}
+		}
 	},
 	increaseDailyElapsed: () => set({ 
 		dailyElapsed: get().dailyElapsed + 1,

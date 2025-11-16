@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { ProgressRing } from '../components/feature/ProgressRing';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Check, CheckCircle2, Plus, CheckSquare, Clock } from 'lucide-react';
+import { Pencil, Plus, CheckSquare, Clock,CalendarDays, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -371,7 +371,7 @@ export default function FlagPage() {
       toast.warning(`冷却中，还需等待 ${Math.ceil(globalCooldown / 60)} 分钟 ⏱️`);
       return;
     }
-    // 记录flag完成时间，判断是否触发冷却
+    // 只有真正完成 flag 时才计入完成时间
     const now = Date.now();
     const completeTimesKey = 'flag_complete_times';
     let completeTimes: number[] = [];
@@ -380,18 +380,19 @@ export default function FlagPage() {
     } catch { completeTimes = []; }
     // 只保留最近1分钟内的完成记录
     completeTimes = completeTimes.filter(t => now - t < 60 * 1000);
-    // 判断是否触发冷却
-        // 记录本次完成时间
-        completeTimes.push(now);
-        localStorage.setItem(completeTimesKey, JSON.stringify(completeTimes));
-        
-        // 完成后再判断是否需要冷却（第三次完成后才冷却）
-        if (completeTimes.length >= 3) {
-          localStorage.setItem('flag_global_cooldown_until', String(now + 10 * 60 * 1000));
-          localStorage.setItem(completeTimesKey, JSON.stringify([]));
-          setGlobalCooldown(10 * 60);
-          toast.warning('一分钟内完成3个flag，已进入10分钟冷却 ⏱️');
-        }
+    // willComplete 提前声明
+    const willComplete = task.count !== undefined && task.total !== undefined && task.count + 1 >= task.total;
+    if (willComplete) {
+      completeTimes.push(now);
+      localStorage.setItem(completeTimesKey, JSON.stringify(completeTimes));
+      // 完成后再判断是否需要冷却（第三次完成后才冷却）
+      if (completeTimes.length >= 3) {
+        localStorage.setItem('flag_global_cooldown_until', String(now + 10 * 60 * 1000));
+        localStorage.setItem(completeTimesKey, JSON.stringify([]));
+        setGlobalCooldown(10 * 60);
+        toast.warning('一分钟内完成3个flag，已进入10分钟冷却 ⏱️');
+      }
+    }
     
     // 检查日期范围
     const today = new Date();
@@ -426,7 +427,7 @@ export default function FlagPage() {
     const button = document.activeElement as HTMLButtonElement;
     if (button) button.disabled = true;
     
-    const willComplete = task.count !== undefined && task.total !== undefined && task.count + 1 >= task.total;
+    // willComplete 已提前声明
     
     tickTaskInStore(taskId);
     
@@ -449,11 +450,16 @@ export default function FlagPage() {
             console.log('✅ 积分添加结果:', result);
             // 更新本地积分累计
             localStorage.setItem(dailyPointsKey, String(dailyPoints + addPoints));
-            // 问题8修复：积分更新后重新加载用户数据
+            
+            // 🔧 优化：刷新用户数据（积分和今日学习时长）
             try {
               const { api } = await import('../services/apiClient');
-              const userData = await api.get<{ user: { count: number } }>('/api/getUser');
-              console.log('✅ 用户数据已刷新，最新积分:', userData.user.count);
+              const [userData, todayData] = await Promise.all([
+                api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
+                api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+              ]);
+              console.log('✅ 用户数据已刷新，最新积分:', userData.count);
+              console.log('✅ 今日学习时长已刷新:', todayData.today_learn_time);
             } catch (refreshError) {
               console.warn('⚠️ 刷新用户数据失败:', refreshError);
             }
@@ -838,11 +844,13 @@ export default function FlagPage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
+                {isPunchedToday ? (
+                  <Check className="h-5 w-5 text-green-500" />
+                ) : (
+                  <CalendarDays className="h-5 w-5 text-blue-500" />
+                )}
                 <span className="text-sm font-semibold">每日打卡</span>
               </div>
-              {isPunchedToday && (
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-              )}
             </div>
             
             <div className="space-y-1.5">

@@ -283,18 +283,18 @@ export default function MinePage() {
    * 预设头像列表 - 使用图片路径（包含原始6个screenshot和6个微信图片）
    */
   const avatarOptions = [
-    '/src/assets/images/screenshot_20251114_131601.png',
-    '/src/assets/images/screenshot_20251114_131629.png',
-    '/src/assets/images/screenshot_20251114_131937.png',
-    '/src/assets/images/screenshot_20251114_131951.png',
-    '/src/assets/images/screenshot_20251114_132014.png',
-    '/src/assets/images/screenshot_20251114_133459.png',
-    '/src/assets/images/微信图片_20251115203432_32_227.jpg',
-    '/src/assets/images/微信图片_20251115203433_33_227.jpg',
-    '/src/assets/images/微信图片_20251115203434_34_227.jpg',
-    '/src/assets/images/微信图片_20251115203434_35_227.jpg',
-    '/src/assets/images/微信图片_20251115203435_36_227.jpg',
-    '/src/assets/images/微信图片_20251115203436_37_227.jpg'
+    '/src/assets/head/screenshot_20251114_131601.png',
+    '/src/assets/head/screenshot_20251114_131629.png',
+    '/src/assets/head/screenshot_20251114_131937.png',
+    '/src/assets/head/screenshot_20251114_131951.png',
+    '/src/assets/head/screenshot_20251114_132014.png',
+    '/src/assets/head/screenshot_20251114_133459.png',
+    '/src/assets/head/微信图片_20251115203432_32_227.jpg',
+    '/src/assets/head/微信图片_20251115203433_33_227.jpg',
+    '/src/assets/head/微信图片_20251115203434_34_227.jpg',
+    '/src/assets/head/微信图片_20251115203434_35_227.jpg',
+    '/src/assets/head/微信图片_20251115203435_36_227.jpg',
+    '/src/assets/head/微信图片_20251115203436_37_227.jpg'
   ];
 
   // ========== 事件处理器 ==========

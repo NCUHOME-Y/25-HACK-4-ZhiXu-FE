@@ -5,37 +5,17 @@ import {
   Card, 
   ChartRadialStacked,
   setChartData,
-  ChartAreaDefault, 
   ChartPieLabel,
+  StudyTimeChart,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent
 } from '../components';
-import { ProgressRing } from '../components/feature/ProgressRing';
-import { getStudyTrend } from '../services';
+import { getStudyTimeTrend } from '../services/data.service';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
-import { calculateMonthlyPunches } from '../lib/helpers/helpers';
-import type { StudyTrendData, FlagLabel } from '../lib/types/types';
-
-/**
- * 打卡进度环形图组件
- */
-const PunchChart = ({ monthlyPunches }: { monthlyPunches: number }) => {
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  return (
-    <ProgressRing
-      current={monthlyPunches}
-      total={daysInMonth}
-      size={68}
-      color="hsl(var(--chart-2))"
-      labelTop={String(monthlyPunches)}
-      labelBottom="本月"
-    />
-  );
-};
+import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
 
 /**
  * 数据统计页面
@@ -46,13 +26,12 @@ export default function DataPage() {
   const tasks = useTaskStore((s) => s.tasks); // 任务列表
   const punchedDates = useTaskStore((s) => s.punchedDates); // 打卡日期
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed); // 每日学习时长（秒）
-  const [studyTrendPeriod, setStudyTrendPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly'); // 学习趋势周期
-  const [studyTrendData, setStudyTrendData] = useState<Array<{ label: string; value: number }>>([]); // 学习趋势数据
   const [loading, setLoading] = useState(true); // 加载状态
   const [userPoints, setUserPoints] = useState(0); // 用户积分
-  
-  // 计算本月打卡天数
-  const monthlyPunches = useMemo(() => calculateMonthlyPunches(punchedDates), [punchedDates]);
+  const [studyPeriod, setStudyPeriod] = useState<'week' | 'month' | 'year'>('week'); // 学习趋势周期：周(最近7天)/月(当前月份)/年(最近6个月)
+  // 新增：本月累计学习时长（秒）
+  const [monthLearnTime, setMonthLearnTime] = useState(0);
+  const [studyData, setStudyData] = useState<StudyTimeTrend[]>([]); // 学习趋势数据
   
   // 计算连续打卡天数
   const streak = useMemo(() => {
@@ -76,13 +55,7 @@ export default function DataPage() {
     return count;
   }, [punchedDates]);
 
-  // 格式化学习时长
-  const formatDailyTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (h > 0) return `${h}h${m}m`;
-    return `${m}min`;
-  };
+
 
   // P1修复：从后端加载标签统计数据和用户数据
   useEffect(() => {
@@ -116,14 +89,7 @@ export default function DataPage() {
         });
         
         // 加载用户统计数据
-        const { api } = await import('../services/apiClient');
-        const userData = await api.get<{ month_learn_time: number; count: number }>('/api/getUser');
-        console.log('用户学习时长:', userData.month_learn_time);
-        console.log('用户积分:', userData.count);
-        setUserPoints(userData.count || 0);
-        useTaskStore.setState({
-          dailyElapsed: (userData.month_learn_time || 0) * 60 // 分钟转秒
-        });
+        await refreshUserData();
       } catch (error) {
         console.error('加载数据失败:', error);
       } finally {
@@ -133,29 +99,54 @@ export default function DataPage() {
     loadAllData();
   }, []);
 
+  // 🔧 新增：刷新用户数据函数
+  const refreshUserData = async () => {
+    try {
+      const { api } = await import('../services/apiClient');
+      const [userData, todayData] = await Promise.all([
+        api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
+        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+      ]);
+      
+      console.log('用户学习时长:', userData.month_learn_time);
+      console.log('今日学习时长:', todayData.today_learn_time);
+      console.log('用户积分:', userData.count);
+      
+      setUserPoints(userData.count || 0);
+      
+      // 分别设置今日和月累计学习时长（后端返回的都是秒）
+      const todayTime = todayData.today_learn_time || 0; // 今日学习时长（秒）
+      const monthTime = userData.month_learn_time || 0; // 本月累计学习时长（秒）
+      setMonthLearnTime(monthTime);
+      useTaskStore.setState({
+        dailyElapsed: todayTime // 今日学习时长（秒）
+      });
+    } catch (error) {
+      console.error('刷新用户数据失败:', error);
+    }
+  };
 
-  // ========== 副作用 ========== 
-  /**
-   * 加载学习趋势数据（根据选择的周期）
-   */
+  // 🔧 新增：监听任务变化，自动刷新用户数据
   useEffect(() => {
-    const loadStudyTrend = async () => {
+    if (!loading) {
+      refreshUserData();
+    }
+  }, [tasks.length, loading]); // 任务数量变化时刷新
+
+  // 加载学习趋势数据
+  useEffect(() => {
+    const loadStudyData = async () => {
       try {
-        const data = await getStudyTrend(studyTrendPeriod);
-        console.log(`加载${studyTrendPeriod}学习趋势:`, data);
-        const formattedData = data.map((item: StudyTrendData) => ({
-          label: item.label,
-          value: item.duration
-        }));
-        setStudyTrendData(formattedData);
+        const data = await getStudyTimeTrend(studyPeriod);
+        console.log(`加载${studyPeriod}学习趋势:`, data);
+        setStudyData(data);
       } catch (err) {
         console.error('加载学习趋势失败:', err);
-        setStudyTrendData([]);
+        setStudyData([]);
       }
     };
-    loadStudyTrend();
-  }, [studyTrendPeriod]);
-
+    loadStudyData();
+  }, [studyPeriod]);
 
   // ========== 计算属性 ========== 
   /**
@@ -180,9 +171,9 @@ export default function DataPage() {
       punchedDays: totalPunchedDays, // 累计打卡天数
       monthlyPunches, // 本月打卡天数
       missedDays: missedDays,
-      totalStudyTime: Math.floor(dailyElapsed / 60) // 转分钟
+      totalStudyTime: monthLearnTime // 本月累计学习时长（秒）
     };
-  }, [punchedDates, dailyElapsed]);
+  }, [punchedDates, monthLearnTime]);
 
   /**
    * 计算 Flag 统计数据
@@ -217,37 +208,6 @@ export default function DataPage() {
   }, [tasks]);
 
   /**
-   * 格式化学习趋势数据，选择性显示标签
-   */
-  const formattedStudyTrendData = useMemo(() => {
-    if (studyTrendData.length === 0) return [];
-    
-    if (studyTrendPeriod === 'weekly') {
-      // 周视图：显示所有7天的标签
-      return studyTrendData;
-    } else if (studyTrendPeriod === 'monthly') {
-      // 月视图：只在特定位置显示标签（1、6、11、16、21、26、30天）
-      return studyTrendData.map((item, index) => {
-        const shouldShowLabel = [0, 5, 10, 15, 20, 25, 29].includes(index);
-        return {
-          ...item,
-          label: shouldShowLabel ? item.label : ''
-        };
-      });
-    } else if (studyTrendPeriod === 'yearly') {
-      // 年视图：每10个数据点显示一个标签
-      return studyTrendData.map((item, index) => {
-        const shouldShowLabel = index % 10 === 0;
-        return {
-          ...item,
-          label: shouldShowLabel ? item.label : ''
-        };
-      });
-    }
-    return studyTrendData;
-  }, [studyTrendData, studyTrendPeriod]);
-
-  /**
    * 饼图数据转换
    */
   const pieChartData = useMemo(() => {
@@ -262,26 +222,27 @@ export default function DataPage() {
 
   // ========== 工具函数 ========== 
   /**
-   * 格式化学习时长（分钟转小时）
+   * 格式化学习时长（秒转小时/分钟/秒）
    */
-  const formatStudyTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}小时${mins}分钟` : `${mins}分钟`;
+  // 总时长显示：大于1小时显示小时，否则显示分钟
+  const formatTotalHours = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h${mins}`;
+    }
+    return `${mins}m${seconds % 60}`;
   };
 
-  /**
-   * 获取周期描述文本
-   */
-  const getPeriodDescription = () => {
-    switch (studyTrendPeriod) {
-      case 'weekly':
-        return '最近7天';
-      case 'monthly':
-        return '最近30天';
-      case 'yearly':
-        return '最近180天';
+  // 今日时长显示：不足1小时显示XmXs，超过1小时显示XhXm
+  const formatTodayTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}h${mins}`;
     }
+    return `${mins}m${secs}`;
   };
 
   // ========== 渲染 ========== 
@@ -309,7 +270,7 @@ export default function DataPage() {
         </div>
 
         {/* 打卡概览 */}
-        <section className="px-4">
+        <section className="px-2">
           <h2 className="text-lg font-semibold mb-3">打卡概览</h2>
           <Card className="p-4">
             <div className="grid grid-cols-3 gap-4">
@@ -325,26 +286,32 @@ export default function DataPage() {
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-50">
                 <Clock className="h-6 w-6 text-green-600 mb-2" />
-                <div className="text-2xl font-bold text-green-600">{Math.floor(calculatedMonthlyStats.totalStudyTime / 60)}</div>
-                <div className="text-xs text-muted-foreground mt-1">累计时长(h)</div>
+                <div className="text-2xl font-bold text-green-600">{formatTotalHours(calculatedMonthlyStats.totalStudyTime)}</div>
+                <div className="text-xs text-muted-foreground mt-1">累计时长({Math.floor(calculatedMonthlyStats.totalStudyTime / 3600) > 0 ? 'h' : 'min'})</div>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t text-center text-sm text-muted-foreground">
-              本月累计学习 {formatStudyTime(calculatedMonthlyStats.totalStudyTime)}
+              本月累计学习 {(() => {
+                const hours = Math.floor(calculatedMonthlyStats.totalStudyTime / 3600);
+                const mins = Math.floor((calculatedMonthlyStats.totalStudyTime % 3600) / 60);
+                return `${hours}小时${mins}分钟`;
+              })()}
             </div>
           </Card>
         </section>
 
         {/* 数据统计模块 */}
-        <section className="px-4">
+        <section className="px-2">
           <h2 className="text-lg font-semibold mb-3">学习数据</h2>
           <Card className="p-4">
             <div className="grid grid-cols-3 gap-3">
-              {/* 打卡进度 */}
+              {/* 连续打卡天数 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
                 <Calendar className="h-7 w-7 text-blue-600 mb-2" />
-                <div className="text-xs text-muted-foreground mb-2">本月打卡进度</div>
-                <PunchChart monthlyPunches={monthlyPunches} />
+                <div className="text-xs text-muted-foreground mb-1">连续打卡天数</div>
+                <div className="text-3xl font-bold text-blue-600 tabular-nums">
+                  {streak}
+                </div>
               </div>
               
               {/* 今日获得积分 */}
@@ -361,7 +328,7 @@ export default function DataPage() {
                 <Clock className="h-7 w-7 text-green-600 mb-2" />
                 <div className="text-xs text-muted-foreground mb-1">今日累计学习</div>
                 <div className="text-3xl font-bold text-green-600 tabular-nums">
-                  {formatDailyTime(dailyElapsed)}
+                  {formatTodayTime(dailyElapsed)}
                 </div>
               </div>
             </div>
@@ -399,46 +366,35 @@ export default function DataPage() {
               {/* 标签分类：无数据时显示“无标签 0%” */}
               <div className="space-y-2 border-t pt-3">
                 <h3 className="text-sm font-semibold">标签分类</h3>
-                {(flagStats.labelStats && flagStats.labelStats.length > 0)
-                  ? flagStats.labelStats.map((stat) => (
-                      <div key={stat.label} className="flex items-center gap-2">
-                        <div 
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: stat.color }}
-                        />
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-medium">{stat.labelName}</span>
-                            <span className="tabular-nums font-semibold" style={{ color: stat.color }}>
-                              {stat.percentage.toFixed(1)}%
-                            </span>
-                          </div>
-                          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                            <div 
-                              className="h-full transition-all"
-                              style={{ 
-                                width: `${stat.percentage}%`,
-                                backgroundColor: stat.color
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  : (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-slate-300" />
+                {Object.entries(FLAG_LABELS).map(([, labelObj]) => {
+                  const stat = flagStats.labelStats?.find(l => l.labelName === labelObj.name);
+                  const percentage = stat ? stat.percentage : 0;
+                  return (
+                    <div key={labelObj.name} className="flex items-center gap-2">
+                      <div 
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: labelObj.color }}
+                      />
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-medium">无标签</span>
-                          <span className="tabular-nums font-semibold text-slate-400">0%</span>
+                          <span className="font-medium">{labelObj.name}</span>
+                          <span className="tabular-nums font-semibold" style={{ color: labelObj.color }}>
+                            {percentage.toFixed(1)}%
+                          </span>
                         </div>
                         <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                          <div className="h-full transition-all w-0 bg-slate-400" />
+                          <div 
+                            className="h-full transition-all"
+                            style={{ 
+                              width: `${percentage}%`,
+                              backgroundColor: labelObj.color
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
-                  )}
+                  );
+                })}
               </div>
 
               {/* 已完成Flag分布饼图 */}
@@ -457,30 +413,31 @@ export default function DataPage() {
           </section>
         )}
 
-        {/* 学习趋势 */}
+        {/* 学习时长趋势 */}
         <section className="px-4">
-          <h2 className="text-lg font-semibold mb-3">学习趋势</h2>
+          <h2 className="text-lg font-semibold mb-3">学习时长趋势</h2>
           <Card>
-            <Tabs value={studyTrendPeriod} onValueChange={(v: string) => setStudyTrendPeriod(v as typeof studyTrendPeriod)} className="w-full">
-              <div className="p-6 pb-0">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="weekly">周</TabsTrigger>
-                  <TabsTrigger value="monthly">月</TabsTrigger>
-                  <TabsTrigger value="yearly">年</TabsTrigger>
+            <Tabs value={studyPeriod} onValueChange={(v: string) => setStudyPeriod(v as typeof studyPeriod)} className="w-full">
+              <div className="p-4 pb-0">
+                <TabsList className="grid w-full grid-cols-3 h-9">
+                  <TabsTrigger value="week" className="text-xs">周</TabsTrigger>
+                  <TabsTrigger value="month" className="text-xs">月</TabsTrigger>
+                  <TabsTrigger value="year" className="text-xs">年</TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value={studyTrendPeriod} className="mt-0">
-                <ChartAreaDefault 
-                  data={formattedStudyTrendData}
-                  title="学习时长"
-                  description={getPeriodDescription() + '的累计学习时长'}
-                  valueLabel="分钟"
+              <TabsContent value={studyPeriod} className="mt-0 px-3 pb-4">
+                <StudyTimeChart 
+                  data={studyData}
+                  period={studyPeriod}
+                  title="学习时长统计"
+                  description={`${studyPeriod === 'week' ? '最近7天' : studyPeriod === 'month' ? '当前月份' : '最近6个月'}的学习时长分布`}
                   showFooter={true}
                 />
               </TabsContent>
             </Tabs>
           </Card>
         </section>
+
       </div>
       <BottomNav />
     </div>

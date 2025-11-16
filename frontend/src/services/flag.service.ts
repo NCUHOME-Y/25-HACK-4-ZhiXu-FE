@@ -216,6 +216,25 @@ export async function startStudySession(): Promise<StudyRecord> {
 export async function stopStudySession(_sessionId: string, duration: number): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.post('/api/addLearnTime', { duration });
+  
+  // 🔧 新增：刷新用户数据
+  try {
+    const { useTaskStore } = await import('../lib/stores/stores');
+    const [userData, todayData] = await Promise.all([
+      api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
+      api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+    ]);
+    
+    const todayTime = todayData.today_learn_time || 0;
+    useTaskStore.setState({
+      dailyElapsed: todayTime * 60, // 今日学习时长（转秒）
+    });
+    
+    console.log('✅ 学习时长已同步:', { todayTime, dailyElapsed: todayTime * 60 });
+  } catch (error) {
+    console.error('刷新用户数据失败:', error);
+  }
+  
   return true;
 }
 

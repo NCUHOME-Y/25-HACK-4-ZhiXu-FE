@@ -82,7 +82,7 @@ export interface StudyRecord {
 export interface MonthlyStats {
   punchedDays: number // 累计打卡天数
   missedDays: number // 缺卡天数
-  totalStudyTime: number // 累计学习时长（分钟）
+  totalStudyTime: number // 累计学习时长（秒）
 }
 
 // 标签统计数据
@@ -102,10 +102,10 @@ export interface FlagStats {
   labelStats?: LabelStats[] // 按标签统计
 }
 
-// 学习时长趋势数据
-export interface StudyTrendData {
-  label: string // 日期/周/月标签
-  duration: number // 学习时长（分钟）
+// 学习时长趋势数据（新）
+export interface StudyTimeTrend {
+  date: string // 日期 YYYY-MM-DD
+  seconds: number // 学习时长（秒）
 }
 
 // 打卡记录扩展（包含打卡类型）

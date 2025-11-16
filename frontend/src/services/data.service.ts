@@ -2,8 +2,8 @@
 import type {
   MonthlyStats,
   FlagStats,
-  StudyTrendData,
   FlagLabel,
+  StudyTimeTrend,
   // ApiResponse,
 } from '../lib/types/types';
 
@@ -30,7 +30,7 @@ export async function getMonthlyStats(): Promise<MonthlyStats> {
     return {
       punchedDays,
       missedDays: Math.max(0, new Date().getDate() - punchedDays),
-      totalStudyTime: learnTime.month_learntime || 0,
+      totalStudyTime: learnTime.month_learntime || 0, // 后端已修正为秒
     };
   } catch (error) {
     console.error('获取月度统计失败:', error);
@@ -85,56 +85,6 @@ export async function getFlagStats(): Promise<FlagStats> {
   }
 }
 
-/**
- * 获取学习时长趋势数据
- * P1修复：调用后端获取学习时长趋势
- * @param period 'weekly' | 'monthly' | 'yearly'
- */
-export async function getStudyTrend(period: 'weekly' | 'monthly' | 'yearly'): Promise<StudyTrendData[]> {
-  const { api } = await import('./apiClient');
-  try {
-    let endpoint = '/api/get7daylearntime';
-    if (period === 'monthly') {
-      endpoint = '/api/getLearnTimemonth';
-    } else if (period === 'yearly') {
-      endpoint = '/api/getLearnTime180days';
-    }
-    
-    const response = await api.get<{ learn_times: Array<{ id: number; user_id: number; duration: number; created_at: string }> }>(endpoint);
-    
-    // 后端返回的是 LearnTime 模型数组，包含 created_at 字段
-    if (!response.learn_times || response.learn_times.length === 0) {
-      return [];
-    }
-    
-    return response.learn_times.map((item) => {
-      // 格式化日期标签
-      const date = new Date(item.created_at);
-      let label = '';
-      
-      if (period === 'weekly') {
-        // 周视图：显示星期几
-        const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-        label = weekdays[date.getDay()];
-      } else if (period === 'monthly') {
-        // 月视图：显示日期
-        label = `${date.getDate()}日`;
-      } else {
-        // 年视图：显示月-日
-        label = `${date.getMonth() + 1}-${date.getDate()}`;
-      }
-      
-      return {
-        label,
-        duration: item.duration || 0
-      };
-    });
-  } catch (error) {
-    console.error('获取学习趋势失败:', error);
-    return [];
-  }
-}
-
 
 // P1修复:获取标签系统(Flag标签分类统计)
 export async function getFlagLabels(): Promise<Array<{ label: number; count: number; name: string }>> {
@@ -154,6 +104,51 @@ export async function getFlagLabels(): Promise<Array<{ label: number; count: num
     ];
   } catch (error) {
     console.error('获取标签系统失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取学习时长趋势数据（新）
+ * @param period 'week' (最近7天) | 'month' (当前月份) | 'year' (最近6个月)
+ * @returns 学习时长趋势数组
+ */
+export async function getStudyTimeTrend(period: 'week' | 'month' | 'year'): Promise<StudyTimeTrend[]> {
+  const { api } = await import('./apiClient');
+  try {
+    let endpoint = '/api/get7daylearntime'; // 默认周(最近7天)
+    if (period === 'week') {
+      endpoint = '/api/get7daylearntime'; // 周：最近7天
+    } else if (period === 'month') {
+      endpoint = '/api/getCurrentMonthLearnTime'; // 月：当前月份
+    } else if (period === 'year') {
+      endpoint = '/api/getRecent6MonthsLearnTime'; // 年：最近6个月
+    }
+    
+    const response = await api.get<{ learn_times: Array<{ id: number; user_id: number; duration: number; created_at: string }> }>(endpoint);
+    
+    console.log(`${period}周期原始数据:`, response);
+    
+    if (!response.learn_times || response.learn_times.length === 0) {
+      console.log(`${period}周期无数据`);
+      return [];
+    }
+    
+    // 转换为前端需要的格式 - 直接提取日期部分，避免时区问题
+    const result = response.learn_times.map((item) => {
+      // created_at 格式: "2025-11-01T00:00:00+08:00" 或 "2025-11-01"
+      // 直接提取YYYY-MM-DD部分，不经过Date对象
+      const dateStr = item.created_at.split('T')[0]; // 取T之前的部分
+      return {
+        date: dateStr,
+        seconds: item.duration || 0
+      };
+    });
+    
+    console.log(`${period}周期转换后数据:`, result);
+    return result;
+  } catch (error) {
+    console.error('获取学习时长趋势失败:', error);
     return [];
   }
 }

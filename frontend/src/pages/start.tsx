@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/auth.service';
-import startImage from '../assets/start.png';
+import startImage from '../assets/start/start.png';
+import zhixuImage from '../assets/start/zhixu.png';
+import yanImage from '../assets/start/yan.png';
 
-/**
- * 开屏动画页面
- * - 展示品牌形象（至少2秒）
- * - 自动检测token并尝试登录
- * - 有token则直接进入主页，无token则进入登录页
- */
 export default function StartPage() {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(true);
@@ -71,34 +67,40 @@ export default function StartPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 flex flex-col items-center justify-between overflow-hidden">
-        {/* 顶部Logo和标题区域 */}
-      <div className="flex-1 flex flex-col items-center justify-center space-y-6 px-4">
-        <div className="text-center space-y-4 animate-fade-in">
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-500 via-red-400 to-orange-600 bg-clip-text text-transparent drop-shadow-lg">
-            知序
-          </h1>
-          <p className="text-xl text-orange-600 font-medium">知往观来，序理成章</p>
-        </div>
-        
+      {/* 居中图片区域 */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 relative">
+        {/* zhixu图片正中央 */}
+        <img
+          src={zhixuImage}
+          alt="zhixu"
+          className="w-3/5 h-auto object-contain mx-auto animate-fade-in"
+          style={{ position: 'relative', zIndex: 2 }}
+        />
+        {/* yan图片紧贴zhixu下方 */}
+          <img
+            src={yanImage}
+            alt="yan"
+            className="w-3/5 h-auto object-contain mx-auto animate-fade-in mt-8"
+            style={{ position: 'relative', zIndex: 1 }}
+          />
         {/* 加载动画 */}
         {isChecking && (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 mt-6">
             <div className="w-3 h-3 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
             <div className="w-3 h-3 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
             <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
           </div>
         )}
       </div>
-      {/* 底部吉祥物图片 */}
-      <div className="w-full">
-        <img 
+      {/* start图片在屏幕中下位置 */}
+      <div className="w-full mb-8">
+        <img
           src={startImage}
-          alt="知序吉祥物"
-          className="w-full h-auto object-cover object-bottom"
-          style={{ maxHeight: '40vh' }}
+          alt="start"
+          className="w-full h-auto object-contain"
+          style={{ maxHeight: '32vh' }}
         />
       </div>
-
       {/* 自定义动画样式 */}
       <style>{`
         @keyframes fade-in {
@@ -111,7 +113,6 @@ export default function StartPage() {
             transform: translateY(0);
           }
         }
-        
         .animate-fade-in {
           animation: fade-in 0.8s ease-out;
         }
