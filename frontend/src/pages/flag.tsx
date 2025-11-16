@@ -1474,8 +1474,11 @@ export default function FlagPage() {
                 id="flag-total"
                 type="number"
                 min={1}
-                value={newTask.total}
-                onChange={(e) => setNewTask((s) => ({ ...s, total: Number(e.target.value || 1) }))}
+                value={newTask.total === 0 ? '' : newTask.total}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNewTask((s) => ({ ...s, total: val === '' ? 0 : Number(val) }));
+                }}
                 className="mt-1 [appearance:auto] [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
               />
             </div>
@@ -1547,7 +1550,13 @@ export default function FlagPage() {
             </div>
           </div>
           <DrawerFooter>
-            <Button onClick={handleSaveTask} className="rounded-full px-8">保存</Button>
+            <Button onClick={() => {
+              if (newTask.total === 0) {
+                toast.warning('请输入每日完成次数');
+                return;
+              }
+              handleSaveTask();
+            }} className="rounded-full px-8">保存</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
