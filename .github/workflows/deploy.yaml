@@ -8,6 +8,7 @@ on:
 env:
   DIST_DIR: frontend/dist
   BUCKET_NAME: 25-hack-4-fe
+  VITE_API_BASE_URL: https://unimate.ncuos.com/api
 
 jobs:
   build:
