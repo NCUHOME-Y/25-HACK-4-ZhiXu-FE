@@ -8,6 +8,10 @@ import leaf1 from '../assets/start/leaf1.png';
 import leaf2 from '../assets/start/leaf2.png';
 import leaf3 from '../assets/start/leaf3.png';
 import leaf4 from '../assets/start/leaf4.png';
+import leaf5 from '../assets/start/微信图片_20251117203226_58_227-removebg-preview.png';
+import leaf6 from '../assets/start/微信图片_20251117203226_59_227-removebg-preview.png';
+import leaf7 from '../assets/start/微信图片_20251117203227_60_227-removebg-preview.png';
+import leaf8 from '../assets/start/微信图片_20251117203228_61_227-removebg-preview.png';
 
 export default function StartPage() {
   const navigate = useNavigate();
@@ -77,6 +81,11 @@ export default function StartPage() {
       <img src={leaf2} alt="leaf2" className="absolute right-10 top-24 w-20 h-20 opacity-80 animate-fade-in" style={{zIndex:1}} />
       <img src={leaf3} alt="leaf3" className="absolute left-12 bottom-72 w-20 h-20 opacity-80 animate-fade-in" style={{zIndex:1}} />
       <img src={leaf4} alt="leaf4" className="absolute right-16 bottom-64 w-16 h-16 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      {/* 新增银杏叶装饰 */}
+      <img src={leaf5} alt="leaf5" className="absolute left-1/2 top-8 transform -translate-x-1/2 w-18 h-18 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      <img src={leaf6} alt="leaf6" className="absolute right-8 top-1/2 transform -translate-y-1/2 w-20 h-20 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      <img src={leaf7} alt="leaf7" className="absolute left-8 bottom-32 w-18 h-18 opacity-80 animate-fade-in" style={{zIndex:1}} />
+      <img src={leaf8} alt="leaf8" className="absolute right-1/2 bottom-40 transform translate-x-1/2 w-16 h-16 opacity-80 animate-fade-in" style={{zIndex:1}} />
 
       {/* 居中图片区域 */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">

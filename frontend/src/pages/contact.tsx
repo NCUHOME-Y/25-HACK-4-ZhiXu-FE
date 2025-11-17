@@ -7,6 +7,7 @@ import type { Conversation } from '../services/chat.service';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser } from '../lib/helpers/helpers';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
+import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 
 /**
  * 联系页面(翰林院论)
@@ -463,7 +464,7 @@ export default function ContactPage() {
                           <PopoverTrigger asChild>
                             <div className="cursor-pointer flex-shrink-0">
                               <Avatar className="h-11 w-11">
-                                <AvatarImage src={user.avatar} />
+                                <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
                                 <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
                               </Avatar>
                             </div>
@@ -472,7 +473,7 @@ export default function ContactPage() {
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-12 w-12">
-                                  <AvatarImage src={user.avatar} />
+                                  <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
                                   <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
@@ -550,7 +551,7 @@ export default function ContactPage() {
                           {user.comments.map((comment) => (
                             <div key={comment.id} className="flex gap-2">
                               <Avatar className="h-9 w-9 flex-shrink-0">
-                                <AvatarImage src={comment.userAvatar} />
+                                <AvatarImage src={typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('http') ? comment.userAvatar : (typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('/api/avatar/') ? getAvatarUrl(comment.userAvatar) : comment.userAvatar)} />
                                 <AvatarFallback>{comment.userName.slice(0, 2)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
@@ -602,7 +603,7 @@ export default function ContactPage() {
                     <Card key={searchUser.id} className="p-4 rounded-xl">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                          <AvatarImage src={searchUser.avatar} alt="Avatar" />
+                          <AvatarImage src={typeof searchUser.avatar === 'string' && searchUser.avatar.startsWith('http') ? searchUser.avatar : (typeof searchUser.avatar === 'string' && searchUser.avatar.startsWith('/api/avatar/') ? getAvatarUrl(searchUser.avatar) : searchUser.avatar)} alt="Avatar" />
                           <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">
                             {searchUser.name.slice(0, 2)}
                           </AvatarFallback>
@@ -683,18 +684,18 @@ export default function ContactPage() {
                   <PopoverTrigger asChild>
                     <div className="cursor-pointer flex-shrink-0">
                       <Avatar className="h-11 w-11">
-                        <AvatarImage src={user.avatar} />
+                        <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
                         <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
                       </Avatar>
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-3">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={user.avatar} />
-                          <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
-                        </Avatar>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
+                            <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+                          </Avatar>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-sm truncate">{user.name}</h4>
                         </div>
@@ -781,7 +782,7 @@ export default function ContactPage() {
                   {user.comments.map((comment) => (
                     <div key={comment.id} className="flex gap-2">
                       <Avatar className="h-9 w-9 flex-shrink-0">
-                        <AvatarImage src={comment.userAvatar} />
+                        <AvatarImage src={typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('http') ? comment.userAvatar : (typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('/api/avatar/') ? getAvatarUrl(comment.userAvatar) : comment.userAvatar)} />
                         <AvatarFallback>{comment.userName.slice(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">

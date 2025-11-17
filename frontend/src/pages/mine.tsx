@@ -131,6 +131,10 @@ export default function MinePage() {
     { id: 9, name: '夜猫子', icon: Star, color: 'cyan' },
     { id: 10, name: '完美主义', icon: Target, color: 'amber' },
     { id: 11, name: '全能选手', icon: Trophy, color: 'lime' },
+    { id: 12, name: '学习狂人', icon: Star, color: 'violet' },
+    { id: 13, name: '社交达人', icon: MessageSquare, color: 'rose' },
+    { id: 14, name: '时间管理者', icon: Target, color: 'emerald' },
+    { id: 15, name: '成就收集者', icon: Award, color: 'slate' },
   ], []);
   
   // P1修复：加载用户成就系统（支持实时刷新）
@@ -163,7 +167,7 @@ export default function MinePage() {
           isUnlocked: false
         })));
       } else {
-        // 后端返回了12个成就数据
+        // 后端返回了16个成就数据
         console.log(`✅ 加载了 ${data.achievements.length} 个成就`);
         setBadges(data.achievements);
       }
@@ -202,9 +206,9 @@ export default function MinePage() {
   const achievedBadges = badges.filter(b => b.isUnlocked).length;
   const totalBadges = badges.length > 0 ? badges.length : allBadges.length;
   
-  // 合并后端成就数据和前端配置
+  // 合并后端成就数据和前端配置，确保只显示16个成就
   const displayBadges = badges.length > 0 
-    ? badges.map((badge, index) => ({
+    ? badges.slice(0, 16).map((badge, index) => ({
         id: badge.id,
         name: badge.name,
         description: badge.description,
@@ -236,6 +240,10 @@ export default function MinePage() {
       cyan: 'bg-cyan-50 dark:bg-cyan-950/30',
       amber: 'bg-amber-50 dark:bg-amber-950/30',
       lime: 'bg-lime-50 dark:bg-lime-950/30',
+      violet: 'bg-violet-50 dark:bg-violet-950/30',
+      rose: 'bg-rose-50 dark:bg-rose-950/30',
+      emerald: 'bg-emerald-50 dark:bg-emerald-950/30',
+      slate: 'bg-slate-50 dark:bg-slate-950/30',
     };
     return colorMap[color] || 'bg-slate-50';
   };
@@ -257,6 +265,10 @@ export default function MinePage() {
       cyan: 'text-cyan-600 dark:text-cyan-400',
       amber: 'text-amber-600 dark:text-amber-400',
       lime: 'text-lime-600 dark:text-lime-400',
+      violet: 'text-violet-600 dark:text-violet-400',
+      rose: 'text-rose-600 dark:text-rose-400',
+      emerald: 'text-emerald-600 dark:text-emerald-400',
+      slate: 'text-slate-600 dark:text-slate-400',
     };
     return colorMap[color] || 'text-slate-400';
   };
