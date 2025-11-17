@@ -257,13 +257,19 @@ export default function AIPage() {
     <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-24 space-y-5">
         {/* 页面标题 */}
-        <div className="pt-6 pb-1 px-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-7 w-7 text-blue-500" />
-            <h1 className="text-2xl font-bold">太傅</h1>
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-100">
+                <Sparkles className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">太傅</h1>
+                <p className="text-sm text-slate-600">输入学习目标，AI为你定制专属计划</p>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">输入学习目标，AI为你定制专属计划</p>
-        </div>
+        </header>
 
         {/* 输入区域 */}
         <section className="space-y-4 px-4">

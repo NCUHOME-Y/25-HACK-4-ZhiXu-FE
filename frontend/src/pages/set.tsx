@@ -111,17 +111,17 @@ export default function SetPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* 固定标题栏 - 与search栏相同样式 */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
         <div className="flex h-16 items-center px-4 gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9"
+            className="h-9 w-9 rounded-full hover:bg-gray-100"
             onClick={() => navigate('/mine')}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold">系统设置</h1>
+          <h1 className="text-2xl font-bold text-gray-900">系统设置</h1>
         </div>
       </nav>
 

@@ -178,50 +178,62 @@ export default function PublicPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <nav className="bg-white sticky top-0 z-10">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <nav className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200/50 shadow-sm">
         <div className="px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/chat-rooms')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/chat-rooms')} className="hover:bg-gray-100 rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold">{roomName}</h1>
-            <p className="text-xs text-muted-foreground">房间ID: {roomId}</p>
+            <h1 className="text-lg font-semibold text-gray-900">{roomName}</h1>
+            <p className="text-xs text-gray-500">房间ID: {roomId}</p>
           </div>
         </div>
       </nav>
 
       <div className="flex-1 pb-24 overflow-y-auto px-4 pt-4">
         {messages.length === 0 ? (
-          <div className="h-full" />
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                <Send className="h-8 w-8 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-gray-600 font-medium text-lg">开始聊天吧</p>
+                <p className="text-sm text-gray-500 mt-1">发送第一条消息</p>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="space-y-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-2 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}
+                className={`flex gap-3 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-300`}
               >
                 <div className="flex flex-col items-center gap-1">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
+                  <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-white shadow-sm">
                     <AvatarImage src={getAvatarUrl(msg.avatar)} />
-                    <AvatarFallback>{msg.userName.slice(0, 2)}</AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs">
+                      {msg.userName.slice(0, 2)}
+                    </AvatarFallback>
                   </Avatar>
-                  <div className="text-[10px] text-muted-foreground text-center max-w-[60px] truncate">
+                  <div className="text-[10px] text-gray-500 text-center max-w-[60px] truncate">
                     {msg.userName}
                   </div>
                 </div>
                 
-                <div className={`flex flex-col gap-1 max-w-[65%] ${msg.isMe ? 'items-end' : 'items-start'}`}>
+                <div className={`flex flex-col gap-1 max-w-[70%] ${msg.isMe ? 'items-end' : 'items-start'}`}>
                   <div
-                    className={`px-4 py-2 rounded-2xl ${
+                    className={`px-4 py-3 rounded-2xl shadow-sm ${
                       msg.isMe
-                        ? 'bg-blue-600 text-white rounded-tr-sm'
-                        : 'bg-slate-100 text-slate-900 rounded-tl-sm'
-                    }`}
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-tr-sm'
+                        : 'bg-white text-gray-900 rounded-tl-sm border border-gray-100'
+                    } transition-all duration-200 hover:shadow-md`}
                   >
-                    {msg.message}
+                    <p className="text-sm leading-relaxed">{msg.message}</p>
                   </div>
-                  <div className="text-xs text-muted-foreground px-2">{msg.time}</div>
+                  <div className="text-xs text-gray-500 px-2">{msg.time}</div>
                 </div>
               </div>
             ))}
@@ -230,8 +242,8 @@ export default function PublicPage() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 py-3">
-        <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white border border-border rounded-full shadow-sm overflow-hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent px-4 py-4">
+        <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-full shadow-lg overflow-hidden">
           <div className="flex items-center flex-1 pl-4 pr-2 h-full">
             <Input
               value={message}
@@ -245,13 +257,13 @@ export default function PublicPage() {
               }}
             />
           </div>
-          <Separator orientation="vertical" className="h-full" />
+          <Separator orientation="vertical" className="h-8" />
           <Button
             type="submit"
             variant="default"
             size="sm"
             onClick={handleSendMessage}
-            className="h-full px-6 rounded-none"
+            className="h-full px-6 rounded-none bg-blue-600 hover:bg-blue-700 transition-all duration-200"
             style={{ borderRadius: 0 }}
           >
             <Send className="h-4 w-4" />

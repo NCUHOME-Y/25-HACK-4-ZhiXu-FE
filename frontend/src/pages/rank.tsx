@@ -80,17 +80,6 @@ export default function RankPage() {
   };
 
   /**
-   * 获取排名徽章颜色
-   */
-  const getMedalColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-500 shadow-lg shadow-yellow-200';
-    if (rank === 2) return 'bg-gradient-to-br from-gray-300 via-gray-200 to-slate-400 shadow-lg shadow-gray-200';
-    if (rank === 3) return 'bg-gradient-to-br from-amber-700 via-amber-600 to-orange-700 shadow-lg shadow-amber-300';
-    if (rank <= 6) return 'bg-gradient-to-br from-orange-600 via-orange-500 to-red-600 shadow-lg shadow-orange-300';
-    return 'bg-slate-100 text-slate-600';
-  };
-
-  /**
    * 获取显示的数值
    */
   const getDisplayValue = (user: RankUser) => {
@@ -111,58 +100,70 @@ export default function RankPage() {
   // ========== 渲染 ==========
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="px-4 py-4">
-          <p className="text-muted-foreground text-center">加载中...</p>
+          <p className="text-gray-500 text-center">加载中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       {/* 顶部导航 */}
-      <nav className="bg-white sticky top-0 z-10">
+      <nav className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200/50 shadow-sm">
         <div className="px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-gray-100 rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">排行榜</h1>
+          <h1 className="text-lg font-semibold text-gray-900">排行榜</h1>
         </div>
       </nav>
 
       {/* 内容区域 */}
-      <div className="flex-1 px-4 py-4 space-y-4 mb-20">
+      <div className="flex-1 px-4 py-4 space-y-4 mb-24">
         {/* 排行榜类型切换 */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 p-1 bg-gray-50 rounded-xl">
           <Button
-            variant={activeTab === 'days' ? 'default' : 'outline'}
-            className="flex-1 gap-2"
+            variant={activeTab === 'days' ? 'default' : 'ghost'}
+            className={`flex-1 gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 ${
+              activeTab === 'days'
+                ? 'bg-white shadow-sm text-orange-600 font-medium'
+                : 'hover:bg-white/60 text-gray-600'
+            }`}
             onClick={() => setActiveTab('days')}
           >
             <Flame className="h-4 w-4" />
             打卡总天数
           </Button>
           <Button
-            variant={activeTab === 'flags' ? 'default' : 'outline'}
-            className="flex-1 gap-2"
+            variant={activeTab === 'flags' ? 'default' : 'ghost'}
+            className={`flex-1 gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 ${
+              activeTab === 'flags'
+                ? 'bg-white shadow-sm text-blue-600 font-medium'
+                : 'hover:bg-white/60 text-gray-600'
+            }`}
             onClick={() => setActiveTab('flags')}
           >
             <Trophy className="h-4 w-4" />
             完成Flag数
           </Button>
           <Button
-            variant={activeTab === 'points' ? 'default' : 'outline'}
-            className="flex-1 gap-2"
+            variant={activeTab === 'points' ? 'default' : 'ghost'}
+            className={`flex-1 gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 ${
+              activeTab === 'points'
+                ? 'bg-white shadow-sm text-purple-600 font-medium'
+                : 'hover:bg-white/60 text-gray-600'
+            }`}
             onClick={() => setActiveTab('points')}
           >
-            ✨
+            <span className="text-base">✨</span>
             积分总数
           </Button>
         </div>
 
         {/* 排行榜列表 - 固定显示前20名 */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {Array.from({ length: 20 }, (_, index) => {
             const user = rankUsers[index];
             const rank = index + 1;
@@ -170,25 +171,25 @@ export default function RankPage() {
             if (!user) {
               // 占位符：没有数据时显示空白但保留排名
               return (
-                <Card key={`placeholder-${rank}`} className="p-4 bg-gray-50 opacity-40">
+                <Card key={`placeholder-${rank}`} className="p-4 bg-gray-50/50 border border-gray-100 opacity-60">
                   <div className="flex items-center gap-4">
                     {/* 排名 */}
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-gray-200 text-gray-400">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-gray-200 text-gray-400 text-sm">
                       {rank}
                     </div>
                     {/* 占位内容 */}
                     <div className="flex-1 flex items-center gap-3">
                       <Avatar className="w-10 h-10 bg-gray-300">
-                        <AvatarFallback>-</AvatarFallback>
+                        <AvatarFallback className="text-gray-400">-</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-400">暂无数据</div>
-                        <div className="text-sm text-gray-300">等待上榜</div>
+                        <div className="font-medium text-gray-400 text-sm">暂无数据</div>
+                        <div className="text-xs text-gray-300">等待上榜</div>
                       </div>
                     </div>
                     {/* 数据 */}
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-300">-</div>
+                      <div className="text-xl font-bold text-gray-300">-</div>
                       <div className="text-xs text-gray-300">{getUnit()}</div>
                     </div>
                   </div>
@@ -198,22 +199,39 @@ export default function RankPage() {
             
             // 有数据时正常显示
             return (
-            <Card key={user.id} className={`p-4 ${user.rank <= 6 ? 'border-2 bg-gradient-to-br from-white to-slate-50' : ''} ${user.rank === 1 ? 'border-yellow-300' : user.rank === 2 ? 'border-gray-300' : user.rank === 3 ? 'border-amber-600' : user.rank <= 6 ? 'border-orange-500' : ''}`}>
+            <Card key={user.id} className={`p-4 transition-all duration-200 hover:shadow-lg ${
+              user.rank <= 3
+                ? 'bg-gradient-to-r from-yellow-50/80 to-amber-50/40 border-2 shadow-md'
+                : 'bg-white border border-gray-100 hover:border-gray-200'
+            } ${
+              user.rank === 1 ? 'border-yellow-300 shadow-yellow-100' :
+              user.rank === 2 ? 'border-gray-300 shadow-gray-100' :
+              user.rank === 3 ? 'border-amber-400 shadow-amber-100' :
+              ''
+            }`}>
               <div className="flex items-center gap-4">
                 {/* 排名 */}
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${getMedalColor(user.rank)}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
+                  user.rank === 1 ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-600 shadow-yellow-300' :
+                  user.rank === 2 ? 'bg-gradient-to-br from-gray-300 via-slate-400 to-gray-500 shadow-gray-300' :
+                  user.rank === 3 ? 'bg-gradient-to-br from-amber-600 via-orange-500 to-amber-700 shadow-amber-300' :
+                  user.rank <= 6 ? 'bg-gradient-to-br from-orange-500 via-red-500 to-red-600 shadow-orange-300' :
+                  'bg-gray-400 shadow-gray-200'
+                }`}>
                   {getMedalIcon(user.rank)}
                 </div>
 
                 {/* 用户信息 */}
                 <div className="flex-1 flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-10 h-10 ring-1 ring-gray-200">
                     <AvatarImage src={getAvatarUrl(user.avatar)} />
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
+                    <AvatarFallback className="bg-gray-100 text-gray-600 font-medium">
+                      {user.name[0]}
+                    </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="font-semibold">{user.name}</div>
-                    <div className="text-sm text-slate-500">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">{user.name}</div>
+                    <div className="text-sm text-gray-500 truncate">
                       {activeTab === 'days' && `打卡 ${user.totalDays} 天`}
                       {activeTab === 'flags' && `完成 ${user.completedFlags} 个Flag`}
                       {activeTab === 'points' && `获得 ${user.totalPoints} 积分`}
@@ -239,23 +257,25 @@ export default function RankPage() {
 
       {/* 我的排名 - 固定在底部 */}
       {currentUser && (
-        <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pt-4 z-10">
-          <Card className="p-4 border-2 border-blue-500 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 pt-3 z-10">
+          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-200">
             <div className="flex items-center gap-4">
               {/* 排名 */}
-              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-blue-100 text-blue-600">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-blue-500 text-white shadow-lg">
                 {currentUser.rank}
               </div>
 
               {/* 用户信息 */}
               <div className="flex-1 flex items-center gap-3">
-                <Avatar className="w-10 h-10 ring-2 ring-blue-500">
+                <Avatar className="w-10 h-10 ring-2 ring-blue-300">
                   <AvatarImage src={getAvatarUrl(currentUser.avatar)} />
-                  <AvatarFallback>{currentUser.name}</AvatarFallback>
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                    {currentUser.name[0]}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div className="font-semibold text-blue-600">{currentUser.name}</div>
-                  <div className="text-sm text-slate-500">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-blue-900">{currentUser.name}</div>
+                  <div className="text-sm text-blue-700">
                     {activeTab === 'days' && `打卡 ${currentUser.totalDays} 天`}
                     {activeTab === 'flags' && `完成 ${currentUser.completedFlags} 个Flag`}
                     {activeTab === 'points' && `获得 ${currentUser.totalPoints} 积分`}
@@ -268,7 +288,7 @@ export default function RankPage() {
                 <div className="text-2xl font-bold text-blue-600">
                   {getDisplayValue(currentUser)}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-blue-500 font-medium">
                   {getUnit()}
                 </div>
               </div>

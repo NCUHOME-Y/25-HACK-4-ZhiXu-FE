@@ -749,13 +749,19 @@ export default function FlagPage() {
       
       <div className="flex-1 pb-24 space-y-4 px-4">
         {/* 页面标题 */}
-        <div className="pt-6 pb-1 px-0">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="h-7 w-7 text-blue-500" />
-            <h1 className="text-2xl font-bold">Flag</h1>
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-100">
+                <CheckSquare className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">Flag</h1>
+                <p className="text-sm text-slate-600">管理您的学习目标和任务</p>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">管理您的学习目标和任务</p>
-        </div>
+        </header>
 
         {/* 顶部日历 */}
         <section className="pt-3">

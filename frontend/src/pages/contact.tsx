@@ -445,9 +445,9 @@ export default function ContactPage() {
         {activeSearchQuery.trim() ? (
           <section className="px-4">
             <Tabs defaultValue="posts" className="w-full">
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="posts">相关帖子 ({displayedPosts.length})</TabsTrigger>
-                <TabsTrigger value="users">相关用户 ({searchUserResults.length})</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-2 h-12 bg-slate-100/80 backdrop-blur-sm p-1 rounded-2xl shadow-sm">
+                <TabsTrigger value="posts" className="rounded-xl font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm">相关帖子 ({displayedPosts.length})</TabsTrigger>
+                <TabsTrigger value="users" className="rounded-xl font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm">相关用户 ({searchUserResults.length})</TabsTrigger>
               </TabsList>
               
               {/* 帖子结果 Tab */}

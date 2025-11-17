@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Button, Card } from "../components";
 import authService from '../services/auth.service';
 import { api } from '../services/apiClient';
+import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 
 interface PrivateConversation {
   userId: string;
@@ -235,37 +236,40 @@ export default function ReceivePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* 顶部导航栏 */}
-      <nav className="bg-white sticky top-0 z-10">
+      <nav className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200/50 shadow-sm">
         <div className="px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-gray-100 rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">收到的消息</h1>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-gray-900">收到的消息</h1>
+            <p className="text-xs text-gray-500">查看私聊和评论通知</p>
+          </div>
         </div>
       </nav>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 pb-6 px-4 pt-6">
         {/* 私聊会话列表 */}
         {conversations.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h2 className="text-sm font-medium text-muted-foreground px-2">私聊消息</h2>
             {conversations.map((conv) => (
               <Card
                 key={conv.userId}
-                className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                className="p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] bg-white/80 backdrop-blur-sm border border-gray-200/50"
                 onClick={() => handleConversationClick(conv)}
               >
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 flex-shrink-0">
-                    <AvatarImage src={conv.userAvatar} />
+                  <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-white">
+                    <AvatarImage src={getAvatarUrl(conv.userAvatar)} />
                     <AvatarFallback>{conv.userName.slice(0, 2)}</AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-medium truncate">{conv.userName}</h3>
+                      <h3 className="font-semibold text-gray-900 truncate">{conv.userName}</h3>
                       <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                         {formatTime(conv.lastMessageTime)}
                       </span>
@@ -287,19 +291,19 @@ export default function ReceivePage() {
         )}
 
         {/* 评论通知 */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground px-2">评论通知</h2>
           <Card
-            className="p-4 cursor-pointer hover:bg-accent transition-colors"
+            className="p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] bg-white/80 backdrop-blur-sm border border-gray-200/50"
             onClick={handleCommentsClick}
           >
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center">
-                <MessageSquare className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-teal-500 shadow-lg shadow-green-200 flex items-center justify-center flex-shrink-0 ring-2 ring-white">
+                <MessageSquare className="h-6 w-6 text-white" />
               </div>
               
               <div className="flex-1">
-                <h3 className="font-medium">对你的评论</h3>
+                <h3 className="font-semibold text-gray-900">对你的评论</h3>
                 <p className="text-sm text-muted-foreground">
                   {comments.length > 0 ? `${comments.length}条新评论` : '暂无新评论'}
                 </p>
@@ -316,18 +320,18 @@ export default function ReceivePage() {
 
         {/* 评论详情列表 */}
         {showCommentDetails && comments.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h2 className="text-sm font-medium text-muted-foreground px-2">评论详情</h2>
             {comments.map((comment) => (
-              <Card key={comment.id} className="p-4">
+              <Card key={comment.id} className="p-4 bg-white/80 backdrop-blur-sm border border-gray-200/50">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={comment.fromUserAvatar} />
+                    <AvatarImage src={getAvatarUrl(comment.fromUserAvatar)} />
                     <AvatarFallback>{comment.fromUserName.slice(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{comment.fromUserName}</span>
+                      <span className="font-semibold text-sm text-gray-900">{comment.fromUserName}</span>
                       <span className="text-xs text-muted-foreground">
                         {formatTime(comment.createdAt)}
                       </span>
@@ -335,7 +339,7 @@ export default function ReceivePage() {
                     <p className="text-sm text-muted-foreground mb-2">
                       评论了你的帖子「{comment.postTitle}」
                     </p>
-                    <p className="text-sm">{comment.content}</p>
+                    <p className="text-sm text-gray-700">{comment.content}</p>
                   </div>
                 </div>
               </Card>
@@ -345,19 +349,41 @@ export default function ReceivePage() {
 
         {/* 错误提示 */}
         {error && (
-          <div className="flex flex-col items-center justify-center py-8">
-            <p className="text-red-500 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>重新加载</Button>
-          </div>
+          <Card className="p-6 mb-6 bg-gradient-to-r from-red-50 to-pink-50 border-red-200 shadow-sm">
+            <div className="text-center space-y-3">
+              <div className="text-2xl">⚠️</div>
+              <p className="text-red-700 font-medium">{error}</p>
+              <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-full px-6">
+                重新加载
+              </Button>
+            </div>
+          </Card>
         )}
 
         {/* 空状态 - 只在没有私聊会话时显示 */}
         {!error && conversations.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <MessageCircle className="h-16 w-16 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">暂无私聊消息</p>
-            <p className="text-sm text-muted-foreground/70 mt-2">
-              收到的私聊消息会显示在这里
+          <Card className="p-8 text-center bg-white/60 backdrop-blur-sm border border-gray-200/50 shadow-sm">
+            <div className="space-y-4">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                <MessageCircle className="h-8 w-8 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-gray-600 font-medium text-lg">暂无私聊消息</p>
+                <p className="text-sm text-gray-500 mt-1">收到的私聊消息会显示在这里</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {!error && conversations.length > 0 && (
+          <div className="mt-8 text-center text-xs text-gray-500 space-y-1 bg-white/40 backdrop-blur-sm rounded-lg p-4 border border-gray-200/50">
+            <p className="flex items-center justify-center gap-1">
+              <span className="text-blue-500">💬</span>
+              点击私聊消息进入聊天界面
+            </p>
+            <p className="flex items-center justify-center gap-1">
+              <span className="text-green-500">🔔</span>
+              评论通知会实时更新
             </p>
           </div>
         )}

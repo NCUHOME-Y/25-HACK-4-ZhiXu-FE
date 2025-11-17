@@ -265,13 +265,19 @@ export default function DataPage() {
     <div className="flex min-h-screen flex-col bg-white">
       <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
-        <div className="pt-6 pb-2 px-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-7 w-7 text-blue-500" />
-            <h1 className="text-2xl font-bold">璇历</h1>
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-100">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">璇历</h1>
+                <p className="text-sm text-slate-600">查看学习数据和统计信息</p>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">查看学习数据和统计信息</p>
-        </div>
+        </header>
 
         {/* 打卡概览 */}
         <section className="px-2">
