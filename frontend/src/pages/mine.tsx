@@ -28,7 +28,7 @@ import {
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
 import { toast } from 'sonner';
-import { getAvatarUrl } from '../lib/helpers/asset-helpers';
+import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
 
 /**
  * 我的页面
@@ -261,8 +261,8 @@ export default function MinePage() {
     return colorMap[color] || 'text-slate-400';
   };
 
-  // 头像选项（1-21对应后端的21个头像文件）
-  const avatarOptions = Array.from({ length: 21 }, (_, i) => `/api/avatar/${i + 1}`);
+  // 头像选项（1-21对应前端本地头像文件）
+  const avatarOptions = AVATAR_FILES;
 
   // ========== 事件处理器 ==========
   /**
@@ -290,12 +290,12 @@ export default function MinePage() {
    * 选择头像
    */
   const handleSelectAvatar = async (selectedAvatar: string) => {
-    // 直接本地切换头像（如需同步到后端可保留API调用）
-    const match = selectedAvatar.match(/\/api\/avatar\/(\d+)$/);
-    if (match) {
-      const avatarId = parseInt(match[1], 10);
+    // 直接本地切换头像
+    const avatarIndex = AVATAR_FILES.indexOf(selectedAvatar);
+    if (avatarIndex !== -1) {
+      const avatarId = avatarIndex + 1;
       try {
-        // 如需同步到后端头像索引，保留API调用
+        // 同步到后端头像索引
         const { switchAvatar } = await import('../services/set.service');
         await switchAvatar(avatarId);
         setAvatar(selectedAvatar);
@@ -337,7 +337,7 @@ export default function MinePage() {
           <Card className="p-4 rounded-xl">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                <AvatarImage src={getAvatarUrl(avatar)} alt="Avatar" />
+                <AvatarImage src={typeof avatar === 'string' && avatar.startsWith('http') ? avatar : (typeof avatar === 'string' && avatar.startsWith('/api/avatar/') ? getAvatarUrl(avatar) : avatar)} alt="Avatar" />
                 <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">知</AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -521,7 +521,7 @@ export default function MinePage() {
                   onClick={() => setAvatarPopoverOpen(true)}
                   className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0"
                 >
-                  <img src={getAvatarUrl(avatar)} alt="Avatar" className="h-full w-full object-cover" />
+                  <img src={typeof avatar === 'string' && avatar.startsWith('http') ? avatar : (typeof avatar === 'string' && avatar.startsWith('/api/avatar/') ? getAvatarUrl(avatar) : avatar)} alt="Avatar" className="h-full w-full object-cover" />
                 </button>
 
                 <Dialog open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
@@ -530,15 +530,15 @@ export default function MinePage() {
                       <DialogTitle>选择头像</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-3 gap-3 py-2">
-                      {avatarOptions.map((option) => (
+                      {avatarOptions.map((option, index) => (
                         <button
-                          key={option}
+                          key={index}
                           onClick={() => handleSelectAvatar(option)}
                           className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${
                             avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'
                           }`}
                         >
-                          <img src={getAvatarUrl(option)} alt="Avatar option" className="h-full w-full object-cover" />
+                          <img src={option} alt="Avatar option" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
