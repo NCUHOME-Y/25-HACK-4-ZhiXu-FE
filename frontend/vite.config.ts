@@ -26,6 +26,12 @@ export default defineConfig(({ mode }) => {
           ws: true,
           changeOrigin: true,
         },
+        // 代理静态资源（头像等）到后端
+        '/assets': {
+          target: apiBase,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   }

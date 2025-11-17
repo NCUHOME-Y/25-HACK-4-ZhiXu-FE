@@ -25,6 +25,7 @@ export interface Conversation {
   last_message: string;
   last_message_time: string;
   unread_count: number;
+  last_message_at: string; // 补充 last_message_at 字段，兼容 contact.tsx 的类型检查
 }
 
 // 聊天室接口

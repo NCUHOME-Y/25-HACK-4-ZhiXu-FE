@@ -45,7 +45,7 @@ export default function MinePage() {
   const [profile, setProfile] = useState({
     nickname: '知序学习者',
     bio: '每天进步一点点,成为更好的自己',
-    avatar: '/assets/images/screenshot_20251114_131601.png'
+    avatar: '/assets/head/screenshot_20251114_131601.png'
   });
   const [nickname, setNickname] = useState(profile.nickname);
   const [bio, setBio] = useState(profile.bio);

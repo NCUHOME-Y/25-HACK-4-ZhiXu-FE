@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon, Plus, Inbox } from 'lucide-react';
 import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea, Tabs, TabsList, TabsTrigger, TabsContent } from "../components";
 import contactService, { type SearchUserResult } from '../services/contact.service';
+import type { Conversation } from '../services/chat.service';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser } from '../lib/helpers/helpers';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
@@ -97,7 +98,7 @@ export default function ContactPage() {
 
       // 检查是否有新的私聊消息
       const conversationsResponse = await contactService.getPrivateConversations();
-      const hasNewPrivateMsg = conversationsResponse?.conversations?.some((conv: { last_message_at: string }) => 
+      const hasNewPrivateMsg = conversationsResponse?.conversations?.some((conv: Conversation) => 
         new Date(conv.last_message_at) > new Date(lastReadTime)
       ) || false;
 
