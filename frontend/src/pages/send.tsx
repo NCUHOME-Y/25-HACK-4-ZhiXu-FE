@@ -279,34 +279,37 @@ export default function SendPage() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent px-4 py-4">
-        <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-full shadow-lg overflow-hidden">
-          <div className="flex items-center flex-1 pl-4 pr-2 h-full">
-            <Input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="输入消息..."
-              className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSendMessage();
-                }
-              }}
-            />
+      {/* 如果是自己，不显示发送消息区域 */}
+      {(!currentUserId || currentUserId === '' || String(user.id) !== currentUserId) && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent px-4 py-4">
+          <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-full shadow-lg overflow-hidden">
+            <div className="flex items-center flex-1 pl-4 pr-2 h-full">
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="输入消息..."
+                className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendMessage();
+                  }
+                }}
+              />
+            </div>
+            <Separator orientation="vertical" className="h-8" />
+            <Button
+              type="submit"
+              variant="default"
+              size="sm"
+              onClick={handleSendMessage}
+              className="h-full px-6 rounded-none bg-blue-600 hover:bg-blue-700 transition-all duration-200"
+              style={{ borderRadius: 0 }}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
-          <Separator orientation="vertical" className="h-8" />
-          <Button
-            type="submit"
-            variant="default"
-            size="sm"
-            onClick={handleSendMessage}
-            className="h-full px-6 rounded-none bg-blue-600 hover:bg-blue-700 transition-all duration-200"
-            style={{ borderRadius: 0 }}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

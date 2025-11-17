@@ -10,7 +10,7 @@ export interface ChatMessage {
   is_deleted?: boolean;
   deleted_at?: string;
   deleted_by?: string;
-  // 聊天室消息特有字段
+  // 谈玄斋消息特有字段
   room_id?: string;
   // 私聊消息特有字段
   sender_id?: string;
@@ -28,7 +28,7 @@ export interface Conversation {
   last_message_at: string; // 补充 last_message_at 字段，兼容 contact.tsx 的类型检查
 }
 
-// 聊天室接口
+// 谈玄斋接口
 export interface ChatRoom {
   id: string;
   name: string;
@@ -149,16 +149,16 @@ class PrivateChatService {
 }
 
 /**
- * 公共聊天室服务
- * 支持公共聊天室的WebSocket连接、消息发送、历史记录获取等功能
+ * 公共谈玄斋服务
+ * 支持公共谈玄斋的WebSocket连接、消息发送、历史记录获取等功能
  */
 class PublicChatService {
-  private readonly PUBLIC_ROOM_ID = 'public-room-1'; // 公共聊天室ID
+  private readonly PUBLIC_ROOM_ID = 'public-room-1'; // 公共谈玄斋ID
   private ws: WebSocket | null = null;
   private messageCallbacks: ((message: ChatMessage) => void)[] = [];
 
   /**
-   * 连接到公共聊天室
+   * 连接到公共谈玄斋
    */
   connect(token: string): void {
     // 断开现有连接
@@ -215,13 +215,13 @@ class PublicChatService {
   }
 
   /**
-   * 获取聊天室列表
+   * 获取谈玄斋列表
    */
   getChatRooms = () =>
     api.get<ChatRoom[]>('/api/chat/rooms');
 
   /**
-   * 获取公共聊天室历史消息
+   * 获取公共谈玄斋历史消息
    */
   getHistory = (page: number = 1, limit: number = 50) =>
     api.get<ChatMessage[]>(`/api/chat/history/${this.PUBLIC_ROOM_ID}`, {

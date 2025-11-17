@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { ArrowLeft, Trophy, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Avatar, AvatarImage, AvatarFallback, Button } from "../components";
+import { Card, Avatar, AvatarImage, AvatarFallback, Button, Tabs, TabsList, TabsTrigger } from "../components";
 
 import { useEffect } from 'react';
 import rankService from '../services/rank.service';
 import { getAvatarUrl } from '../lib/helpers/helpers';
 
-// 排行榜用户数据
+// 封神榜用户数据
 interface RankUser {
   id: string;
   rank: number;
@@ -19,8 +19,8 @@ interface RankUser {
 }
 
 /**
- * 排行榜页面
- * 展示打卡总天数、完成Flag数、积分总数三个维度的排行榜
+ * 封神榜页面
+ * 展示打卡总天数、完成Flag数、积分总数三个维度的封神榜
  */
 export default function RankPage() {
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ export default function RankPage() {
         setRankUsers(rankData);
         setCurrentUser(userData);
       } catch (error) {
-        console.error('加载排行榜数据失败:', error);
+        console.error('加载封神榜数据失败:', error);
       } finally {
         setLoading(false);
       }
@@ -55,7 +55,7 @@ export default function RankPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // 页面变为可见时，重新加载排行榜数据
+        // 页面变为可见时，重新加载封神榜数据
         rankService.getRankList(activeTab).then(setRankUsers).catch(console.error);
         rankService.getCurrentUserRank(activeTab).then(setCurrentUser).catch(console.error);
       }
@@ -116,53 +116,40 @@ export default function RankPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-gray-100 rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold text-gray-900">排行榜</h1>
+          <h1 className="text-lg font-semibold text-gray-900">封神榜</h1>
         </div>
       </nav>
 
       {/* 内容区域 */}
       <div className="flex-1 px-4 py-4 space-y-4 mb-24">
-        {/* 排行榜类型切换 */}
-        <div className="flex gap-2 p-1 bg-gray-50 rounded-xl">
-          <Button
-            variant={activeTab === 'days' ? 'default' : 'ghost'}
-            className={`flex-1 gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 ${
-              activeTab === 'days'
-                ? 'bg-white shadow-sm text-orange-600 font-medium'
-                : 'hover:bg-white/60 text-gray-600'
-            }`}
-            onClick={() => setActiveTab('days')}
-          >
-            <Flame className="h-4 w-4" />
-            打卡总天数
-          </Button>
-          <Button
-            variant={activeTab === 'flags' ? 'default' : 'ghost'}
-            className={`flex-1 gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 ${
-              activeTab === 'flags'
-                ? 'bg-white shadow-sm text-blue-600 font-medium'
-                : 'hover:bg-white/60 text-gray-600'
-            }`}
-            onClick={() => setActiveTab('flags')}
-          >
-            <Trophy className="h-4 w-4" />
-            完成Flag数
-          </Button>
-          <Button
-            variant={activeTab === 'points' ? 'default' : 'ghost'}
-            className={`flex-1 gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 ${
-              activeTab === 'points'
-                ? 'bg-white shadow-sm text-purple-600 font-medium'
-                : 'hover:bg-white/60 text-gray-600'
-            }`}
-            onClick={() => setActiveTab('points')}
-          >
-            <span className="text-base">✨</span>
-            积分总数
-          </Button>
-        </div>
+        {/* 封神榜类型切换 */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'days' | 'flags' | 'points')} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-50 rounded-xl p-1">
+            <TabsTrigger 
+              value="days" 
+              className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-orange-600 data-[state=active]:font-medium"
+            >
+              <Flame className="h-4 w-4" />
+              打卡总天数
+            </TabsTrigger>
+            <TabsTrigger 
+              value="flags" 
+              className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-medium"
+            >
+              <Trophy className="h-4 w-4" />
+              完成Flag数
+            </TabsTrigger>
+            <TabsTrigger 
+              value="points" 
+              className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-purple-600 data-[state=active]:font-medium"
+            >
+              <span className="text-base">✨</span>
+              积分总数
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        {/* 排行榜列表 - 固定显示前20名 */}
+        {/* 封神榜列表 - 固定显示前20名 */}
         <div className="space-y-2">
           {Array.from({ length: 20 }, (_, index) => {
             const user = rankUsers[index];

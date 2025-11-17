@@ -76,7 +76,7 @@ export default function MinePage() {
 
   // 消息提醒状态
   const [notificationEnabled, setNotificationEnabled] = useState(true);
-  const [notificationHour, setNotificationHour] = useState('09');
+  const [notificationHour, setNotificationHour] = useState('12');
   const [notificationMinute, setNotificationMinute] = useState('00');
 
   // ========== 计算属性 ========== 
@@ -779,9 +779,9 @@ export default function MinePage() {
 
       {/* 编辑个人信息 Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>编辑个人信息</DialogTitle>
+        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto rounded-3xl bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-xl font-bold text-slate-900">编辑个人信息</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* 头像和昵称在同一行 */}
@@ -797,25 +797,33 @@ export default function MinePage() {
                 </button>
 
                 <Dialog open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
-                  <DialogContent className="sm:max-w-[480px] w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto rounded-2xl p-4">
-                    <DialogHeader>
-                      <DialogTitle>选择头像</DialogTitle>
+                  <DialogContent className="sm:max-w-[480px] w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto rounded-3xl bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl p-6">
+                    <DialogHeader className="pb-4">
+                      <DialogTitle className="text-xl font-bold text-slate-900">选择头像</DialogTitle>
                     </DialogHeader>
-                    <div className="grid grid-cols-3 gap-3 py-2">
+                    <div className="grid grid-cols-3 gap-4 py-2">
                       {avatarOptions.map((option, index) => (
                         <button
                           key={index}
                           onClick={() => handleSelectAvatar(option)}
-                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${
-                            avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'
+                          className={`h-20 w-20 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                            avatar === option 
+                              ? 'ring-3 ring-blue-500 shadow-lg scale-105' 
+                              : 'hover:ring-2 hover:ring-slate-300 shadow-md'
                           }`}
                         >
                           <img src={option} alt="Avatar option" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setAvatarPopoverOpen(false)} className="rounded-full">取消</Button>
+                    <DialogFooter className="pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setAvatarPopoverOpen(false)} 
+                        className="rounded-2xl px-6 py-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200 hover:scale-105"
+                      >
+                        取消
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -826,6 +834,7 @@ export default function MinePage() {
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
                     placeholder="请输入昵称"
+                    className="rounded-2xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
               </div>
@@ -840,19 +849,20 @@ export default function MinePage() {
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="请输入个人简介"
                 rows={3}
+                className="rounded-2xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200"
               />
             </div>
           </div>
-          <DialogFooter className="gap-3">
+          <DialogFooter className="gap-3 pt-4">
             <Button 
               variant="outline" 
-              className="border-blue-200 text-blue-600 hover:bg-blue-50 rounded-full px-6 py-2" 
+              className="border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl px-6 py-2 transition-all duration-200 hover:scale-105" 
               onClick={() => setEditDialogOpen(false)}
             >
               取消
             </Button>
             <Button 
-              className="rounded-full px-6 py-2" 
+              className="rounded-2xl px-6 py-2 bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg" 
               onClick={handleSaveProfile}
             >
               保存
@@ -863,10 +873,10 @@ export default function MinePage() {
 
       {/* 修改密码 Dialog */}
       <Dialog open={changePasswordDialogOpen} onOpenChange={setChangePasswordDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>修改密码</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] rounded-3xl bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-xl font-bold text-slate-900">修改密码</DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 mt-1">
               请输入旧密码和新密码。新密码长度至少6位。
             </DialogDescription>
           </DialogHeader>
@@ -879,6 +889,7 @@ export default function MinePage() {
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 placeholder="请输入旧密码"
+                className="rounded-2xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
@@ -889,6 +900,7 @@ export default function MinePage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="请输入新密码（至少6位）"
+                className="rounded-2xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
@@ -899,13 +911,14 @@ export default function MinePage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="请再次输入新密码"
+                className="rounded-2xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-3 pt-4">
             <Button 
               variant="outline" 
-              className="rounded-full px-4 py-2 my-1 min-w-[80px] border-blue-200 text-blue-600 hover:bg-blue-50"
+              className="border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl px-6 py-2 transition-all duration-200 hover:scale-105"
               onClick={() => {
                 setChangePasswordDialogOpen(false);
                 setOldPassword('');
@@ -916,7 +929,7 @@ export default function MinePage() {
               取消
             </Button>
             <Button 
-              className="rounded-full px-4 py-2 my-1 min-w-[80px]"
+              className="rounded-2xl px-6 py-2 bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
               onClick={handleChangePassword}
             >
               确认修改
@@ -927,24 +940,24 @@ export default function MinePage() {
 
       {/* 退出登录确认 Dialog */}
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-[320px] mx-4">
-          <DialogHeader>
-            <DialogTitle>确认退出</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="rounded-3xl max-w-[320px] mx-4 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg font-bold text-slate-900">确认退出</DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 mt-1">
               确定要退出登录吗？退出后需要重新登录才能使用。
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-3 pt-4">
             <Button 
               variant="outline" 
-              className="rounded-full px-4 py-2 my-1 min-w-[80px] border-blue-200 text-blue-600 hover:bg-blue-50"
+              className="border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl px-6 py-2 transition-all duration-200 hover:scale-105"
               onClick={() => setLogoutDialogOpen(false)}
             >
               取消
             </Button>
             <Button 
               variant="destructive" 
-              className="rounded-full px-4 py-2 my-1 min-w-[80px] text-white"
+              className="rounded-2xl px-6 py-2 bg-red-600 hover:bg-red-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg text-white"
               onClick={handleLogout}
             >
               确认退出

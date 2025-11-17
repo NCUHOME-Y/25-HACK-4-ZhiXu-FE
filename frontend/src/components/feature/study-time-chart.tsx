@@ -7,7 +7,6 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -23,7 +22,6 @@ import type { StudyTimeTrend } from '../../lib/types/types'
 interface StudyTimeChartProps {
   data: StudyTimeTrend[]
   period: 'week' | 'month' | 'year'
-  title?: string
   description?: string
   showFooter?: boolean
 }
@@ -38,7 +36,6 @@ const chartConfig = {
 export function StudyTimeChart({ 
   data, 
   period,
-  title = "学习时长趋势",
   description = "查看学习时长统计",
   showFooter = true
 }: StudyTimeChartProps) {
@@ -108,9 +105,8 @@ export function StudyTimeChart({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="h-4 w-4 text-blue-500" />
-          {title}
+          {description}
         </CardTitle>
-        <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
       <CardContent className="px-2">
         <ChartContainer config={chartConfig}>
@@ -153,7 +149,7 @@ export function StudyTimeChart({
         </ChartContainer>
       </CardContent>
       {showFooter && (
-        <CardFooter className="flex-col items-start gap-1.5 text-xs border-t pt-3 px-4">
+        <CardFooter className="flex-col items-start gap-1.5 text-xs border-t border-gray-200 pt-3 px-4">
           <div className="flex items-center gap-1.5 font-medium leading-none">
             <TrendingUp className="h-3.5 w-3.5 text-green-600" />
             <span>{getPeriodDescription()}累计 {formatTime(totalMinutes)}</span>

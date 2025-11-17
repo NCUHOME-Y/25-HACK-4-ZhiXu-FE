@@ -148,7 +148,7 @@ export interface PrivateMessage {
   userName?: string;
 }
 
-// 公共聊天室消息类型
+// 公共谈玄斋消息类型
 export interface ChatMessage {
   id: string;
   userId: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Target, Loader2, User, BookOpen } from 'lucide-react';
+import { Sparkles, Target, Loader2, User, BookOpen, Flag } from 'lucide-react';
 import { CalendarDays, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -158,7 +158,7 @@ export default function AIPage() {
       localStorage.setItem(STORAGE_KEYS.ADDED_FLAGS, JSON.stringify([...newAddedFlags]));
       
       toast.dismiss(toastId);
-      toast.success(`✅ 成功添加「${flag.title}」`);
+      toast.success(`成功添加「${flag.title}」`);
     } catch (error) {
       toast.dismiss(toastId);
       console.error(`添加Flag失败 [${flag.title}]:`, error);
@@ -227,17 +227,17 @@ export default function AIPage() {
       
       // 构建提示信息
       if (successCount > 0 && skippedCount === 0 && errors.length === 0) {
-        toast.success(`✅ 成功添加 ${successCount} 个Flag（共${totalPoints}积分）`);
+        toast.success(`成功添加 ${successCount} 个Flag（共${totalPoints}积分）`);
       } else if (successCount > 0) {
-        let message = `✅ 成功添加 ${successCount} 个Flag`;
+        let message = `成功添加 ${successCount} 个Flag`;
         if (skippedCount > 0) message += `，跳过 ${skippedCount} 个已添加的`;
         if (errors.length > 0) message += `，${errors.length} 个失败`;
         toast.success(message);
       } else if (skippedCount > 0 && errors.length === 0) {
-        toast.info(`ℹ️ 全部 ${skippedCount} 个Flag已添加过`);
+        toast.info(`全部 ${skippedCount} 个Flag已添加过`);
         return;
       } else {
-        toast.error('❌ 所有Flag添加失败，请重试');
+        toast.error('所有Flag添加失败，请重试');
         return;
       }
       
@@ -291,8 +291,9 @@ export default function AIPage() {
                 />
                 {/* 上次背景提示 */}
                 <div className="space-y-1">
-                  <div className="text-sm font-medium text-gray-600 pl-1">
-                    📝 上次个人学习背景
+                  <div className="text-sm font-medium text-gray-600 pl-1 flex items-center gap-1">
+                    <User className="h-3.5 w-3.5 text-blue-600" />
+                    上次个人学习背景
                   </div>
                   <div className="text-xs text-muted-foreground pl-1">
                     {lastBackground ? (
@@ -320,8 +321,9 @@ export default function AIPage() {
                 />
                 {/* 上次目标提示 */}
                 <div className="space-y-1">
-                  <div className="text-sm font-medium text-gray-600 pl-1">
-                    🎯 上次学习目标
+                  <div className="text-sm font-medium text-gray-600 pl-1 flex items-center gap-1">
+                    <Target className="h-3.5 w-3.5 text-blue-600" />
+                    上次学习目标
                   </div>
                   <div className="text-xs text-muted-foreground pl-1">
                     {lastGoal ? (
@@ -460,7 +462,10 @@ export default function AIPage() {
                           <AccordionItem value={`flags-${planIndex}`}>
                             <AccordionTrigger>
                             <div className="flex items-center justify-between w-full pr-4">
-                              <h4 className="text-sm font-semibold text-gray-700">🎯 具体Flag ({plan.flags.length}个)</h4>
+                              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                                <Flag className="h-4 w-4 text-blue-600" />
+                                具体Flag ({plan.flags.length}个)
+                              </h4>
                               <div
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -496,7 +501,7 @@ export default function AIPage() {
                                       {/* 标题和标签 */}
                                       <div className="flex items-start justify-between gap-2">
                                         <h5 className="font-semibold text-sm flex-1">
-                                          {isAdded && '✓ '}{flag.title}
+                                          {isAdded && '[已添加] '}{flag.title}
                                         </h5>
                                         <div className="flex gap-1.5 flex-shrink-0">
                                           <Badge 

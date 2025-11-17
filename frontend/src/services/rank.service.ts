@@ -25,7 +25,7 @@ const PRESET_AVATARS = [
   '/assets/head/微信图片_20251116131031_53_227.jpg',
 ];
 
-// 排行榜用户数据
+// 封神榜用户数据
 export interface RankUser {
   user_id: number;
   rank: number;
@@ -50,8 +50,8 @@ interface FrontendRankUser {
 
 const rankService = {
   /**
-   * 获取排行榜列表
-   * @param type 排行榜类型: 'days' | 'flags' | 'points'
+   * 获取封神榜列表
+   * @param type 封神榜类型: 'days' | 'flags' | 'points'
    */
   getRankList: async (type: 'days' | 'flags' | 'points'): Promise<FrontendRankUser[]> => {
     // 根据类型选择对应的后端 API
@@ -80,7 +80,7 @@ const rankService = {
 
   /**
    * 获取当前用户排名
-   * @param type 排行榜类型: 'days' | 'flags' | 'points'
+   * @param type 封神榜类型: 'days' | 'flags' | 'points'
    */
   getCurrentUserRank: async (type: 'days' | 'flags' | 'points'): Promise<FrontendRankUser | null> => {
     try {
@@ -94,7 +94,7 @@ const rankService = {
         return null;
       }
       
-      // 获取排行榜列表来计算排名
+      // 获取封神榜列表来计算排名
       const rankList = await rankService.getRankList(type);
       const currentUserRank = rankList.find(u => u.id === user.user_id.toString());
       

@@ -762,7 +762,7 @@ export default function FlagPage() {
                 <CheckSquare className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">Flag</h1>
+                <h1 className="text-xl font-bold text-slate-900">圭表</h1>
                 <p className="text-sm text-slate-600">管理您的学习目标和任务</p>
               </div>
             </div>
@@ -770,11 +770,11 @@ export default function FlagPage() {
         </header>
 
         {/* 顶部日历 */}
-        <section className="pt-3 px-4">
+        <section>
           <Calendar
             mode="single"
             captionLayout="dropdown"
-            className="w-full rounded-2xl border border-gray-200/60 shadow-lg bg-white/90 backdrop-blur-md hover:shadow-xl transition-all duration-300"
+            className="w-full rounded-2xl border border-gray-200/60 shadow-md bg-white/90 backdrop-blur-md hover:shadow-xl transition-all duration-300"
             formatters={{
               formatMonthDropdown: (date) => date.toLocaleString('zh-CN', { month: 'long' }),
               formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString('zh-CN', { month: 'long' })}`,
@@ -859,7 +859,7 @@ export default function FlagPage() {
         </section>
 
         {/* 打卡与计时模块 */}
-        <section className="px-4">
+        <section>
           <div className="grid grid-cols-2 gap-4">
           {/* 打卡模块 */}
           <Card 
@@ -1404,7 +1404,7 @@ export default function FlagPage() {
 
       {/* Drawer：新建/编辑flag */}
       <Drawer open={openDrawer} onOpenChange={(isOpen) => !isOpen && closeDrawer()}>
-        <DrawerContent className="bg-white/95 backdrop-blur-sm border-t border-white/20 rounded-t-2xl shadow-2xl">
+        <DrawerContent className="bg-white backdrop-blur-sm border-t border-white/20 rounded-t-2xl shadow-2xl">
           <DrawerHeader className="border-b border-gray-100/50 pb-4">
             <DrawerTitle className="text-lg font-semibold text-gray-900">{editingTaskId ? '编辑flag' : '新建flag'}</DrawerTitle>
           </DrawerHeader>
@@ -1539,14 +1539,6 @@ export default function FlagPage() {
                 </Label>
               </div>
               <div className="flex items-center gap-2">
-                {/* 太傅按钮 */}
-                <Button
-                  type="button"
-                  className="font-bold h-7 px-4 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                  onClick={() => navigate('/ai')}
-                >
-                  太傅
-                </Button>
                 {/* 删除按钮（仅编辑时显示） */}
                 {editingTaskId && (
                   <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1559,7 +1551,7 @@ export default function FlagPage() {
                         删除
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl rounded-xl">
+                    <AlertDialogContent className="bg-white backdrop-blur-sm border-white/20 shadow-2xl rounded-xl">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-lg font-semibold text-gray-900">确认删除</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-600">

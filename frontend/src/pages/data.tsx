@@ -277,14 +277,14 @@ export default function DataPage() {
           </div>
         </header>
 
-        {/* 打卡概览 */}
+        {/* 本月概览 */}
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5 text-blue-500" />
-            打卡概览
+            本月概览
           </h2>
-          <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
-            <div className="grid grid-cols-3 gap-4">
+          <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
+            <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50 hover:shadow-md transition-all duration-200">
                 <Calendar className="h-6 w-6 text-blue-600 mb-2" />
                 <div className="text-2xl font-bold text-blue-600">{calculatedMonthlyStats.punchedDays}</div>
@@ -315,14 +315,14 @@ export default function DataPage() {
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-500" />
-            学习数据
+            今日数据
           </h2>
-          <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
-            <div className="grid grid-cols-3 gap-3">
+          <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
+            <div className="grid grid-cols-3 gap-2">
               {/* 连续打卡天数 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
                 <Calendar className="h-7 w-7 text-blue-600 mb-2" />
-                <div className="text-xs text-muted-foreground mb-1">连续打卡天数</div>
+                <div className="text-xs text-muted-foreground mb-1">连续打卡</div>
                 <div className="text-3xl font-bold text-blue-600 tabular-nums">
                   {streak}
                 </div>
@@ -331,7 +331,7 @@ export default function DataPage() {
               {/* 今日获得积分 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
                 <Trophy className="h-7 w-7 text-purple-600 mb-2" />
-                <div className="text-xs text-muted-foreground mb-1">今日获得积分</div>
+                <div className="text-xs text-muted-foreground mb-1">今日积分</div>
                 <div className="text-3xl font-bold text-purple-600 tabular-nums">
                   {todayPoints}
                 </div>
@@ -340,7 +340,7 @@ export default function DataPage() {
               {/* 今日学习时长 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
                 <Clock className="h-7 w-7 text-green-600 mb-2" />
-                <div className="text-xs text-muted-foreground mb-1">今日累计学习</div>
+                <div className="text-xs text-muted-foreground mb-1">今日学习</div>
                 <div className="text-3xl font-bold text-green-600 tabular-nums">
                   {formatTodayTime(dailyElapsed)}
                 </div>
@@ -354,10 +354,10 @@ export default function DataPage() {
           <section className="px-4">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Flag className="h-5 w-5 text-blue-500" />
-              Flag完成度
+              Flag完成
             </h2>
-            <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
-              <div className="space-y-6">
+            <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
+              <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50 hover:shadow-md transition-all duration-200">
                   <Flag className="h-5 w-5 text-blue-600" />
@@ -382,7 +382,7 @@ export default function DataPage() {
 
 
               {/* 标签分类：无数据时显示"无标签 0%" */}
-              <div className="space-y-3 border-t border-gray-200/50 pt-4">
+              <div className="space-y-3 border-t border-gray-200/50 pt-3">
                 <h3 className="text-sm font-semibold text-gray-700">标签分类</h3>
                 {Object.entries(FLAG_LABELS).map(([, labelObj]) => {
                   const stat = flagStats.labelStats?.find(l => l.labelName === labelObj.name);
@@ -417,8 +417,7 @@ export default function DataPage() {
 
               {/* 已完成Flag分布饼图 */}
               {pieChartData.length > 0 && (
-                <div className="border-t pt-3">
-                  <h3 className="text-sm font-semibold mb-1">已完成Flag分布</h3>
+                <div className="border-t border-gray-200 pt-2">
                   <ChartPieLabel 
                     data={pieChartData}
                     title="已完成Flag分布"
@@ -432,26 +431,25 @@ export default function DataPage() {
           </section>
         )}
 
-        {/* 学习时长趋势 */}
+        {/* 学习时长 */}
         <section className="px-4">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Clock className="h-5 w-5 text-blue-500" />
-            学习时长趋势
+            学习时长
           </h2>
           <Card className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
             <Tabs value={studyPeriod} onValueChange={(v: string) => setStudyPeriod(v as typeof studyPeriod)} className="w-full">
-              <div className="p-6 pb-0">
+              <div className="p-4 pb-2">
                 <TabsList className="grid w-full grid-cols-3 h-10">
                   <TabsTrigger value="week" className="text-sm">周</TabsTrigger>
                   <TabsTrigger value="month" className="text-sm">月</TabsTrigger>
                   <TabsTrigger value="year" className="text-sm">年</TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value={studyPeriod} className="mt-0 px-6 pb-6">
+              <TabsContent value={studyPeriod} className="mt-0 px-4 pb-4">
                 <StudyTimeChart 
                   data={studyData}
                   period={studyPeriod}
-                  title="学习时长统计"
                   description={`${studyPeriod === 'week' ? '最近7天' : studyPeriod === 'month' ? '当前月份' : '最近6个月'}的学习时长分布`}
                   showFooter={true}
                 />

@@ -247,6 +247,8 @@ export default function AuthPage() {
       const result = await authService.login({ email, password })
       
       if (result.user) {
+        // 保存用户信息到localStorage，供其他页面使用
+        localStorage.setItem('user', JSON.stringify(result.user));
         // 登录成功后跳转到打卡页面
         navigate("/flag")
       } else {
@@ -284,6 +286,8 @@ export default function AuthPage() {
       const result = await authService.loginWithOTP(phone, code)
       
       if (result.user) {
+        // 保存用户信息到localStorage，供其他页面使用
+        localStorage.setItem('user', JSON.stringify(result.user));
         navigate("/flag")
       }
     } catch (error) {
@@ -322,6 +326,8 @@ export default function AuthPage() {
       const result = await authService.verifyEmail(phone, code) // phone变量存储邮箱
       
       if (result.user && result.token) {
+        // 保存用户信息到localStorage，供其他页面使用
+        localStorage.setItem('user', JSON.stringify(result.user));
         // 验证成功，已自动登录，跳转到打卡页面
         navigate("/flag")
       } else {
@@ -424,7 +430,7 @@ export default function AuthPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="w-full max-w-sm">
         {/* 登录表单 */}
         {mode === "login" && (
@@ -458,10 +464,10 @@ export default function AuthPage() {
 
         {/* 验证码表单 */}
         {mode === "otp" && !otpSent && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">邮箱验证</CardTitle>
-              <CardDescription>
+          <Card className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl rounded-[2rem]">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-slate-900">邮箱验证</CardTitle>
+              <CardDescription className="text-slate-600">
                 输入您的邮箱以接收验证码
               </CardDescription>
             </CardHeader>
@@ -469,8 +475,11 @@ export default function AuthPage() {
               <div className="flex flex-col gap-6">
                 {/* 错误提示 */}
                 {(otpPurpose === 'login' ? loginError : signupError) && (
-                  <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
-                    {otpPurpose === 'login' ? loginError : signupError}
+                  <div className="rounded-2xl bg-red-50 border border-red-200/50 p-4 text-sm text-red-700 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-500">⚠️</span>
+                      <span>{otpPurpose === 'login' ? loginError : signupError}</span>
+                    </div>
                   </div>
                 )}
                 <div className="grid gap-2">
@@ -482,10 +491,11 @@ export default function AuthPage() {
                     value={otpPhone}
                     onChange={(e) => setOtpPhone(e.target.value)}
                     required
+                    className="rounded-[1.5rem] border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 <Button 
-                  className="w-full" 
+                  className="w-full rounded-3xl bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg" 
                   type="button"
                   disabled={sendingOTP || resendCooldown > 0}
                   onClick={handleSendOTP}
@@ -505,7 +515,7 @@ export default function AuthPage() {
                       setLoginError("") // 清除登录错误
                       setSignupError("") // 清除注册错误
                     }}
-                    className="underline underline-offset-4 hover:text-slate-900"
+                    className="text-blue-600 hover:text-blue-700 underline underline-offset-4 transition-colors duration-200 hover:scale-105"
                   >
                     返回登录
                   </button>
@@ -520,9 +530,11 @@ export default function AuthPage() {
           <div className="space-y-3">
             {/* 显示当前邮箱 */}
             {phone && (
-              <p className="text-xs text-center text-slate-500">
-                验证码已发送至：{phone}
-              </p>
+              <div className="text-center p-3 rounded-2xl bg-blue-50 border border-blue-200/50">
+                <p className="text-sm text-blue-700 font-medium">
+                  📧 验证码已发送至：{phone}
+                </p>
+              </div>
             )}
             <OTPForm
               onSwitchToLogin={() => {
@@ -544,10 +556,10 @@ export default function AuthPage() {
 
         {/* P1修复：忘记密码 - 输入邮箱 */}
         {mode === "forgot-password" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">忘记密码</CardTitle>
-              <CardDescription>
+          <Card className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl rounded-[2rem]">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-slate-900">忘记密码</CardTitle>
+              <CardDescription className="text-slate-600">
                 输入您的邮箱地址，我们将发送验证码
               </CardDescription>
             </CardHeader>
@@ -555,8 +567,11 @@ export default function AuthPage() {
               <div className="flex flex-col gap-6">
                 {/* 错误提示 */}
                 {forgotPasswordError && (
-                  <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
-                    {forgotPasswordError}
+                  <div className="rounded-2xl bg-red-50 border border-red-200/50 p-4 text-sm text-red-700 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-500">⚠️</span>
+                      <span>{forgotPasswordError}</span>
+                    </div>
                   </div>
                 )}
                 
@@ -569,10 +584,11 @@ export default function AuthPage() {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
+                    className="rounded-[1.5rem] border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 <Button 
-                  className="w-full" 
+                  className="w-full rounded-3xl bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg" 
                   type="button"
                   disabled={sendingResetCode || resetCodeCooldown > 0}
                   onClick={handleSendResetCode}
@@ -591,7 +607,7 @@ export default function AuthPage() {
                       setMode("login")
                       setForgotPasswordError("") // 清除忘记密码错误
                     }}
-                    className="underline underline-offset-4 hover:text-slate-900"
+                    className="text-blue-600 hover:text-blue-700 underline underline-offset-4 transition-colors duration-200 hover:scale-105"
                   >
                     返回登录
                   </button>
@@ -603,10 +619,10 @@ export default function AuthPage() {
 
         {/* P1修复：重置密码 - 输入验证码和新密码 */}
         {mode === "reset-password" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">重置密码</CardTitle>
-              <CardDescription>
+          <Card className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl rounded-[2rem]">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-slate-900">重置密码</CardTitle>
+              <CardDescription className="text-slate-600">
                 请输入邮箱收到的验证码和新密码
               </CardDescription>
             </CardHeader>
@@ -614,8 +630,11 @@ export default function AuthPage() {
               <div className="flex flex-col gap-6">
                 {/* 错误提示 */}
                 {resetPasswordError && (
-                  <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
-                    {resetPasswordError}
+                  <div className="rounded-2xl bg-red-50 border border-red-200/50 p-4 text-sm text-red-700 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-500">⚠️</span>
+                      <span>{resetPasswordError}</span>
+                    </div>
                   </div>
                 )}
                 
@@ -629,6 +648,7 @@ export default function AuthPage() {
                     onChange={(e) => setResetCode(e.target.value)}
                     maxLength={6}
                     required
+                    className="rounded-[1.5rem] border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -636,25 +656,27 @@ export default function AuthPage() {
                   <Input
                     id="new-password"
                     type="password"
-                    placeholder="请输入新密码（至少6位）"
+                    placeholder="请输入新密码"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
+                    className="rounded-[1.5rem] border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="confirm-new-password">确认新密码</Label>
                   <Input
-                    id="confirm-new-password"
+                    id="confirm-password"
                     type="password"
-                    placeholder="请再次输入新密码"
+                    placeholder="请确认新密码"
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                     required
+                    className="rounded-[1.5rem] border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 <Button 
-                  className="w-full" 
+                  className="w-full rounded-3xl bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg" 
                   type="button"
                   disabled={resettingPassword}
                   onClick={handleResetPassword}
@@ -669,7 +691,7 @@ export default function AuthPage() {
                       setMode("login")
                       setResetPasswordError("") // 清除重置密码错误
                     }}
-                    className="underline underline-offset-4 hover:text-slate-900"
+                    className="text-blue-600 hover:text-blue-700 underline underline-offset-4 transition-colors duration-200 hover:scale-105"
                   >
                     返回登录
                   </button>
@@ -683,13 +705,13 @@ export default function AuthPage() {
       {/* 提示对话框：移动端紧凑样式 */}
       <AlertDialog open={showAlertDialog} onOpenChange={setShowAlertDialog}>
         <AlertDialogContent
-          className="w-[280px] p-4 rounded-xl gap-3 text-center sm:w-[280px]"
+          className="w-[280px] p-6 rounded-3xl bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl gap-4 text-center sm:w-[280px]"
         >
-          <AlertDialogTitle className="text-base font-medium">提示</AlertDialogTitle>
-          <AlertDialogDescription className="text-sm leading-relaxed">
+          <AlertDialogTitle className="text-lg font-bold text-slate-900">提示</AlertDialogTitle>
+          <AlertDialogDescription className="text-sm leading-relaxed text-slate-600">
             {alertMessage}
           </AlertDialogDescription>
-          <AlertDialogAction className="mt-1 w-full">确定</AlertDialogAction>
+          <AlertDialogAction className="mt-2 w-full rounded-3xl bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg">确定</AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
     </div>

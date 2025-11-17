@@ -57,7 +57,7 @@ export function ChartPieLabel({
   };
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col bg-transparent border-none shadow-none p-1">
       <CardHeader className="items-center pb-0">
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>

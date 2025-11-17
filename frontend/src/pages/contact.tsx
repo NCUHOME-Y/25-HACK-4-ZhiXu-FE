@@ -40,6 +40,7 @@ export default function ContactPage() {
     const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
     return commentsUnread || privateUnread;
   });
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   // ========== 事件处理器 ==========
   /**
@@ -129,6 +130,24 @@ export default function ContactPage() {
   };
 
   // ========== 副作用 ==========
+  /**
+   * 获取当前用户信息
+   */
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setCurrentUserId(String(user.id));
+        }
+      } catch (error) {
+        console.error('获取当前用户信息失败:', error);
+      }
+    };
+    loadCurrentUser();
+  }, []);
+
   /**
    * 初始加载和搜索触发
    */
@@ -360,7 +379,7 @@ export default function ContactPage() {
                 <MessageCircle className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">翰林院</h1>
+                <h1 className="text-xl font-bold text-slate-900">翰林</h1>
                 <p className="text-sm text-slate-600">分享学习心得，交流生活感悟</p>
               </div>
             </div>
@@ -368,7 +387,7 @@ export default function ContactPage() {
         </header>
 
         {/* 搜索框 */}
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <div className="relative">
             <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
@@ -394,30 +413,30 @@ export default function ContactPage() {
         </div>
 
         {/* 顶部导航模块 */}
-        <div className="px-4 py-4">
+        <div className="px-4 py-2">
           <div className="grid grid-cols-3 gap-4">
             <Card
-              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200"
+              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 rounded-2xl"
               onClick={() => navigate('/rank')}
             >
               <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
                 <Trophy className="h-6 w-6 text-white" />
               </div>
-              <div className="font-semibold text-slate-700">排行榜</div>
+              <div className="font-semibold text-slate-700">封神榜</div>
             </Card>
 
             <Card
-              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200"
+              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 rounded-2xl"
               onClick={() => navigate('/chat-rooms')}
             >
               <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
                 <MessageCircle className="h-6 w-6 text-white" />
               </div>
-              <div className="font-semibold text-slate-700">聊天室</div>
+              <div className="font-semibold text-slate-700">谈玄斋</div>
             </Card>
 
             <Card
-              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-teal-50 border-green-200 relative"
+              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-teal-50 border-green-200 relative rounded-2xl"
               onClick={() => {
                 setHasUnreadMessages(false);
                 const userId = localStorage.getItem('currentUserId');
@@ -428,7 +447,7 @@ export default function ContactPage() {
               <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center">
                 <Inbox className="h-6 w-6 text-white" />
               </div>
-              <div className="font-semibold text-slate-700">收到的消息</div>
+              <div className="font-semibold text-slate-700">雁书札</div>
               {hasUnreadMessages && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
               )}
@@ -438,7 +457,7 @@ export default function ContactPage() {
 
         {/* 动态列表标题 */}
         <div className="px-4 py-2">
-          <h2 className="text-lg font-semibold text-slate-800">最新动态</h2>
+          <h2 className="text-lg font-semibold text-slate-800">翰林院论</h2>
         </div>
 
         {/* 搜索结果：有搜索关键词时显示 Tabs */}
@@ -494,22 +513,24 @@ export default function ContactPage() {
                                   <div className="text-xs text-slate-500 font-medium">总积分</div>
                                 </div>
                               </div>
-                              <Button
-                                size="sm"
-                                className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
-                                onClick={() => navigate('/send', {
-                                  state: {
-                                    user: {
-                                      id: user.userId,
-                                      name: user.name,
-                                      avatar: user.avatar
+                              {(!currentUserId || currentUserId === '' || String(user.userId) !== currentUserId) && (
+                                <Button
+                                  size="sm"
+                                  className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                                  onClick={() => navigate('/send', {
+                                    state: {
+                                      user: {
+                                        id: user.userId,
+                                        name: user.name,
+                                        avatar: user.avatar
+                                      }
                                     }
-                                  }
-                                })}
-                              >
-                                <Send className="h-4 w-4 mr-2" />
-                                发消息
-                              </Button>
+                                  })}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  发消息
+                                </Button>
+                              )}
                             </div>
                           </PopoverContent>
                         </Popover>
@@ -536,7 +557,7 @@ export default function ContactPage() {
                       </div>
 
                       {/* 互动按钮 */}
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <ToggleGroup
                             type="multiple"
@@ -546,22 +567,22 @@ export default function ContactPage() {
                             <ToggleGroupItem
                               value="liked"
                               aria-label="点赞"
-                              className={`h-9 px-4 gap-2 rounded-full transition-all duration-200 font-semibold ${
+                              className={`h-8 px-3 gap-2 rounded-full transition-all duration-200 font-semibold ${
                                 likedPosts.has(user.id)
                                   ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md'
                                   : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
                               }`}
                             >
-                      <Heart className={`h-4 w-4 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
+                      <Heart className={`h-3.5 w-3.5 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
                               <span className="font-bold">{user.likes}</span>
                             </ToggleGroupItem>
                           </ToggleGroup>
 
                           <button
-                            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-9 px-4 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
+                            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-8 px-3 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
                             onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
                           >
-                            <MessageSquare className={`h-4 w-4 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
+                            <MessageSquare className={`h-3.5 w-3.5 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
                             <span className="font-bold">{user.comments.length}</span>
                           </button>
                         </div>
@@ -632,33 +653,35 @@ export default function ContactPage() {
                 ) : (
                   searchUserResults.map((searchUser) => (
                     <Card key={searchUser.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 border-slate-200">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-14 w-14 bg-gradient-to-br from-blue-500 to-purple-600">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <Avatar className="h-14 w-14 bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0">
                           <AvatarImage src={getAvatarUrl(searchUser.avatar)} alt="Avatar" />
                           <AvatarFallback className="text-lg font-bold text-white bg-blue-500">
                             {searchUser.name.slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <h2 className="text-lg font-bold text-slate-900 truncate">{searchUser.name}</h2>
                           <p className="text-sm text-slate-600 truncate">{searchUser.email}</p>
                         </div>
-                        <Button
-                          size="sm"
-                          className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4"
-                          onClick={() => navigate('/send', {
-                            state: {
-                              user: {
-                                id: String(searchUser.id),
-                                name: searchUser.name,
-                                avatar: searchUser.avatar
+                        {(!currentUserId || currentUserId === '' || String(searchUser.id) !== currentUserId) && (
+                          <Button
+                            size="sm"
+                            className="rounded-full bg-blue-600 hover:bg-blue-700 px-4 flex-shrink-0 ml-auto"
+                            onClick={() => navigate('/send', {
+                              state: {
+                                user: {
+                                  id: String(searchUser.id),
+                                  name: searchUser.name,
+                                  avatar: searchUser.avatar
+                                }
                               }
-                            }
-                          })}
-                        >
-                          <Send className="h-3 w-3 mr-2" />
-                          发消息
-                        </Button>
+                            })}
+                          >
+                            <Send className="h-3 w-3 mr-2" />
+                            发消息
+                          </Button>
+                        )}
                       </div>
                     </Card>
                   ))
@@ -744,24 +767,26 @@ export default function ContactPage() {
                           <div className="font-bold text-xl text-purple-600">{user.totalPoints}</div>
                           <div className="text-xs text-slate-500 font-medium">总积分</div>
                         </div>
-                      </div>
+                        </div>
                       
-                      <Button 
-                        size="sm"
-                        className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
-                        onClick={() => navigate('/send', { 
-                          state: { 
-                            user: {
-                              id: user.userId,  // 使用userId而不是id
-                              name: user.name,
-                              avatar: user.avatar
-                            }
-                          } 
-                        })}
-                      >
-                        <Send className="h-3 w-3 mr-2" />
-                        发消息
-                      </Button>
+                        {(!currentUserId || currentUserId === '' || String(user.userId) !== currentUserId) && (
+                          <Button 
+                            size="sm"
+                            className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                            onClick={() => navigate('/send', { 
+                              state: { 
+                                user: {
+                                  id: user.userId,  // 使用userId而不是id
+                                  name: user.name,
+                                  avatar: user.avatar
+                                }
+                              } 
+                            })}
+                          >
+                            <Send className="h-3 w-3 mr-2" />
+                            发消息
+                          </Button>
+                        )}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -783,45 +808,39 @@ export default function ContactPage() {
                 <p className="text-slate-800 leading-relaxed text-base whitespace-pre-wrap break-words">{user.message}</p>
               </div>
               
-              {/* 互动按钮 */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ToggleGroup 
-                    type="multiple" 
-                    size="sm"
-                    onValueChange={(value) => handleLike(user.id, value)}
-                  >
-                    <ToggleGroupItem 
-                      value="liked" 
-                      aria-label="点赞" 
-                      className={`h-9 px-4 gap-2 rounded-full transition-all duration-200 font-semibold data-[state=on]:bg-red-100 data-[state=on]:text-red-600 data-[state=on]:border-red-300 ${
-                        likedPosts.has(user.id) 
-                          ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md' 
-                          : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
-                      }`}
-                    >
-                      <Heart className={`h-4 w-4 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
-                      <span className="font-bold">{user.likes}</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                  
-                  <button 
-                    className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-9 px-4 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
-                    onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
-                  >
-                    <MessageSquare className={`h-4 w-4 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
-                    <span className="font-bold">{user.comments.length}</span>
-                  </button>
-                </div>
-
-                <div className="text-xs text-slate-400 font-medium">
-                  {user.comments.length > 0 ? `${user.comments.length} 条评论` : '暂无评论'}
-                </div>
-              </div>
-
-                      {/* 评论列表 */}
+                      {/* 互动按钮 */}
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <ToggleGroup 
+                            type="multiple" 
+                            size="sm"
+                            onValueChange={(value) => handleLike(user.id, value)}
+                          >
+                            <ToggleGroupItem 
+                              value="liked" 
+                              aria-label="点赞" 
+                              className={`h-8 px-3 gap-2 rounded-full transition-all duration-200 font-semibold data-[state=on]:bg-red-100 data-[state=on]:text-red-600 data-[state=on]:border-red-300 ${
+                                likedPosts.has(user.id) 
+                                  ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md' 
+                                  : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                              }`}
+                            >
+                      <Heart className={`h-3.5 w-3.5 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
+                              <span className="font-bold">{user.likes}</span>
+                            </ToggleGroupItem>
+                          </ToggleGroup>
+                          
+                          <button 
+                            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-8 px-3 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
+                            onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
+                          >
+                            <MessageSquare className={`h-3.5 w-3.5 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
+                            <span className="font-bold">{user.comments.length}</span>
+                          </button>
+                        </div>
+                      </div>                      {/* 评论列表 */}
                       {showComments[user.id] && user.comments.length > 0 && (
-                        <div className="mt-3 space-y-3">
+                        <div className="mt-2 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                             <MessageSquare className="h-4 w-4" />
                             <span>评论 ({user.comments.length})</span>
