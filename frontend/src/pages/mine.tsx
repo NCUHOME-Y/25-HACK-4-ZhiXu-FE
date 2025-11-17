@@ -45,7 +45,7 @@ export default function MinePage() {
   const [profile, setProfile] = useState({
     nickname: '知序学习者',
     bio: '每天进步一点点,成为更好的自己',
-    avatar: '/src/assets/images/screenshot_20251114_131601.png'
+    avatar: '/assets/images/screenshot_20251114_131601.png'
   });
   const [nickname, setNickname] = useState(profile.nickname);
   const [bio, setBio] = useState(profile.bio);
@@ -87,27 +87,27 @@ export default function MinePage() {
       setPoints(user.count || 0);
       // 更新用户资料（昵称和头像）
       const avatarList = [
-        '/src/assets/head/screenshot_20251114_131601.png',
-        '/src/assets/head/screenshot_20251114_131629.png',
-        '/src/assets/head/screenshot_20251114_131937.png',
-        '/src/assets/head/screenshot_20251114_131951.png',
-        '/src/assets/head/screenshot_20251114_132014.png',
-        '/src/assets/head/screenshot_20251114_133459.png',
-        '/src/assets/head/微信图片_20251115203432_32_227.jpg',
-        '/src/assets/head/微信图片_20251115203433_33_227.jpg',
-        '/src/assets/head/微信图片_20251115203434_34_227.jpg',
-        '/src/assets/head/微信图片_20251115203434_35_227.jpg',
-        '/src/assets/head/微信图片_20251115203435_36_227.jpg',
-        '/src/assets/head/微信图片_20251115203436_37_227.jpg',
-        '/src/assets/head/微信图片_20251116131024_45_227.jpg',
-        '/src/assets/head/微信图片_20251116131024_46_227.jpg',
-        '/src/assets/head/微信图片_20251116131025_47_227.jpg',
-        '/src/assets/head/微信图片_20251116131026_48_227.jpg',
-        '/src/assets/head/微信图片_20251116131027_49_227.jpg',
-        '/src/assets/head/微信图片_20251116131028_50_227.jpg',
-        '/src/assets/head/微信图片_20251116131029_51_227.jpg',
-        '/src/assets/head/微信图片_20251116131030_52_227.jpg',
-        '/src/assets/head/微信图片_20251116131031_53_227.jpg'
+        '/assets/head/screenshot_20251114_131601.png',
+        '/assets/head/screenshot_20251114_131629.png',
+        '/assets/head/screenshot_20251114_131937.png',
+        '/assets/head/screenshot_20251114_131951.png',
+        '/assets/head/screenshot_20251114_132014.png',
+        '/assets/head/screenshot_20251114_133459.png',
+        '/assets/head/微信图片_20251115203432_32_227.jpg',
+        '/assets/head/微信图片_20251115203433_33_227.jpg',
+        '/assets/head/微信图片_20251115203434_34_227.jpg',
+        '/assets/head/微信图片_20251115203434_35_227.jpg',
+        '/assets/head/微信图片_20251115203435_36_227.jpg',
+        '/assets/head/微信图片_20251115203436_37_227.jpg',
+        '/assets/head/微信图片_20251116131024_45_227.jpg',
+        '/assets/head/微信图片_20251116131024_46_227.jpg',
+        '/assets/head/微信图片_20251116131025_47_227.jpg',
+        '/assets/head/微信图片_20251116131026_48_227.jpg',
+        '/assets/head/微信图片_20251116131027_49_227.jpg',
+        '/assets/head/微信图片_20251116131028_50_227.jpg',
+        '/assets/head/微信图片_20251116131029_51_227.jpg',
+        '/assets/head/微信图片_20251116131030_52_227.jpg',
+        '/assets/head/微信图片_20251116131031_53_227.jpg'
       ];
       const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 21) ? user.head_show - 1 : 0;
       const avatarPath = avatarList[avatarIndex];
@@ -288,26 +288,26 @@ export default function MinePage() {
    * 预设头像列表 - 使用图片路径（包含原始6个screenshot和6个微信图片）
    */
   const avatarOptions = [
-    '/src/assets/head/screenshot_20251114_131601.png',
-    '/src/assets/head/screenshot_20251114_131629.png',
-    '/src/assets/head/screenshot_20251114_131937.png',
-    '/src/assets/head/screenshot_20251114_131951.png',
-    '/src/assets/head/screenshot_20251114_132014.png',
-    '/src/assets/head/screenshot_20251114_133459.png',
-    '/src/assets/head/微信图片_20251115203432_32_227.jpg',
-    '/src/assets/head/微信图片_20251115203433_33_227.jpg',
-    '/src/assets/head/微信图片_20251115203434_34_227.jpg',
-    '/src/assets/head/微信图片_20251115203434_35_227.jpg',
-    '/src/assets/head/微信图片_20251115203435_36_227.jpg',
-    '/src/assets/head/微信图片_20251115203436_37_227.jpg',
-    '/src/assets/head/微信图片_20251116131024_45_227.jpg',
-    '/src/assets/head/微信图片_20251116131024_46_227.jpg',
-    '/src/assets/head/微信图片_20251116131025_47_227.jpg',
-    '/src/assets/head/微信图片_20251116131026_48_227.jpg',
-    '/src/assets/head/微信图片_20251116131027_49_227.jpg',
-    '/src/assets/head/微信图片_20251116131028_50_227.jpg',
-    '/src/assets/head/微信图片_20251116131029_51_227.jpg',
-    '/src/assets/head/微信图片_20251116131031_53_227.jpg'
+    '/assets/head/screenshot_20251114_131601.png',
+    '/assets/head/screenshot_20251114_131629.png',
+    '/assets/head/screenshot_20251114_131937.png',
+    '/assets/head/screenshot_20251114_131951.png',
+    '/assets/head/screenshot_20251114_132014.png',
+    '/assets/head/screenshot_20251114_133459.png',
+    '/assets/head/微信图片_20251115203432_32_227.jpg',
+    '/assets/head/微信图片_20251115203433_33_227.jpg',
+    '/assets/head/微信图片_20251115203434_34_227.jpg',
+    '/assets/head/微信图片_20251115203434_35_227.jpg',
+    '/assets/head/微信图片_20251115203435_36_227.jpg',
+    '/assets/head/微信图片_20251115203436_37_227.jpg',
+    '/assets/head/微信图片_20251116131024_45_227.jpg',
+    '/assets/head/微信图片_20251116131024_46_227.jpg',
+    '/assets/head/微信图片_20251116131025_47_227.jpg',
+    '/assets/head/微信图片_20251116131026_48_227.jpg',
+    '/assets/head/微信图片_20251116131027_49_227.jpg',
+    '/assets/head/微信图片_20251116131028_50_227.jpg',
+    '/assets/head/微信图片_20251116131029_51_227.jpg',
+    '/assets/head/微信图片_20251116131031_53_227.jpg'
   ];
 
   // ========== 事件处理器 ==========

@@ -1,4 +1,5 @@
 import { api } from './apiClient';
+import type { Conversation } from './chat.service';
 
 // 帖子接口类型
 export interface Post {
@@ -219,27 +220,27 @@ const contactService = {
     
     // 头像路径映射（支持21个头像）
     const avatarList = [
-      '/src/assets/head/screenshot_20251114_131601.png',
-      '/src/assets/head/screenshot_20251114_131629.png',
-      '/src/assets/head/screenshot_20251114_131937.png',
-      '/src/assets/head/screenshot_20251114_131951.png',
-      '/src/assets/head/screenshot_20251114_132014.png',
-      '/src/assets/head/screenshot_20251114_133459.png',
-      '/src/assets/head/微信图片_20251115203432_32_227.jpg',
-      '/src/assets/head/微信图片_20251115203433_33_227.jpg',
-      '/src/assets/head/微信图片_20251115203434_34_227.jpg',
-      '/src/assets/head/微信图片_20251115203434_35_227.jpg',
-      '/src/assets/head/微信图片_20251115203435_36_227.jpg',
-      '/src/assets/head/微信图片_20251115203436_37_227.jpg',
-      '/src/assets/head/微信图片_20251116131024_45_227.jpg',
-      '/src/assets/head/微信图片_20251116131024_46_227.jpg',
-      '/src/assets/head/微信图片_20251116131025_47_227.jpg',
-      '/src/assets/head/微信图片_20251116131026_48_227.jpg',
-      '/src/assets/head/微信图片_20251116131027_49_227.jpg',
-      '/src/assets/head/微信图片_20251116131028_50_227.jpg',
-      '/src/assets/head/微信图片_20251116131029_51_227.jpg',
-      '/src/assets/head/微信图片_20251116131030_52_227.jpg',
-      '/src/assets/head/微信图片_20251116131031_53_227.jpg'
+      '/assets/head/screenshot_20251114_131601.png',
+      '/assets/head/screenshot_20251114_131629.png',
+      '/assets/head/screenshot_20251114_131937.png',
+      '/assets/head/screenshot_20251114_131951.png',
+      '/assets/head/screenshot_20251114_132014.png',
+      '/assets/head/screenshot_20251114_133459.png',
+      '/assets/head/微信图片_20251115203432_32_227.jpg',
+      '/assets/head/微信图片_20251115203433_33_227.jpg',
+      '/assets/head/微信图片_20251115203434_34_227.jpg',
+      '/assets/head/微信图片_20251115203434_35_227.jpg',
+      '/assets/head/微信图片_20251115203435_36_227.jpg',
+      '/assets/head/微信图片_20251115203436_37_227.jpg',
+      '/assets/head/微信图片_20251116131024_45_227.jpg',
+      '/assets/head/微信图片_20251116131024_46_227.jpg',
+      '/assets/head/微信图片_20251116131025_47_227.jpg',
+      '/assets/head/微信图片_20251116131026_48_227.jpg',
+      '/assets/head/微信图片_20251116131027_49_227.jpg',
+      '/assets/head/微信图片_20251116131028_50_227.jpg',
+      '/assets/head/微信图片_20251116131029_51_227.jpg',
+      '/assets/head/微信图片_20251116131030_52_227.jpg',
+      '/assets/head/微信图片_20251116131031_53_227.jpg'
     ];
     
     return (response.users || []).map(user => ({
@@ -259,7 +260,8 @@ const contactService = {
 
   // 获取私聊会话列表
   getPrivateConversations: async () => {
-    return api.get<{ conversations: any[] }>('/api/private-chat/conversations');
+    // 路径已适配 API_BASE，无需硬编码域名
+    return api.get<{ conversations: Conversation[] }>('/api/private-chat/conversations');
   },
 
   // 获取当前用户点过赞的帖子ID列表

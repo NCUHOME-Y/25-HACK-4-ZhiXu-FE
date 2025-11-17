@@ -7,7 +7,8 @@ import { createApiWrapper } from '../lib/helpers/api-helpers';
  * 包含请求拦截器和响应拦截器
  */
 // 后端地址通过 Vite 环境变量 `VITE_API_BASE_URL` 注入，回退到本地开发默认值
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+// 优先使用 Vite 注入的环境变量，其次使用页面 origin（部署在同域时），最后回退到本地开发地址
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080');
 
 /**
  * 将 http(s) 地址转换为 ws(s) 地址并拼接路径
@@ -15,9 +16,13 @@ export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8
 export function makeWsUrl(path: string) {
   let origin = API_BASE;
   if (origin.endsWith('/')) origin = origin.slice(0, -1);
-  // http -> ws, https -> wss
-  origin = origin.replace(/^http/, 'ws');
-  return `${origin}${path}`;
+  // 如果 API_BASE 是相对路径（例如空字符串），使用当前页面 origin
+  if (origin === '' && typeof window !== 'undefined') origin = window.location.origin;
+  // 将 http(s) 协议转换为 ws(s)
+  origin = origin.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+  // 确保 path 以 '/' 开头
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${origin}${p}`;
 }
 
 const apiClient = axios.create({
