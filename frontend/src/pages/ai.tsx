@@ -254,10 +254,10 @@ export default function AIPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <div className="flex-1 pb-24 space-y-5">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
           <div className="px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-blue-100">
@@ -272,24 +272,26 @@ export default function AIPage() {
         </header>
 
         {/* 输入区域 */}
-        <section className="space-y-4 px-4">
-          <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
-            <div className="space-y-4">
+        <section className="px-4">
+          <Card className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+            {/* 头部渐变区域 */}
+            <div className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-b border-blue-100/50">
+              <div className="space-y-6">
               {/* 个人背景输入 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-1">
-                  <User className="h-4 w-4" />
+              <div className="space-y-3">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-600" />
                   个人学习背景
                 </label>
                 <Textarea
                   placeholder="输入您的学习背景，例如：大三学生、有编程基础..."
                   value={background}
                   onChange={(e) => setBackground(e.target.value)}
-                  className="bg-white min-h-[80px] resize-none"
+                  className="bg-white min-h-[80px] resize-none rounded-xl"
                 />
                 {/* 上次背景提示 */}
                 <div className="space-y-1">
-                  <div className="text-[13px] font-medium text-gray-600 pl-1">
+                  <div className="text-sm font-medium text-gray-600 pl-1">
                     📝 上次个人学习背景
                   </div>
                   <div className="text-xs text-muted-foreground pl-1">
@@ -305,20 +307,20 @@ export default function AIPage() {
               <Separator className="my-3" />
 
               {/* 学习目标输入 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-1">
-                  <BookOpen className="h-4 w-4" />
+              <div className="space-y-3">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
                   学习目标
                 </label>
                 <Input
                   placeholder="输入您的学习目标..."
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  className="bg-white"
+                  className="bg-white rounded-xl"
                 />
                 {/* 上次目标提示 */}
                 <div className="space-y-1">
-                  <div className="text-[13px] font-medium text-gray-600 pl-1">
+                  <div className="text-sm font-medium text-gray-600 pl-1">
                     🎯 上次学习目标
                   </div>
                   <div className="text-xs text-muted-foreground pl-1">
@@ -334,17 +336,17 @@ export default function AIPage() {
               <Separator className="my-3" />
 
               {/* 难度选择 */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-sm font-medium">选择难度</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {difficulties.map((diff) => (
                     <button
                       key={diff.value}
                       onClick={() => setSelectedDifficulty(diff.value)}
-                      className={`px-3 py-2 text-sm rounded-lg font-medium transition-all ${
+                      className={`px-4 py-3 text-sm rounded-xl font-medium transition-all duration-200 ${
                         selectedDifficulty === diff.value
-                          ? diff.color + ' ring-2 ring-offset-2 ring-blue-500'
-                          : 'bg-white text-gray-600 hover:bg-gray-100'
+                          ? diff.color + ' ring-2 ring-offset-2 ring-blue-500 shadow-md'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 hover:shadow-sm border border-gray-200'
                       }`}
                     >
                       {diff.label}
@@ -357,7 +359,7 @@ export default function AIPage() {
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || !goal.trim() || !selectedDifficulty}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {isGenerating ? (
                   <>
@@ -372,43 +374,46 @@ export default function AIPage() {
                 )}
               </Button>
             </div>
+            </div>
           </Card>
         </section>
 
         {/* 加载状态 */}
         {isGenerating && (
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold">正在生成...</h2>
-            <Card className="p-4 space-y-3">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
+          <section className="px-4">
+            <h2 className="text-lg font-semibold mb-4">正在生成...</h2>
+            <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-3/4 rounded-lg" />
+                <Skeleton className="h-4 w-full rounded-lg" />
+                <Skeleton className="h-4 w-5/6 rounded-lg" />
+              </div>
             </Card>
           </section>
         )}
 
         {/* 已生成学习计划 */}
-        <section className="space-y-4 px-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+        <section className="px-4">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Target className="h-5 w-5 text-blue-500" />
             已生成学习计划
           </h2>
           {generatedPlans.length === 0 ? (
-            <Card className="p-8 text-center">
-              <div className="flex flex-col items-center gap-2">
+            <Card className="p-8 text-center rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
+              <div className="flex flex-col items-center gap-3">
                 <Target className="h-12 w-12 text-gray-300" />
                 <p className="text-muted-foreground">暂无学习计划</p>
                 <p className="text-xs text-gray-400">输入目标并生成计划后将在此显示</p>
               </div>
             </Card>
           ) : (
-              <div className="flex flex-col gap-6">
-                {/* 只显示最近的三个学习计划 */}
-                {generatedPlans.slice(0, 3).map((plan, planIndex) => {
+              <div className="flex flex-col gap-4">
+                {/* 只显示最近的五个学习计划 */}
+                {generatedPlans.slice(0, 5).map((plan, planIndex) => {
                   return (
-                  <div key={planIndex} className="rounded-2xl shadow-lg bg-white border border-blue-100 overflow-hidden">
+                  <Card key={planIndex} className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
                     {/* 目标信息区域 */}
-                    <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50">
+                    <div className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-b border-blue-100/50">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Target className="h-5 w-5 text-blue-600" />
@@ -461,7 +466,7 @@ export default function AIPage() {
                                   e.stopPropagation();
                                   handleAddToFlags(plan);
                                 }}
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-3 py-1 rounded bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-xs h-8 text-white cursor-pointer"
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-xs h-9 text-white cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.98]"
                                 role="button"
                                 tabIndex={0}
                               >
@@ -481,9 +486,9 @@ export default function AIPage() {
                                   <div
                                     key={flagIndex}
                                     className={
-                                      `p-4 rounded-xl transition-all shadow-sm ` +
+                                      `p-4 rounded-xl transition-all duration-200 shadow-sm ` +
                                       (isAdded
-                                        ? 'bg-gradient-to-br from-green-50 to-emerald-50 text-green-700'
+                                        ? 'bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/50 text-green-700'
                                         : 'bg-white border border-gray-200 hover:border-blue-300 hover:shadow-md text-gray-800')
                                     }
                                   >
@@ -529,7 +534,7 @@ export default function AIPage() {
                                       {!isAdded && (
                                           <div
                                             onClick={() => handleAddSingleFlag(plan, flagIndex)}
-                                            className="w-full text-xs h-8 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl flex items-center justify-center cursor-pointer"
+                                            className="w-full text-xs h-9 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.98]"
                                             role="button"
                                             tabIndex={0}
                                           >
@@ -542,8 +547,8 @@ export default function AIPage() {
                               })}
                             </div>
                             {/* 总积分统计 */}
-                            <div className="pt-3 mt-3 border-t border-gray-300/40 flex items-center justify-between">
-                              <span className="text-sm text-gray-600">完成全部可获得:</span>
+                            <div className="pt-4 mt-4 border-t border-gray-200/50 flex items-center justify-between bg-gray-50/50 rounded-lg p-3">
+                              <span className="text-sm text-gray-600 font-medium">完成全部可获得:</span>
                               <span className="text-lg font-bold text-orange-600">
                                 {plan.flags.reduce((sum, f) => sum + (f.points || 0), 0)} 积分
                               </span>
@@ -553,12 +558,12 @@ export default function AIPage() {
                         </Accordion>
                       </div>
                     </div>
-                  </div>
-                );
+                  </Card>
+                  );
                 })}
-            </div>
-          )}
-        </section>
+              </div>
+            )}
+          </section>
       </div>
       <BottomNav />
     </div>

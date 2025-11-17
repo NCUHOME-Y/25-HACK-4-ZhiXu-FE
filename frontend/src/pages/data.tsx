@@ -260,10 +260,10 @@ export default function DataPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
           <div className="px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-blue-100">
@@ -278,27 +278,30 @@ export default function DataPage() {
         </header>
 
         {/* 打卡概览 */}
-        <section className="px-2">
-          <h2 className="text-lg font-semibold mb-3">打卡概览</h2>
-          <Card className="p-4">
+        <section className="px-4">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-500" />
+            打卡概览
+          </h2>
+          <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
             <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50">
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50 hover:shadow-md transition-all duration-200">
                 <Calendar className="h-6 w-6 text-blue-600 mb-2" />
                 <div className="text-2xl font-bold text-blue-600">{calculatedMonthlyStats.punchedDays}</div>
-                <div className="text-xs text-muted-foreground mt-1">累计打卡</div>
+                <div className="text-xs text-blue-700 mt-1">累计打卡</div>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50">
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200/50 hover:shadow-md transition-all duration-200">
                 <Calendar className="h-6 w-6 text-red-600 mb-2" />
                 <div className="text-2xl font-bold text-red-600">{calculatedMonthlyStats.missedDays}</div>
-                <div className="text-xs text-muted-foreground mt-1">缺卡天数</div>
+                <div className="text-xs text-red-700 mt-1">缺卡天数</div>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-50">
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200/50 hover:shadow-md transition-all duration-200">
                 <Clock className="h-6 w-6 text-green-600 mb-2" />
                 <div className="text-2xl font-bold text-green-600">{formatTotalHours(calculatedMonthlyStats.totalStudyTime)}</div>
-                <div className="text-xs text-muted-foreground mt-1">累计时长({Math.floor(calculatedMonthlyStats.totalStudyTime / 3600) > 0 ? 'h' : 'min'})</div>
+                <div className="text-xs text-green-700 mt-1 whitespace-nowrap">累计时长({Math.floor(calculatedMonthlyStats.totalStudyTime / 3600) > 0 ? 'h' : 'm'})</div>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t text-center text-sm text-muted-foreground">
+            <div className="mt-4 pt-4 border-t border-gray-200/50 text-center text-sm text-gray-600 bg-gray-50/50 rounded-lg p-3">
               本月累计学习 {(() => {
                 const hours = Math.floor(calculatedMonthlyStats.totalStudyTime / 3600);
                 const mins = Math.floor((calculatedMonthlyStats.totalStudyTime % 3600) / 60);
@@ -309,9 +312,12 @@ export default function DataPage() {
         </section>
 
         {/* 数据统计模块 */}
-        <section className="px-2">
-          <h2 className="text-lg font-semibold mb-3">学习数据</h2>
-          <Card className="p-4">
+        <section className="px-4">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-blue-500" />
+            学习数据
+          </h2>
+          <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
             <div className="grid grid-cols-3 gap-3">
               {/* 连续打卡天数 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
@@ -346,34 +352,38 @@ export default function DataPage() {
         {/* Flag完成度 */}
         {flagStats && (
           <section className="px-4">
-            <h2 className="text-lg font-semibold mb-3">Flag完成度</h2>
-            <Card className="p-3 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50">
-                  <Flag className="h-4 w-4 text-blue-600" />
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Flag className="h-5 w-5 text-blue-500" />
+              Flag完成度
+            </h2>
+            <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
+              <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50 hover:shadow-md transition-all duration-200">
+                  <Flag className="h-5 w-5 text-blue-600" />
                   <div>
-                    <div className="text-lg font-bold">{flagStats.completedCount}</div>
-                    <div className="text-xs text-muted-foreground">已完成</div>
+                    <div className="text-xl font-bold text-blue-600">{flagStats.completedCount}</div>
+                    <div className="text-xs text-blue-700">已完成</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50">
-                  <Flag className="h-4 w-4 text-orange-600" />
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200/50 hover:shadow-md transition-all duration-200">
+                  <Flag className="h-5 w-5 text-orange-600" />
                   <div>
-                    <div className="text-lg font-bold">{flagStats.uncompletedCount}</div>
-                    <div className="text-xs text-muted-foreground">未完成</div>
+                    <div className="text-xl font-bold text-orange-600">{flagStats.uncompletedCount}</div>
+                    <div className="text-xs text-orange-700">未完成</div>
                   </div>
                 </div>
               </div>
               
               {/* 径向图 */}
-              <div className="flex flex-col items-center -my-2">
+              <div className="flex flex-col items-center">
                 <ChartRadialStacked />
               </div>
 
 
-              {/* 标签分类：无数据时显示“无标签 0%” */}
-              <div className="space-y-2 border-t pt-3">
-                <h3 className="text-sm font-semibold">标签分类</h3>
+              {/* 标签分类：无数据时显示"无标签 0%" */}
+              <div className="space-y-3 border-t border-gray-200/50 pt-4">
+                <h3 className="text-sm font-semibold text-gray-700">标签分类</h3>
                 {Object.entries(FLAG_LABELS).map(([, labelObj]) => {
                   const stat = flagStats.labelStats?.find(l => l.labelName === labelObj.name);
                   const percentage = stat ? stat.percentage : 0;
@@ -417,23 +427,27 @@ export default function DataPage() {
                   />
                 </div>
               )}
+            </div>
             </Card>
           </section>
         )}
 
         {/* 学习时长趋势 */}
         <section className="px-4">
-          <h2 className="text-lg font-semibold mb-3">学习时长趋势</h2>
-          <Card>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-500" />
+            学习时长趋势
+          </h2>
+          <Card className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
             <Tabs value={studyPeriod} onValueChange={(v: string) => setStudyPeriod(v as typeof studyPeriod)} className="w-full">
-              <div className="p-4 pb-0">
-                <TabsList className="grid w-full grid-cols-3 h-9">
-                  <TabsTrigger value="week" className="text-xs">周</TabsTrigger>
-                  <TabsTrigger value="month" className="text-xs">月</TabsTrigger>
-                  <TabsTrigger value="year" className="text-xs">年</TabsTrigger>
+              <div className="p-6 pb-0">
+                <TabsList className="grid w-full grid-cols-3 h-10">
+                  <TabsTrigger value="week" className="text-sm">周</TabsTrigger>
+                  <TabsTrigger value="month" className="text-sm">月</TabsTrigger>
+                  <TabsTrigger value="year" className="text-sm">年</TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value={studyPeriod} className="mt-0 px-3 pb-4">
+              <TabsContent value={studyPeriod} className="mt-0 px-6 pb-6">
                 <StudyTimeChart 
                   data={studyData}
                   period={studyPeriod}

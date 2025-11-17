@@ -350,7 +350,7 @@ export default function ContactPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
       <div className="pb-20">
         {/* 页面标题 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
@@ -360,7 +360,7 @@ export default function ContactPage() {
                 <MessageCircle className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">翰林院论</h1>
+                <h1 className="text-xl font-bold text-slate-900">翰林院</h1>
                 <p className="text-sm text-slate-600">分享学习心得，交流生活感悟</p>
               </div>
             </div>
@@ -460,7 +460,7 @@ export default function ContactPage() {
                   displayedPosts.map((user) => (
                     <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
                       {/* 用户信息行 */}
-                      <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center gap-3 mb-3">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-blue-100 hover:ring-blue-300 transition-all duration-200">
@@ -531,12 +531,12 @@ export default function ContactPage() {
                       </div>
 
                       {/* 帖子内容 */}
-                      <div className="mb-4">
+                      <div className="mb-3">
                         <p className="text-slate-800 leading-relaxed text-base whitespace-pre-wrap break-words">{user.message}</p>
                       </div>
 
                       {/* 互动按钮 */}
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <ToggleGroup
                             type="multiple"
@@ -566,11 +566,11 @@ export default function ContactPage() {
                           </button>
                         </div>
                           {/* 评论数统计行已移除 */}
-                      </div>
+                        </div>
 
                       {/* 评论列表 */}
                       {showComments[user.id] && user.comments.length > 0 && (
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                             <MessageSquare className="h-4 w-4" />
                             <span>评论 ({user.comments.length})</span>
@@ -710,7 +710,7 @@ export default function ContactPage() {
             displayedPosts.map((user) => (
             <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
               {/* 用户信息行 */}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-3">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-blue-100 hover:ring-blue-300 transition-all duration-200">
@@ -779,12 +779,12 @@ export default function ContactPage() {
               </div>
 
               {/* 帖子内容 */}
-              <div className="mb-4">
+              <div className="mb-3">
                 <p className="text-slate-800 leading-relaxed text-base whitespace-pre-wrap break-words">{user.message}</p>
               </div>
               
               {/* 互动按钮 */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <ToggleGroup 
                     type="multiple" 
@@ -821,7 +821,7 @@ export default function ContactPage() {
 
                       {/* 评论列表 */}
                       {showComments[user.id] && user.comments.length > 0 && (
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                             <MessageSquare className="h-4 w-4" />
                             <span>评论 ({user.comments.length})</span>
@@ -844,7 +844,7 @@ export default function ContactPage() {
                         </div>
                       )}              {/* 评论输入框 */}
               {showComments[user.id] && (
-                <div className="flex items-end gap-3 mt-4">
+                <div className="flex items-end gap-3 mt-3">
                   <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarFallback className="text-xs bg-blue-100 text-blue-700 font-semibold">
                       {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我'}

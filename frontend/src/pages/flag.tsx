@@ -122,7 +122,13 @@ export default function FlagPage() {
       // 更新新增的状态
       setFlagsWithDates(flagsWithDatesData);
       setPresetFlags(presetFlagsData);
-      setExpiredFlags(expiredFlagsData);
+      // 对过期flag按结束日期降序排序（最近过期的排在前面）
+      const sortedExpiredFlags = expiredFlagsData.sort((a, b) => {
+        const aEndDate = a.endDate ? new Date(a.endDate).getTime() : 0;
+        const bEndDate = b.endDate ? new Date(b.endDate).getTime() : 0;
+        return bEndDate - aEndDate; // 降序，最近过期的在前
+      });
+      setExpiredFlags(sortedExpiredFlags);
     } catch (error) {
       console.error('加载数据失败:', error);
       // 如果是401错误，可能token过期，跳转到登录页
@@ -737,7 +743,7 @@ export default function FlagPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {alertVisible && (
         <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[9999] w-11/12 max-w-md">
           <Alert variant="destructive" className={alertHiding ? 'alert-hide' : ''}>
@@ -749,7 +755,7 @@ export default function FlagPage() {
       
       <div className="flex-1 pb-24 space-y-4 px-4">
         {/* 页面标题 */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
           <div className="px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-blue-100">
@@ -764,11 +770,11 @@ export default function FlagPage() {
         </header>
 
         {/* 顶部日历 */}
-        <section className="pt-3">
+        <section className="pt-3 px-4">
           <Calendar
             mode="single"
             captionLayout="dropdown"
-            className="w-full rounded-xl border border-slate-200 shadow-sm"
+            className="w-full rounded-2xl border border-gray-200/60 shadow-lg bg-white/90 backdrop-blur-md hover:shadow-xl transition-all duration-300"
             formatters={{
               formatMonthDropdown: (date) => date.toLocaleString('zh-CN', { month: 'long' }),
               formatCaption: (date) => `${date.getFullYear()}年 ${date.toLocaleString('zh-CN', { month: 'long' })}`,
@@ -785,26 +791,27 @@ export default function FlagPage() {
                 const isPast = dateObj < startOfToday;
                 const isPunched = punchedDates.includes(dateStr);
                 const isPastUnpunched = isPast && !isPunched;
-                
+                const isToday = dateObj.toDateString() === today.toDateString();
+
                 // 检查该日期是否在任何flag的日期范围内
                 const hasFlagDate = flagsWithDates.some(flag => {
                   if (!flag.startDate) return false;
                   const flagStartDate = new Date(flag.startDate);
                   flagStartDate.setHours(0, 0, 0, 0);
                   const dateTime = dateObj.getTime();
-                  
+
                   // 检查是否在起止日期范围内
                   if (dateTime < flagStartDate.getTime()) return false;
-                  
+
                   if (flag.endDate) {
                     const flagEndDate = new Date(flag.endDate);
                     flagEndDate.setHours(0, 0, 0, 0);
                     if (dateTime > flagEndDate.getTime()) return false;
                   }
-                  
+
                   return true;
                 });
-                
+
                 // 非本月日期完全隐藏
                 if (!isCurrentMonth) {
                   return (
@@ -818,18 +825,32 @@ export default function FlagPage() {
                     </CalendarDayButton>
                   );
                 }
-                
+
                 return (
                   <CalendarDayButton
                     day={day}
                     modifiers={modifiers}
                     {...props}
-                    className={`relative ${isPastUnpunched ? 'text-slate-400' : 'text-black'} cursor-default pointer-events-none`}
+                    className={`relative transition-all duration-200 hover:scale-110 ${
+                      isToday
+                        ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                        : isPastUnpunched
+                        ? 'text-slate-400 hover:text-slate-500'
+                        : 'text-black hover:text-blue-600 hover:bg-blue-50'
+                    } cursor-default pointer-events-none rounded-lg`}
                   >
-                    <span>{children}</span>
+                    <span className="relative z-10 font-medium">{children}</span>
                     {/* 绿杠（flag高亮）紧贴黄杠上方，且不重叠 */}
-                    {hasFlagDate && <span className="absolute left-1 right-1 bottom-2 h-[3px] rounded bg-green-500 z-10" />}
-                    {isPunched && <span className="absolute left-1 right-1 bottom-1 h-[3px] rounded bg-yellow-400 z-0" />}
+                    {hasFlagDate && (
+                      <span className="absolute left-1 right-1 bottom-2 h-[3px] rounded bg-gradient-to-r from-green-400 to-green-500 z-20 shadow-sm" />
+                    )}
+                    {isPunched && (
+                      <span className="absolute left-1 right-1 bottom-1 h-[3px] rounded bg-gradient-to-r from-yellow-400 to-amber-400 z-10 shadow-sm" />
+                    )}
+                    {/* 今日标记 */}
+                    {isToday && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full border border-blue-300" />
+                    )}
                   </CalendarDayButton>
                 );
               },
@@ -838,7 +859,8 @@ export default function FlagPage() {
         </section>
 
         {/* 打卡与计时模块 */}
-        <section className="grid grid-cols-2 gap-3">
+        <section className="px-4">
+          <div className="grid grid-cols-2 gap-4">
           {/* 打卡模块 */}
           <Card 
             className={`p-3 flex flex-col justify-between gap-2 min-h-[120px] transition-all rounded-xl border-slate-200 shadow-sm ${
@@ -926,6 +948,7 @@ export default function FlagPage() {
               {studying ? '点击停止' : sessionElapsed > 0 ? '点击继续' : '点击开始'}
             </div>
           </Card>
+          </div>
         </section>
 
         {/* 今日flag标题 */}
@@ -939,7 +962,7 @@ export default function FlagPage() {
         {/* 未完成flag列表 */}
         <section className="space-y-2">
           {incompleteTasks.length === 0 ? (
-            <Empty className="border-none">
+            <Empty className="border-none bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg">
               <EmptyHeader>
                 <EmptyTitle>还没有flag</EmptyTitle>
                 <EmptyDescription>
@@ -949,7 +972,7 @@ export default function FlagPage() {
               <EmptyContent>
                 <Button 
                   onClick={() => setOpenDrawer(true)} 
-                  className="rounded-full px-8"
+                  className="rounded-full px-8 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
                   <Plus />创建flag
                 </Button>
@@ -966,7 +989,7 @@ export default function FlagPage() {
               {displayedIncompleteTasks.map((t) => (
                 <Popover key={t.id}>
                   <PopoverTrigger asChild>
-                    <Card className="p-3 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <Card className="p-4 rounded-xl cursor-pointer bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl hover:bg-white/90 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#2563eb" showLabel={true} />
@@ -1037,7 +1060,7 @@ export default function FlagPage() {
                       </div>
                     </Card>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80">
+                  <PopoverContent className="w-80 bg-white/95 backdrop-blur-sm border-white/20 shadow-xl rounded-xl">
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-semibold text-base mb-1">{t.title}</h4>
@@ -1117,7 +1140,7 @@ export default function FlagPage() {
               <div className="flex justify-center pt-2 px-4">
                 <Button 
                   onClick={() => setOpenDrawer(true)} 
-                  className="rounded-full px-8 bg-blue-600 text-white hover:bg-blue-700 border-0"
+                  className="rounded-full px-8 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   创建flag
@@ -1134,7 +1157,7 @@ export default function FlagPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowAllIncomplete(!showAllIncomplete)}
-              className="text-xs"
+              className="text-xs rounded-full border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
             >
               {showAllIncomplete ? (
                 <>
@@ -1162,7 +1185,7 @@ export default function FlagPage() {
               {(showAllPreset ? presetFlags : presetFlags.slice(0, 6)).map((t) => (
                 <Popover key={t.id}>
                   <PopoverTrigger asChild>
-                    <Card className="p-3 bg-gray-50 opacity-60 rounded-xl border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <Card className="p-4 bg-gray-50/80 backdrop-blur-sm opacity-60 rounded-xl border-gray-200/50 cursor-pointer hover:bg-gray-100/90 hover:opacity-80 transition-all duration-300 shadow-md hover:shadow-lg">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#9ca3af" showLabel={true} />
@@ -1180,7 +1203,7 @@ export default function FlagPage() {
                       </div>
                     </Card>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80">
+                  <PopoverContent className="w-80 bg-white/95 backdrop-blur-sm border-white/20 shadow-xl rounded-xl">
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-semibold text-base mb-1">{t.title}</h4>
@@ -1246,7 +1269,7 @@ export default function FlagPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowAllPreset(!showAllPreset)}
-                  className="text-xs"
+                  className="text-xs rounded-full border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                 >
                   {showAllPreset ? (
                     <>
@@ -1275,7 +1298,7 @@ export default function FlagPage() {
             
             <section className="space-y-2">
               {expiredFlags.slice(0, 6).map((t) => (
-                <Card key={t.id} className="p-3 bg-gray-100 opacity-50 rounded-xl border-gray-200">
+                <Card key={t.id} className="p-4 bg-gray-100/80 backdrop-blur-sm opacity-50 rounded-xl border-gray-200/50 shadow-md">
                   <div className="flex items-start gap-3">
                     <div className="flex flex-col items-center gap-2">
                       <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#6b7280" showLabel={true} />
@@ -1309,7 +1332,7 @@ export default function FlagPage() {
             
             <section className="space-y-2">
               {completedTasks.map((t) => (
-                <Card key={t.id} className="p-3 bg-green-50 rounded-xl border-green-200">
+                <Card key={t.id} className="p-4 bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#059669" showLabel={true} />
@@ -1381,9 +1404,9 @@ export default function FlagPage() {
 
       {/* Drawer：新建/编辑flag */}
       <Drawer open={openDrawer} onOpenChange={(isOpen) => !isOpen && closeDrawer()}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{editingTaskId ? '编辑flag' : '新建flag'}</DrawerTitle>
+        <DrawerContent className="bg-white/95 backdrop-blur-sm border-t border-white/20 rounded-t-2xl shadow-2xl">
+          <DrawerHeader className="border-b border-gray-100/50 pb-4">
+            <DrawerTitle className="text-lg font-semibold text-gray-900">{editingTaskId ? '编辑flag' : '新建flag'}</DrawerTitle>
           </DrawerHeader>
           <div className="p-4 space-y-3">
             <div>
@@ -1519,7 +1542,7 @@ export default function FlagPage() {
                 {/* 太傅按钮 */}
                 <Button
                   type="button"
-                  className="font-bold h-7 px-4 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-none"
+                  className="font-bold h-7 px-4 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                   onClick={() => navigate('/ai')}
                 >
                   太傅
@@ -1536,16 +1559,16 @@ export default function FlagPage() {
                         删除
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl rounded-xl">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="text-lg font-semibold text-gray-900">确认删除</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-600">
                           确定要删除这个flag吗？要不再试试坚持一下？
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteTask} className="bg-red-500 hover:bg-red-600 rounded-full px-8">
+                      <AlertDialogFooter className="gap-3">
+                        <AlertDialogCancel className="rounded-full border-gray-200 hover:bg-gray-50">取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteTask} className="bg-red-500 hover:bg-red-600 rounded-full px-8 text-white">
                           确认删除
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -1555,14 +1578,14 @@ export default function FlagPage() {
               </div>
             </div>
           </div>
-          <DrawerFooter>
+          <DrawerFooter className="border-t border-gray-100/50 pt-4 bg-gray-50/50">
             <Button onClick={() => {
               if (newTask.total === 0) {
                 toast.warning('请输入每日完成次数');
                 return;
               }
               handleSaveTask();
-            }} className="rounded-full px-8">保存</Button>
+            }} className="rounded-full px-8 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">保存</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
