@@ -28,7 +28,7 @@ import {
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
 import { toast } from 'sonner';
-import { getAvatarUrl } from '../lib/helpers/helpers';
+import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 
 /**
  * 我的页面
@@ -290,20 +290,18 @@ export default function MinePage() {
    * 选择头像
    */
   const handleSelectAvatar = async (selectedAvatar: string) => {
-    // 从 /api/avatar/1 格式提取索引
+    // 直接本地切换头像（如需同步到后端可保留API调用）
     const match = selectedAvatar.match(/\/api\/avatar\/(\d+)$/);
     if (match) {
       const avatarId = parseInt(match[1], 10);
       try {
+        // 如需同步到后端头像索引，保留API调用
         const { switchAvatar } = await import('../services/set.service');
         await switchAvatar(avatarId);
         setAvatar(selectedAvatar);
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
-        
-        // 重新加载用户数据以同步头像
         await loadUserStats();
-        
         toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
