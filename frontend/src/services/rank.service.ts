@@ -1,5 +1,30 @@
 import { api } from './apiClient';
 
+// 预设头像列表
+const PRESET_AVATARS = [
+  '/assets/head/screenshot_20251114_131601.png',
+  '/assets/head/screenshot_20251114_131629.png',
+  '/assets/head/screenshot_20251114_131937.png',
+  '/assets/head/screenshot_20251114_131951.png',
+  '/assets/head/screenshot_20251114_132014.png',
+  '/assets/head/screenshot_20251114_133459.png',
+  '/assets/head/微信图片_20251115203432_32_227.jpg',
+  '/assets/head/微信图片_20251115203433_33_227.jpg',
+  '/assets/head/微信图片_20251115203434_34_227.jpg',
+  '/assets/head/微信图片_20251115203434_35_227.jpg',
+  '/assets/head/微信图片_20251115203435_36_227.jpg',
+  '/assets/head/微信图片_20251115203436_37_227.jpg',
+  '/assets/head/微信图片_20251116131024_45_227.jpg',
+  '/assets/head/微信图片_20251116131024_46_227.jpg',
+  '/assets/head/微信图片_20251116131025_47_227.jpg',
+  '/assets/head/微信图片_20251116131026_48_227.jpg',
+  '/assets/head/微信图片_20251116131027_49_227.jpg',
+  '/assets/head/微信图片_20251116131028_50_227.jpg',
+  '/assets/head/微信图片_20251116131029_51_227.jpg',
+  '/assets/head/微信图片_20251116131030_52_227.jpg',
+  '/assets/head/微信图片_20251116131031_53_227.jpg',
+];
+
 // 排行榜用户数据
 export interface RankUser {
   user_id: number;

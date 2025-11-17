@@ -350,42 +350,43 @@ export default function ContactPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <div className="flex-1 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+      <div className="pb-20">
         {/* 页面标题 */}
-        <div className="pt-6 pb-1 px-4">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-7 w-7 text-blue-500" />
-            <h1 className="text-2xl font-bold">翰林院论</h1>
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-100">
+                <MessageCircle className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">翰林院论</h1>
+                <p className="text-sm text-slate-600">分享学习心得，交流生活感悟</p>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">展示用户动态，支持社交互动</p>
-        </div>
+        </header>
 
         {/* 搜索框 */}
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center w-full h-12 bg-white border border-border rounded-full shadow-sm overflow-hidden">
-            <div className="flex items-center flex-1 pl-4 pr-2 h-full">
-              <SearchIcon className="h-5 w-5 text-muted-foreground mr-2" />
-              <Input
-                type="search"
-                placeholder="搜索帖子、用户、评论..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setActiveSearchQuery(searchQuery);
-                  }
-                }}
-                className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
-              />
-            </div>
-            <div className="h-full w-px bg-border" />
+        <div className="px-4 py-4">
+          <div className="relative">
+            <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <Input
+              type="search"
+              placeholder="搜索帖子、用户、评论..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setActiveSearchQuery(searchQuery);
+                }
+              }}
+              className="pl-12 pr-20 h-12 bg-white border-slate-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
             <Button
               type="submit"
-              variant="default"
-              size="sm"
               onClick={() => setActiveSearchQuery(searchQuery)}
-              className="h-full px-6 rounded-none"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700"
             >
               搜索
             </Button>
@@ -393,51 +394,51 @@ export default function ContactPage() {
         </div>
 
         {/* 顶部导航模块 */}
-        <section className="grid grid-cols-3 gap-3 mb-4 px-4">
-          <Card 
-            className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
-            onClick={() => navigate('/rank')}
-          >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-              <Trophy className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-sm font-bold">排行榜</div>
-          </Card>
-          
-          <Card 
-            className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
-            onClick={() => navigate('/chat-rooms')}
-          >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-sm font-bold">聊天室</div>
-          </Card>
-          
-          <Card 
-            className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-colors border-transparent"
-            onClick={() => {
-              setHasUnreadMessages(false);
-              const userId = localStorage.getItem('currentUserId');
-              localStorage.setItem(`commentsRead_${userId}`, 'true');
-              navigate('/receive');
-            }}
-          >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center flex-shrink-0">
-              <Inbox className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-sm font-bold relative inline-block">
-              收到的消息/评论
+        <div className="px-4 py-4">
+          <div className="grid grid-cols-3 gap-4">
+            <Card
+              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200"
+              onClick={() => navigate('/rank')}
+            >
+              <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-white" />
+              </div>
+              <div className="font-semibold text-slate-700">排行榜</div>
+            </Card>
+
+            <Card
+              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200"
+              onClick={() => navigate('/chat-rooms')}
+            >
+              <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                <MessageCircle className="h-6 w-6 text-white" />
+              </div>
+              <div className="font-semibold text-slate-700">聊天室</div>
+            </Card>
+
+            <Card
+              className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-teal-50 border-green-200 relative"
+              onClick={() => {
+                setHasUnreadMessages(false);
+                const userId = localStorage.getItem('currentUserId');
+                localStorage.setItem(`commentsRead_${userId}`, 'true');
+                navigate('/receive');
+              }}
+            >
+              <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center">
+                <Inbox className="h-6 w-6 text-white" />
+              </div>
+              <div className="font-semibold text-slate-700">收到的消息</div>
               {hasUnreadMessages && (
-                <div className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
               )}
-            </div>
-          </Card>
-        </section>
+            </Card>
+          </div>
+        </div>
 
         {/* 动态列表标题 */}
-        <div className="mb-3 px-4">
-          <h2 className="text-base font-semibold">翰林院论</h2>
+        <div className="px-4 py-2">
+          <h2 className="text-lg font-semibold text-slate-800">最新动态</h2>
         </div>
 
         {/* 搜索结果：有搜索关键词时显示 Tabs */}
@@ -457,134 +458,164 @@ export default function ContactPage() {
                   </Card>
                 ) : (
                   displayedPosts.map((user) => (
-                    <Card key={user.id} className="p-3 rounded-xl border-x-0">
-                      {/* ...existing code... 帖子卡片内容保持不变 */}
-                      <div className="flex items-center gap-2 mb-2">
+                    <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
+                      {/* 用户信息行 */}
+                      <div className="flex items-center gap-3 mb-4">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <div className="cursor-pointer flex-shrink-0">
-                              <Avatar className="h-11 w-11">
-                                <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
-                                <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
-                              </Avatar>
-                            </div>
+                            <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-blue-100 hover:ring-blue-300 transition-all duration-200">
+                              <AvatarImage src={getAvatarUrl(user.avatar)} />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-purple-100 text-slate-700 font-semibold">{user.name.slice(0, 2)}</AvatarFallback>
+                            </Avatar>
                           </PopoverTrigger>
-                          <PopoverContent className="w-64 p-3">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-12 w-12">
-                                  <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
+                          <PopoverContent className="w-72 p-4 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-14 w-14 ring-2 ring-blue-100">
+                                  <AvatarImage src={getAvatarUrl(user.avatar)} />
                                   <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm truncate">{user.name}</h4>
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-slate-900 text-lg">{user.name}</h4>
+                                  <p className="text-sm text-slate-500">点击查看详情</p>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div className="text-center">
-                                  <div className="font-semibold text-base">{user.totalDays}</div>
-                                  <div className="text-muted-foreground text-[10px]">打卡天数</div>
+                              <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-xl p-3">
+                                <div className="space-y-1">
+                                  <div className="font-bold text-xl text-blue-600">{user.totalDays}</div>
+                                  <div className="text-xs text-slate-500 font-medium">打卡天数</div>
                                 </div>
-                                <div className="text-center">
-                                  <div className="font-semibold text-base">{user.completedFlags}</div>
-                                  <div className="text-muted-foreground text-[10px]">完成flag</div>
+                                <div className="space-y-1">
+                                  <div className="font-bold text-xl text-green-600">{user.completedFlags}</div>
+                                  <div className="text-xs text-slate-500 font-medium">完成flag</div>
                                 </div>
-                                <div className="text-center">
-                                  <div className="font-semibold text-base">{user.totalPoints}</div>
-                                  <div className="text-muted-foreground text-[10px]">总积分</div>
+                                <div className="space-y-1">
+                                  <div className="font-bold text-xl text-purple-600">{user.totalPoints}</div>
+                                  <div className="text-xs text-slate-500 font-medium">总积分</div>
                                 </div>
                               </div>
-                              <Button 
+                              <Button
                                 size="sm"
-                                className="w-full rounded-full h-8"
-                                onClick={() => navigate('/send', { 
-                                  state: { 
+                                className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                                onClick={() => navigate('/send', {
+                                  state: {
                                     user: {
                                       id: user.userId,
                                       name: user.name,
                                       avatar: user.avatar
                                     }
-                                  } 
+                                  }
                                 })}
                               >
-                                <Send className="h-3 w-3 mr-1" />
+                                <Send className="h-4 w-4 mr-2" />
                                 发消息
                               </Button>
                             </div>
                           </PopoverContent>
                         </Popover>
                         <div className="flex-1 min-w-0">
-                          <span className="font-medium text-sm">{user.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-base truncate">{user.name}</span>
+                            {user.comments.length > 0 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                💬 {user.comments.length}
+                              </span>
+                            )}
+                          </div>
+                          {user.comments.length > 0 && (
+                            <span className="text-xs text-slate-500 mt-1 block">
+                              最后回复: {user.comments[user.comments.length - 1].time}
+                            </span>
+                          )}
                         </div>
-                        {user.comments.length > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            {user.comments[user.comments.length - 1].time}
-                          </span>
-                        )}
                       </div>
-                      <p className="text-sm mb-2 break-words px-1">{user.message}</p>
-                      <div className="flex items-center gap-3 mb-2 px-1">
-                        <ToggleGroup 
-                          type="multiple" 
-                          size="sm"
-                          onValueChange={(value) => handleLike(user.id, value)}
-                        >
-                          <ToggleGroupItem 
-                            value="liked" 
-                            aria-label="点赞" 
-                            className={`h-7 px-2 gap-1 ${likedPosts.has(user.id) ? 'text-red-500 data-[state=on]:text-red-500' : ''}`}
+
+                      {/* 帖子内容 */}
+                      <div className="mb-4">
+                        <p className="text-slate-800 leading-relaxed text-base whitespace-pre-wrap break-words">{user.message}</p>
+                      </div>
+
+                      {/* 互动按钮 */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <ToggleGroup
+                            type="multiple"
+                            size="sm"
+                            onValueChange={(value) => handleLike(user.id, value)}
                           >
-                            <Heart className={`h-3 w-3 ${likedPosts.has(user.id) ? 'fill-red-500' : ''}`} />
-                            <span className="text-xs">{user.likes}</span>
-                          </ToggleGroupItem>
-                        </ToggleGroup>
-                        <button 
-                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-500 transition-colors h-7 px-2"
-                          onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                          <span>{user.comments.length}</span>
-                        </button>
+                            <ToggleGroupItem
+                              value="liked"
+                              aria-label="点赞"
+                              className={`h-9 px-4 gap-2 rounded-full transition-all duration-200 font-semibold ${
+                                likedPosts.has(user.id)
+                                  ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md'
+                                  : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                              }`}
+                            >
+                      <Heart className={`h-4 w-4 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
+                              <span className="font-bold">{user.likes}</span>
+                            </ToggleGroupItem>
+                          </ToggleGroup>
+
+                          <button
+                            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-9 px-4 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
+                            onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
+                          >
+                            <MessageSquare className={`h-4 w-4 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
+                            <span className="font-bold">{user.comments.length}</span>
+                          </button>
+                        </div>
+                          {/* 评论数统计行已移除 */}
                       </div>
+
+                      {/* 评论列表 */}
                       {showComments[user.id] && user.comments.length > 0 && (
-                        <div className="space-y-3 mb-2 pl-2 border-l-2 border-slate-100">
+                        <div className="mt-4 space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                            <MessageSquare className="h-4 w-4" />
+                            <span>评论 ({user.comments.length})</span>
+                          </div>
                           {user.comments.map((comment) => (
-                            <div key={comment.id} className="flex gap-2">
+                            <div key={comment.id} className="flex gap-3">
                               <Avatar className="h-9 w-9 flex-shrink-0">
-                                <AvatarImage src={typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('http') ? comment.userAvatar : (typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('/api/avatar/') ? getAvatarUrl(comment.userAvatar) : comment.userAvatar)} />
-                                <AvatarFallback>{comment.userName.slice(0, 2)}</AvatarFallback>
+                                <AvatarImage src={getAvatarUrl(comment.userAvatar)} />
+                                <AvatarFallback className="text-xs bg-slate-100 text-slate-600 font-semibold">{comment.userName.slice(0, 2)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-baseline gap-2">
-                                  <span className="font-medium text-sm">{comment.userName}</span>
-                                  <span className="text-[10px] text-muted-foreground">{comment.time}</span>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-bold text-sm text-slate-900">{comment.userName}</span>
+                                  <span className="text-xs text-slate-500">{comment.time}</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-0.5">{comment.content}</p>
+                                <p className="text-sm text-slate-700 leading-relaxed break-words">{comment.content}</p>
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
+
+                      {/* 评论输入框 */}
                       {showComments[user.id] && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Input
-                            value={newComment[user.id] || ''}
-                            onChange={(e) => setNewComment({ ...newComment, [user.id]: e.target.value })}
-                            placeholder="写评论..."
-                            className="h-7 text-xs"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleAddComment(user.id);
-                              }
-                            }}
-                          />
-                          <Button 
-                            size="sm" 
-                            className="h-7 px-3 text-xs"
-                            onClick={() => handleAddComment(user.id)}
-                          >
-                            发送
-                          </Button>
+                        <div className="flex items-end gap-3 mt-4">
+                          <Avatar className="h-8 w-8 flex-shrink-0">
+                            <AvatarFallback className="text-xs bg-blue-100 text-blue-700 font-semibold">
+                              {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 flex gap-2">
+                            <Input
+                              value={newComment[user.id] || ''}
+                              onChange={(e) => setNewComment({ ...newComment, [user.id]: e.target.value })}
+                              placeholder="写下你的评论..."
+                              className="flex-1 h-10 text-sm rounded-full border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-10 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200"
+                              onClick={() => handleAddComment(user.id)}
+                            >
+                              <Send className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </Card>
@@ -600,32 +631,32 @@ export default function ContactPage() {
                   </Card>
                 ) : (
                   searchUserResults.map((searchUser) => (
-                    <Card key={searchUser.id} className="p-4 rounded-xl">
+                    <Card key={searchUser.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 border-slate-200">
                       <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                          <AvatarImage src={typeof searchUser.avatar === 'string' && searchUser.avatar.startsWith('http') ? searchUser.avatar : (typeof searchUser.avatar === 'string' && searchUser.avatar.startsWith('/api/avatar/') ? getAvatarUrl(searchUser.avatar) : searchUser.avatar)} alt="Avatar" />
-                          <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">
+                        <Avatar className="h-14 w-14 bg-gradient-to-br from-blue-500 to-purple-600">
+                          <AvatarImage src={getAvatarUrl(searchUser.avatar)} alt="Avatar" />
+                          <AvatarFallback className="text-lg font-bold text-white bg-blue-500">
                             {searchUser.name.slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h2 className="text-xl font-bold truncate">{searchUser.name}</h2>
-                          <p className="text-sm text-muted-foreground mt-1 truncate">{searchUser.email}</p>
+                        <div className="flex-1">
+                          <h2 className="text-lg font-bold text-slate-900 truncate">{searchUser.name}</h2>
+                          <p className="text-sm text-slate-600 truncate">{searchUser.email}</p>
                         </div>
-                        <Button 
+                        <Button
                           size="sm"
-                          className="rounded-full h-8 px-4"
-                          onClick={() => navigate('/send', { 
-                            state: { 
+                          className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4"
+                          onClick={() => navigate('/send', {
+                            state: {
                               user: {
                                 id: String(searchUser.id),
                                 name: searchUser.name,
                                 avatar: searchUser.avatar
                               }
-                            } 
+                            }
                           })}
                         >
-                          <Send className="h-3 w-3 mr-1" />
+                          <Send className="h-3 w-3 mr-2" />
                           发消息
                         </Button>
                       </div>
@@ -677,48 +708,47 @@ export default function ContactPage() {
             </Card>
           ) : (
             displayedPosts.map((user) => (
-            <Card key={user.id} className="p-3 rounded-xl border-x-0">
-              {/* 第一行：头像、昵称、发表时间 */}
-              <div className="flex items-center gap-2 mb-2">
+            <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
+              {/* 用户信息行 */}
+              <div className="flex items-center gap-3 mb-4">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <div className="cursor-pointer flex-shrink-0">
-                      <Avatar className="h-11 w-11">
-                        <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
-                        <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                    </div>
+                    <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-blue-100 hover:ring-blue-300 transition-all duration-200">
+                      <AvatarImage src={getAvatarUrl(user.avatar)} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-100 to-purple-100 text-slate-700 font-semibold">{user.name.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={typeof user.avatar === 'string' && user.avatar.startsWith('http') ? user.avatar : (typeof user.avatar === 'string' && user.avatar.startsWith('/api/avatar/') ? getAvatarUrl(user.avatar) : user.avatar)} />
+                  <PopoverContent className="w-72 p-4 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-14 w-14 ring-2 ring-blue-100">
+                            <AvatarImage src={getAvatarUrl(user.avatar)} />
                             <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
                           </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{user.name}</h4>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-slate-900 text-lg">{user.name}</h4>
+                          <p className="text-sm text-slate-500">点击查看详情</p>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div className="text-center">
-                          <div className="font-semibold text-base">{user.totalDays}</div>
-                          <div className="text-muted-foreground text-[10px]">打卡天数</div>
+                      <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-xl p-3">
+                        <div className="space-y-1">
+                          <div className="font-bold text-xl text-blue-600">{user.totalDays}</div>
+                          <div className="text-xs text-slate-500 font-medium">打卡天数</div>
                         </div>
-                        <div className="text-center">
-                          <div className="font-semibold text-base">{user.completedFlags}</div>
-                          <div className="text-muted-foreground text-[10px]">完成flag</div>
+                        <div className="space-y-1">
+                          <div className="font-bold text-xl text-green-600">{user.completedFlags}</div>
+                          <div className="text-xs text-slate-500 font-medium">完成flag</div>
                         </div>
-                        <div className="text-center">
-                          <div className="font-semibold text-base">{user.totalPoints}</div>
-                          <div className="text-muted-foreground text-[10px]">总积分</div>
+                        <div className="space-y-1">
+                          <div className="font-bold text-xl text-purple-600">{user.totalPoints}</div>
+                          <div className="text-xs text-slate-500 font-medium">总积分</div>
                         </div>
                       </div>
                       
                       <Button 
                         size="sm"
-                        className="w-full rounded-full h-8"
+                        className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                         onClick={() => navigate('/send', { 
                           state: { 
                             user: {
@@ -729,7 +759,7 @@ export default function ContactPage() {
                           } 
                         })}
                       >
-                        <Send className="h-3 w-3 mr-1" />
+                        <Send className="h-3 w-3 mr-2" />
                         发消息
                       </Button>
                     </div>
@@ -737,87 +767,109 @@ export default function ContactPage() {
                 </Popover>
 
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium text-sm">{user.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 text-base truncate">{user.name}</span>
+                  </div>
+                  {user.comments.length > 0 && (
+                    <span className="text-xs text-slate-500 mt-1 block">
+                      最后回复: {user.comments[user.comments.length - 1].time}
+                    </span>
+                  )}
                 </div>
-                
-                {user.comments.length > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {user.comments[user.comments.length - 1].time}
-                  </span>
-                )}
               </div>
 
-              {/* 第二行：帖子内容 */}
-              <p className="text-sm mb-2 break-words px-1">{user.message}</p>
+              {/* 帖子内容 */}
+              <div className="mb-4">
+                <p className="text-slate-800 leading-relaxed text-base whitespace-pre-wrap break-words">{user.message}</p>
+              </div>
               
-              {/* 第三行：点赞和评论按钮 */}
-              <div className="flex items-center gap-3 mb-2 px-1">
-                <ToggleGroup 
-                  type="multiple" 
-                  size="sm"
-                  onValueChange={(value) => handleLike(user.id, value)}
-                >
-                  <ToggleGroupItem 
-                    value="liked" 
-                    aria-label="点赞" 
-                    className={`h-7 px-2 gap-1 ${likedPosts.has(user.id) ? 'text-red-500 data-[state=on]:text-red-500' : ''}`}
+              {/* 互动按钮 */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ToggleGroup 
+                    type="multiple" 
+                    size="sm"
+                    onValueChange={(value) => handleLike(user.id, value)}
                   >
-                    <Heart className={`h-3 w-3 ${likedPosts.has(user.id) ? 'fill-red-500' : ''}`} />
-                    <span className="text-xs">{user.likes}</span>
-                  </ToggleGroupItem>
-                </ToggleGroup>
-                
-                <button 
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-500 transition-colors h-7 px-2"
-                  onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
-                >
-                  <MessageSquare className="h-3 w-3" />
-                  <span>{user.comments.length}</span>
-                </button>
+                    <ToggleGroupItem 
+                      value="liked" 
+                      aria-label="点赞" 
+                      className={`h-9 px-4 gap-2 rounded-full transition-all duration-200 font-semibold data-[state=on]:bg-red-100 data-[state=on]:text-red-600 data-[state=on]:border-red-300 ${
+                        likedPosts.has(user.id) 
+                          ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md' 
+                          : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
+                      <span className="font-bold">{user.likes}</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  
+                  <button 
+                    className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-9 px-4 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
+                    onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
+                  >
+                    <MessageSquare className={`h-4 w-4 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
+                    <span className="font-bold">{user.comments.length}</span>
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-400 font-medium">
+                  {user.comments.length > 0 ? `${user.comments.length} 条评论` : '暂无评论'}
+                </div>
               </div>
 
-              {/* 第四行：评论列表 */}
-              {showComments[user.id] && user.comments.length > 0 && (
-                <div className="space-y-3 mb-2 pl-2 border-l-2 border-slate-100">
-                  {user.comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-2">
-                      <Avatar className="h-9 w-9 flex-shrink-0">
-                        <AvatarImage src={typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('http') ? comment.userAvatar : (typeof comment.userAvatar === 'string' && comment.userAvatar.startsWith('/api/avatar/') ? getAvatarUrl(comment.userAvatar) : comment.userAvatar)} />
-                        <AvatarFallback>{comment.userName.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-medium text-sm">{comment.userName}</span>
-                          <span className="text-[10px] text-muted-foreground">{comment.time}</span>
+                      {/* 评论列表 */}
+                      {showComments[user.id] && user.comments.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                            <MessageSquare className="h-4 w-4" />
+                            <span>评论 ({user.comments.length})</span>
+                          </div>
+                          {user.comments.map((comment) => (
+                            <div key={comment.id} className="flex gap-3">
+                              <Avatar className="h-9 w-9 flex-shrink-0">
+                                <AvatarImage src={getAvatarUrl(comment.userAvatar)} />
+                                <AvatarFallback className="text-xs bg-slate-100 text-slate-600 font-semibold">{comment.userName.slice(0, 2)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-bold text-sm text-slate-900">{comment.userName}</span>
+                                  <span className="text-xs text-slate-500">{comment.time}</span>
+                                </div>
+                                <p className="text-sm text-slate-700 leading-relaxed break-words">{comment.content}</p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">{comment.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 评论输入框 */}
+                      )}              {/* 评论输入框 */}
               {showComments[user.id] && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Input
-                    value={newComment[user.id] || ''}
-                    onChange={(e) => setNewComment({ ...newComment, [user.id]: e.target.value })}
-                    placeholder="写评论..."
-                    className="h-7 text-xs"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddComment(user.id);
-                      }
-                    }}
-                  />
-                  <Button 
-                    size="sm" 
-                    className="h-7 px-3 text-xs"
-                    onClick={() => handleAddComment(user.id)}
-                  >
-                    发送
-                  </Button>
+                <div className="flex items-end gap-3 mt-4">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarFallback className="text-xs bg-blue-100 text-blue-700 font-semibold">
+                      {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      value={newComment[user.id] || ''}
+                      onChange={(e) => setNewComment({ ...newComment, [user.id]: e.target.value })}
+                      placeholder="写下你的评论..."
+                      className="flex-1 h-10 text-sm rounded-full border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddComment(user.id);
+                        }
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      className="h-10 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200"
+                      onClick={() => handleAddComment(user.id)}
+                    >
+                      <Send className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
@@ -862,14 +914,14 @@ export default function ContactPage() {
         )}
       </div>
       
-      {/* 发布帖子按钮 - 固定在右下角 */}
+      {/* 发布帖子按钮 */}
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <button
           onClick={() => setIsDrawerOpen(true)}
-          className="fixed right-6 bottom-24 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center text-white"
+          className="fixed right-6 bottom-24 z-50 w-16 h-16 rounded-full bg-blue-600 shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-110 flex items-center justify-center text-white"
           aria-label="发布帖子"
         >
-          <Plus className="h-7 w-7" strokeWidth={2.5} />
+          <Plus className="h-8 w-8" strokeWidth={2.5} />
         </button>
         
         <DrawerContent>
