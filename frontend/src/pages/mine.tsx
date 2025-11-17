@@ -46,7 +46,7 @@ export default function MinePage() {
   const [profile, setProfile] = useState({
     nickname: '知序学习者',
     bio: '每天进步一点点,成为更好的自己',
-    avatar: '/assets/head/screenshot_20251114_131601.png'
+    avatar: '/api/avatar/1' // 使用后端头像API
   });
   const [nickname, setNickname] = useState(profile.nickname);
   const [bio, setBio] = useState(profile.bio);
@@ -86,32 +86,8 @@ export default function MinePage() {
       console.log('我的页面-用户数据:', userData);
       const user = userData.user;
       setPoints(user.count || 0);
-      // 更新用户资料（昵称和头像）
-      const avatarList = [
-        '/assets/head/screenshot_20251114_131601.png',
-        '/assets/head/screenshot_20251114_131629.png',
-        '/assets/head/screenshot_20251114_131937.png',
-        '/assets/head/screenshot_20251114_131951.png',
-        '/assets/head/screenshot_20251114_132014.png',
-        '/assets/head/screenshot_20251114_133459.png',
-        '/assets/head/微信图片_20251115203432_32_227.jpg',
-        '/assets/head/微信图片_20251115203433_33_227.jpg',
-        '/assets/head/微信图片_20251115203434_34_227.jpg',
-        '/assets/head/微信图片_20251115203434_35_227.jpg',
-        '/assets/head/微信图片_20251115203435_36_227.jpg',
-        '/assets/head/微信图片_20251115203436_37_227.jpg',
-        '/assets/head/微信图片_20251116131024_45_227.jpg',
-        '/assets/head/微信图片_20251116131024_46_227.jpg',
-        '/assets/head/微信图片_20251116131025_47_227.jpg',
-        '/assets/head/微信图片_20251116131026_48_227.jpg',
-        '/assets/head/微信图片_20251116131027_49_227.jpg',
-        '/assets/head/微信图片_20251116131028_50_227.jpg',
-        '/assets/head/微信图片_20251116131029_51_227.jpg',
-        '/assets/head/微信图片_20251116131030_52_227.jpg',
-        '/assets/head/微信图片_20251116131031_53_227.jpg'
-      ];
-      const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 21) ? user.head_show - 1 : 0;
-      const avatarPath = avatarList[avatarIndex];
+      // 使用后端head_show生成头像URL（后端提供/api/avatar/:id接口）
+      const avatarPath = user.head_show ? `/api/avatar/${user.head_show}` : '';
       setProfile(prev => ({
         ...prev,
         nickname: user.name || prev.nickname,
@@ -285,31 +261,8 @@ export default function MinePage() {
     return colorMap[color] || 'text-slate-400';
   };
 
-  /**
-   * 预设头像列表 - 使用图片路径（包含原始6个screenshot和6个微信图片）
-   */
-  const avatarOptions = [
-    '/assets/head/screenshot_20251114_131601.png',
-    '/assets/head/screenshot_20251114_131629.png',
-    '/assets/head/screenshot_20251114_131937.png',
-    '/assets/head/screenshot_20251114_131951.png',
-    '/assets/head/screenshot_20251114_132014.png',
-    '/assets/head/screenshot_20251114_133459.png',
-    '/assets/head/微信图片_20251115203432_32_227.jpg',
-    '/assets/head/微信图片_20251115203433_33_227.jpg',
-    '/assets/head/微信图片_20251115203434_34_227.jpg',
-    '/assets/head/微信图片_20251115203434_35_227.jpg',
-    '/assets/head/微信图片_20251115203435_36_227.jpg',
-    '/assets/head/微信图片_20251115203436_37_227.jpg',
-    '/assets/head/微信图片_20251116131024_45_227.jpg',
-    '/assets/head/微信图片_20251116131024_46_227.jpg',
-    '/assets/head/微信图片_20251116131025_47_227.jpg',
-    '/assets/head/微信图片_20251116131026_48_227.jpg',
-    '/assets/head/微信图片_20251116131027_49_227.jpg',
-    '/assets/head/微信图片_20251116131028_50_227.jpg',
-    '/assets/head/微信图片_20251116131029_51_227.jpg',
-    '/assets/head/微信图片_20251116131031_53_227.jpg'
-  ];
+  // 头像选项（1-21对应后端的21个头像文件）
+  const avatarOptions = Array.from({ length: 21 }, (_, i) => `/api/avatar/${i + 1}`);
 
   // ========== 事件处理器 ==========
   /**
@@ -335,15 +288,15 @@ export default function MinePage() {
 
   /**
    * 选择头像
-   * P1修复：调用后端切换头像 API
    */
   const handleSelectAvatar = async (selectedAvatar: string) => {
-    const avatarIndex = avatarOptions.indexOf(selectedAvatar);
-    if (avatarIndex !== -1) {
+    // 从 /api/avatar/1 格式提取索引
+    const match = selectedAvatar.match(/\/api\/avatar\/(\d+)$/);
+    if (match) {
+      const avatarId = parseInt(match[1], 10);
       try {
         const { switchAvatar } = await import('../services/set.service');
-        // 后端需要的1-12的索引，所以要+1
-        await switchAvatar(avatarIndex + 1);
+        await switchAvatar(avatarId);
         setAvatar(selectedAvatar);
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
@@ -570,7 +523,7 @@ export default function MinePage() {
                   onClick={() => setAvatarPopoverOpen(true)}
                   className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0"
                 >
-                  <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
+                  <img src={getAvatarUrl(avatar)} alt="Avatar" className="h-full w-full object-cover" />
                 </button>
 
                 <Dialog open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
@@ -582,13 +535,12 @@ export default function MinePage() {
                       {avatarOptions.map((option) => (
                         <button
                           key={option}
-                          onClick={async () => {
-                            await handleSelectAvatar(option);
-                            setAvatarPopoverOpen(false);
-                          }}
-                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'}`}
+                          onClick={() => handleSelectAvatar(option)}
+                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${
+                            avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'
+                          }`}
                         >
-                          <img src={option} alt="Avatar option" className="h-full w-full object-cover" />
+                          <img src={getAvatarUrl(option)} alt="Avatar option" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
