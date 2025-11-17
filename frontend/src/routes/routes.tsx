@@ -7,7 +7,6 @@ import AIPage from '../pages/ai';
 import DataPage from '../pages/data';
 import ContactPage from '../pages/contact';
 import MinePage from '../pages/mine';
-import SetPage from '../pages/set';
 import RankPage from '../pages/rank';
 import PublicPage from '../pages/public';
 import SendPage from '../pages/send';
@@ -62,14 +61,6 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <MinePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/set',
-    element: (
-      <ProtectedRoute>
-        <SetPage />
       </ProtectedRoute>
     ),
   },

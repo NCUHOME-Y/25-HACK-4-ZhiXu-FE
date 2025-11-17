@@ -27,7 +27,6 @@ export default function DataPage() {
   const punchedDates = useTaskStore((s) => s.punchedDates); // 打卡日期
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed); // 每日学习时长（秒）
   const [loading, setLoading] = useState(true); // 加载状态
-  const [userPoints, setUserPoints] = useState(0); // 用户积分
   const [todayPoints, setTodayPoints] = useState(0); // 今日获得积分
   const [studyPeriod, setStudyPeriod] = useState<'week' | 'month' | 'year'>('week'); // 学习趋势周期：周(最近7天)/月(当前月份)/年(最近6个月)
   // 新增：本月累计学习时长（秒）
@@ -115,7 +114,6 @@ export default function DataPage() {
       console.log('用户积分:', userData.count);
       console.log('今日获得积分:', todayPointsResp && todayPointsResp.today_points);
 
-      setUserPoints(userData.count || 0);
       setTodayPoints((todayPointsResp && todayPointsResp.today_points) || 0);
 
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
