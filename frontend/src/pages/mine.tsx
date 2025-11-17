@@ -362,8 +362,8 @@ export default function MinePage() {
    * 打开用户反馈
    */
   const handleFeedback = () => {
-    // 腾讯文档反馈链接 - TODO: 替换为实际的腾讯文档链接
-    const feedbackDocUrl = 'https://docs.qq.com/form/page/YOUR_FORM_ID';
+    // 反馈链接地址从环境变量获取，默认值为正式文档
+    const feedbackDocUrl = import.meta.env.VITE_FEEDBACK_URL ?? 'https://docs.qq.com/form/page/DQnFvd2h5bkRTWXJ4';
     window.open(feedbackDocUrl, '_blank');
   };
 
