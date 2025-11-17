@@ -251,25 +251,25 @@ export default function MinePage() {
   // 获取徽章的颜色类名
   const getBadgeColor = (color: string, isUnlocked: boolean) => {
     if (!isUnlocked) {
-      return 'bg-slate-50 dark:bg-slate-900/30 opacity-50';
+      return 'bg-slate-50 opacity-50';
     }
     const colorMap: Record<string, string> = {
-      blue: 'bg-blue-50 dark:bg-blue-950/30',
-      green: 'bg-green-50 dark:bg-green-950/30',
-      yellow: 'bg-yellow-50 dark:bg-yellow-950/30',
-      purple: 'bg-purple-50 dark:bg-purple-950/30',
-      orange: 'bg-orange-50 dark:bg-orange-950/30',
-      red: 'bg-red-50 dark:bg-red-950/30',
-      pink: 'bg-pink-50 dark:bg-pink-950/30',
-      indigo: 'bg-indigo-50 dark:bg-indigo-950/30',
-      teal: 'bg-teal-50 dark:bg-teal-950/30',
-      cyan: 'bg-cyan-50 dark:bg-cyan-950/30',
-      amber: 'bg-amber-50 dark:bg-amber-950/30',
-      lime: 'bg-lime-50 dark:bg-lime-950/30',
-      violet: 'bg-violet-50 dark:bg-violet-950/30',
-      rose: 'bg-rose-50 dark:bg-rose-950/30',
-      emerald: 'bg-emerald-50 dark:bg-emerald-950/30',
-      slate: 'bg-slate-50 dark:bg-slate-950/30',
+      blue: 'bg-blue-50',
+      green: 'bg-green-50',
+      yellow: 'bg-yellow-50',
+      purple: 'bg-purple-50',
+      orange: 'bg-orange-50',
+      red: 'bg-red-50',
+      pink: 'bg-pink-50',
+      indigo: 'bg-indigo-50',
+      teal: 'bg-teal-50',
+      cyan: 'bg-cyan-50',
+      amber: 'bg-amber-50',
+      lime: 'bg-lime-50',
+      violet: 'bg-violet-50',
+      rose: 'bg-rose-50',
+      emerald: 'bg-emerald-50',
+      slate: 'bg-slate-50',
     };
     return colorMap[color] || 'bg-slate-50';
   };
@@ -279,27 +279,27 @@ export default function MinePage() {
       return 'text-slate-400';
     }
     const colorMap: Record<string, string> = {
-      blue: 'text-blue-600 dark:text-blue-400',
-      green: 'text-green-600 dark:text-green-400',
-      yellow: 'text-yellow-600 dark:text-yellow-400',
-      purple: 'text-purple-600 dark:text-purple-400',
-      orange: 'text-orange-600 dark:text-orange-400',
-      red: 'text-red-600 dark:text-red-400',
-      pink: 'text-pink-600 dark:text-pink-400',
-      indigo: 'text-indigo-600 dark:text-indigo-400',
-      teal: 'text-teal-600 dark:text-teal-400',
-      cyan: 'text-cyan-600 dark:text-cyan-400',
-      amber: 'text-amber-600 dark:text-amber-400',
-      lime: 'text-lime-600 dark:text-lime-400',
-      violet: 'text-violet-600 dark:text-violet-400',
-      rose: 'text-rose-600 dark:text-rose-400',
-      emerald: 'text-emerald-600 dark:text-emerald-400',
-      slate: 'text-slate-600 dark:text-slate-400',
+      blue: 'text-blue-600',
+      green: 'text-green-600',
+      yellow: 'text-yellow-600',
+      purple: 'text-purple-600',
+      orange: 'text-orange-600',
+      red: 'text-red-600',
+      pink: 'text-pink-600',
+      indigo: 'text-indigo-600',
+      teal: 'text-teal-600',
+      cyan: 'text-cyan-600',
+      amber: 'text-amber-600',
+      lime: 'text-lime-600',
+      violet: 'text-violet-600',
+      rose: 'text-rose-600',
+      emerald: 'text-emerald-600',
+      slate: 'text-slate-600',
     };
     return colorMap[color] || 'text-slate-400';
   };
 
-  // 头像选项（1-21对应前端本地头像文件）
+  // 头像选项（1-32对应前端本地头像文件）
   const avatarOptions = AVATAR_FILES;
 
   // ========== 事件处理器 ==========

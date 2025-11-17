@@ -15,7 +15,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className='fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200/60 bg-white/95 backdrop-blur-xl shadow-xl shadow-gray-900/5 md:hidden'>
+    <nav className='fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200/60 bg-white/95 backdrop-blur-xl shadow-xl shadow-gray-900/5'>
       <div className='safe-area-inset-bottom flex h-16 items-center justify-around px-2'>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;

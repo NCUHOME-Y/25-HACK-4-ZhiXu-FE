@@ -1003,10 +1003,10 @@ export default function FlagPage() {
                           <div className="flex items-center gap-2 overflow-hidden">
                             {t.priority && (
                               <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded flex-shrink-0 ${
-                                t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
-                                t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                                t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
+                                t.priority === 1 ? 'bg-red-100 text-red-700' : 
+                                t.priority === 2 ? 'bg-orange-100 text-orange-700' :
+                                t.priority === 3 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-slate-100 text-slate-700'
                               }`}>
                                 {FLAG_PRIORITIES[t.priority]}
                               </span>
@@ -1346,10 +1346,10 @@ export default function FlagPage() {
                           <div className="flex items-center gap-2 overflow-hidden">
                             {t.priority && (
                               <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded flex-shrink-0 ${
-                                t.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 
-                                t.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                                t.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400'
+                                t.priority === 1 ? 'bg-red-100 text-red-700' : 
+                                t.priority === 2 ? 'bg-orange-100 text-orange-700' :
+                                t.priority === 3 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-slate-100 text-slate-700'
                               }`}>
                                 {FLAG_PRIORITIES[t.priority]}
                               </span>

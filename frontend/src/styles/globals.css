@@ -5,12 +5,16 @@
      全局基础样式设置
      =========================================== */
 
-  /* 全局样式 - 合并过渡效果、滚动条和光标设置 */
+  /* 全局样式 - 滚动条和光标设置 */
   * {
-    transition: all 0.3s;
     -ms-overflow-style: none;
     scrollbar-width: none;
     caret-color: transparent;
+  }
+
+  /* 交互元素过渡效果 */
+  button, a, input, textarea, [role="button"] {
+    transition: all 0.2s ease;
   }
 
   /* ===========================================
@@ -43,80 +47,52 @@
      自定义动画关键帧定义
      =========================================== */
 
-  /* 向上翻立动画 - 从屏幕下方飞到上方，边飞边翻页边变透明 */
-  @keyframes flipUp {
-    0% {
+  /* Alert 组件丝滑进入动画 */
+  @keyframes alertSlideIn {
+    from {
       opacity: 0;
-      transform: rotateX(120deg) scale(0.9) translateY(-100px);
-      transform-origin: bottom center;
+      transform: translateY(-10px) scale(0.95);
     }
-    15% {
-      opacity: 0;
-      transform: rotateX(110deg) scale(0.92) translateY(-80px);
-      transform-origin: bottom center;
-    }
-    40% {
-      opacity: 0.1;
-      transform: rotateX(60deg) scale(0.95) translateY(-32px);
-      transform-origin: bottom center;
-    }
-    70% {
-      opacity: 0.7;
-      transform: rotateX(20deg) scale(0.98) translateY(-4px);
-      transform-origin: bottom center;
-    }
-    90% {
+    to {
       opacity: 1;
-      transform: rotateX(0deg) scale(1.006) translateY(3px);
-      transform-origin: bottom center;
-    }
-    100% {
-      opacity: 1;
-      transform: rotateX(0deg) scale(1) translateY(0px);
-      transform-origin: bottom center;
+      transform: translateY(0) scale(1);
     }
   }
 
-  /* 向上飞消失动画 - 从当前位置向上飞走，边飞边翻页边变透明 */
-  @keyframes flipDown {
-    0% {
+  /* Alert 组件丝滑退出动画 */
+  @keyframes alertSlideOut {
+    from {
       opacity: 1;
-      transform: rotateX(0deg) scale(1) translateY(0px);
-      transform-origin: bottom center;
+      transform: translateY(0) scale(1);
     }
-    30% {
-      opacity: 0.7;
-      transform: rotateX(20deg) scale(0.98) translateY(-4px);
-      transform-origin: bottom center;
-    }
-    80% {
+    to {
       opacity: 0;
-      transform: rotateX(60deg) scale(0.95) translateY(-32px);
-      transform-origin: bottom center;
-    }
-    85% {
-      opacity: 0;
-      transform: rotateX(110deg) scale(0.92) translateY(-80px);
-      transform-origin: bottom center;
-    }
-    100% {
-      opacity: 0;
-      transform: rotateX(120deg) scale(0.9) translateY(-100px);
-      transform-origin: bottom center;
+      transform: translateY(-10px) scale(0.95);
     }
   }
 
-  /* 淡入动画 - 简单透明度变化 */
-  @keyframes fadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+  /* Popover 组件丝滑进入动画 */
+  @keyframes popoverSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
-  /* 缩放弹入动画 - 旋转缩放进入 */
-  @keyframes scaleInBounce {
-    0% { opacity: 0; transform: scale(0.5) rotate(10deg); }
-    50% { opacity: 0.8; transform: scale(1.1) rotate(-2deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  /* Popover 组件丝滑退出动画 */
+  @keyframes popoverSlideOut {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
   }
 
   /* Toast平滑进入动画 */
@@ -143,6 +119,28 @@
     }
   }
 
+  /* 缩放弹入动画 - 更丝滑的弹入效果 */
+  @keyframes scaleInBounce {
+    0% {
+      opacity: 0;
+      transform: scale(0.85) translateY(10px);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.02) translateY(-2px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* 淡入动画 */
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
   /* ===========================================
      CSS变量定义
      =========================================== */
@@ -156,6 +154,26 @@
      UI组件自动动画应用
      =========================================== */
 
+  /* Alert组件丝滑动画 */
+  [role="alert"] {
+    animation: alertSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Alert消失动画 */
+  [role="alert"].alert-hide {
+    animation: alertSlideOut 0.2s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+  }
+
+  /* Popover组件丝滑动画 */
+  [data-radix-popover-content] {
+    animation: popoverSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Popover消失动画 */
+  [data-radix-popover-content][data-state="closed"] {
+    animation: popoverSlideOut 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
   /* Toast消息动画 - Sonner库toast自动应用平滑进入效果 */
   [data-sonner-toaster] [data-sonner-toast] {
     animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
@@ -166,20 +184,9 @@
     animation: toastSlideOut 0.3s cubic-bezier(0.06, 0.71, 0.55, 1) forwards;
   }
 
-  /* Alert组件动画 - 自动应用向上翻立效果 */
-  [role="alert"] {
-    animation: flipUp 0.2s ease-out forwards;
-    opacity: 0;
-  }
-
-  /* Alert消失动画 - 方向相反的向下翻消失 */
-  [role="alert"].alert-hide {
-    animation: flipDown 0.2s ease-in forwards !important;
-  }
-
   /* Dialog组件动画 - Radix UI Dialog自动应用缩放弹入 */
   [data-radix-dialog-content] {
-    animation: scaleInBounce 0.5s var(--bounce-easing) forwards;
+    animation: scaleInBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   /* Dialog遮罩淡入效果 */
@@ -195,14 +202,32 @@
   [data-sonner-toast],
   [role="alert"],
   [data-radix-dialog-content],
-  [data-radix-popover-content],
-  [data-vaul-drawer-content] {
+  [data-radix-popover-content] {
     will-change: transform, opacity;
   }
 
   /* ===========================================
-     Tailwind CSS 主题变量 - 亮色模式
+     交互元素动画增强
      =========================================== */
+
+  /* 按钮悬停微动画 */
+  button:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* 卡片悬停效果 */
+  [class*="card"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* 输入框聚焦动画 */
+  input:focus, textarea:focus {
+    transform: scale(1.01);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
   :root {
     --radius: 0.65rem;

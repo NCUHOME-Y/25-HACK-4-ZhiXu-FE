@@ -209,7 +209,7 @@ const contactService = {
       data: { task_id: taskId }
     }),
 
-  // P1修复：搜索用户（支持21个头像映射）
+  // P1修复：搜索用户（支持32个头像映射）
   searchUsers: async (query: string): Promise<SearchUserResult[]> => {
     const response = await api.post<{ users: Array<{
       id: number;

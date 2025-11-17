@@ -20,8 +20,19 @@ import avatar18 from '../../assets/head/微信图片_20251116131028_50_227.jpg';
 import avatar19 from '../../assets/head/微信图片_20251116131029_51_227.jpg';
 import avatar20 from '../../assets/head/微信图片_20251116131030_52_227.jpg';
 import avatar21 from '../../assets/head/微信图片_20251116131031_53_227.jpg';
+import avatar22 from '../../assets/head/微信图片_20251117235910_62_227.jpg';
+import avatar23 from '../../assets/head/微信图片_20251117235910_63_227.jpg';
+import avatar24 from '../../assets/head/微信图片_20251117235911_64_227.jpg';
+import avatar25 from '../../assets/head/微信图片_20251117235912_65_227.jpg';
+import avatar26 from '../../assets/head/微信图片_20251117235913_66_227.jpg';
+import avatar27 from '../../assets/head/微信图片_20251117235914_67_227.jpg';
+import avatar28 from '../../assets/head/微信图片_20251117235915_68_227.jpg';
+import avatar29 from '../../assets/head/微信图片_20251117235916_69_227.jpg';
+import avatar30 from '../../assets/head/微信图片_20251117235917_71_227.jpg';
+import avatar31 from '../../assets/head/微信图片_20251118000147_72_227.jpg';
+import avatar32 from '../../assets/head/微信图片_20251118000148_74_227.jpg';
 
-// 前端本地头像数组（1-21）
+// 前端本地头像数组（共32个头像，索引0-31对应头像1-32）
 export const AVATAR_FILES = [
   avatar1,
   avatar2,
@@ -44,6 +55,17 @@ export const AVATAR_FILES = [
   avatar19,
   avatar20,
   avatar21,
+  avatar22,
+  avatar23,
+  avatar24,
+  avatar25,
+  avatar26,
+  avatar27,
+  avatar28,
+  avatar29,
+  avatar30,
+  avatar31,
+  avatar32,
 ];
 
 
