@@ -881,7 +881,7 @@ export default function ContactPage() {
           
           <div className="px-4 py-4">
             <Textarea
-              placeholder="写下你想说的话...\n\n可以分享学习心得、生活感悟、或是提出问题"
+              placeholder="写下你想说的话...可以分享学习心得、生活感悟、或是提出问题,快来试试吧！"
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
               className="min-h-[200px] resize-none text-base"
