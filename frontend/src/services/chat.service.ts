@@ -1,4 +1,4 @@
-import { api, makeWsUrl, API_BASE } from './apiClient';
+import { api, makeWsUrl } from './apiClient';
 
 // 聊天消息接口
 export interface ChatMessage {
