@@ -218,38 +218,12 @@ const contactService = {
       head_show?: number;
     }> }>('/api/searchUser', { username: query });
     
-    // 头像路径映射（支持21个头像）
-    const avatarList = [
-      '/assets/head/screenshot_20251114_131601.png',
-      '/assets/head/screenshot_20251114_131629.png',
-      '/assets/head/screenshot_20251114_131937.png',
-      '/assets/head/screenshot_20251114_131951.png',
-      '/assets/head/screenshot_20251114_132014.png',
-      '/assets/head/screenshot_20251114_133459.png',
-      '/assets/head/微信图片_20251115203432_32_227.jpg',
-      '/assets/head/微信图片_20251115203433_33_227.jpg',
-      '/assets/head/微信图片_20251115203434_34_227.jpg',
-      '/assets/head/微信图片_20251115203434_35_227.jpg',
-      '/assets/head/微信图片_20251115203435_36_227.jpg',
-      '/assets/head/微信图片_20251115203436_37_227.jpg',
-      '/assets/head/微信图片_20251116131024_45_227.jpg',
-      '/assets/head/微信图片_20251116131024_46_227.jpg',
-      '/assets/head/微信图片_20251116131025_47_227.jpg',
-      '/assets/head/微信图片_20251116131026_48_227.jpg',
-      '/assets/head/微信图片_20251116131027_49_227.jpg',
-      '/assets/head/微信图片_20251116131028_50_227.jpg',
-      '/assets/head/微信图片_20251116131029_51_227.jpg',
-      '/assets/head/微信图片_20251116131030_52_227.jpg',
-      '/assets/head/微信图片_20251116131031_53_227.jpg'
-    ];
-    
+    // 头像由后端提供，通过/api/avatar/:id获取
     return (response.users || []).map(user => ({
       id: user.id,
       name: user.name,
       email: user.email,
-      avatar: (user.head_show && user.head_show >= 1 && user.head_show <= 21) 
-        ? avatarList[user.head_show - 1] 
-        : avatarList[0]
+      avatar: user.head_show ? `/api/avatar/${user.head_show}` : ''
     }));
   },
 

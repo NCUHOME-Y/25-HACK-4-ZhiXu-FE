@@ -1,5 +1,4 @@
 import { api } from './apiClient';
-import { PRESET_AVATARS } from '../lib/constants/constants';
 
 // 排行榜用户数据
 export interface RankUser {
@@ -47,7 +46,7 @@ const rankService = {
       id: user.user_id.toString(),
       rank: index + 1,
       name: user.name,
-      avatar: user.head_show && user.head_show >= 1 && user.head_show <= PRESET_AVATARS.length ? PRESET_AVATARS[user.head_show - 1] : undefined,
+      avatar: user.head_show ? `/api/avatar/${user.head_show}` : undefined,
       totalDays: user.daka || 0,
       completedFlags: user.flag_number || 0,
       totalPoints: user.count || 0

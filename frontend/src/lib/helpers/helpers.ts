@@ -158,8 +158,8 @@ export const formatTimeAgo = (dateString: string): string => {
 // ========== 社交相关工具函数 ==========
 import { getAssetUrl as _getAssetUrl, getAvatarUrl as _getAvatarUrl } from './asset-helpers';
 
-// 重新导出asset-helpers的函数供外部使用
-export { getAssetUrl, getAvatarUrl } from './asset-helpers';
+// 重新导出asset-helpers的函数和常量供外部使用
+export { getAssetUrl, getAvatarUrl, AVATAR_FILES } from './asset-helpers';
 
 // 将后端 Post 类型转换为前端 ContactUser 类型
 export const adaptPostToUser = (post: {

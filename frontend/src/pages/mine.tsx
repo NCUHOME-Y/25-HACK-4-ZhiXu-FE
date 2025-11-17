@@ -28,7 +28,7 @@ import {
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
 import { toast } from 'sonner';
-import { getAvatarUrl } from '../lib/helpers/helpers';
+import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
 
 /**
  * 我的页面
@@ -46,7 +46,7 @@ export default function MinePage() {
   const [profile, setProfile] = useState({
     nickname: '知序学习者',
     bio: '每天进步一点点,成为更好的自己',
-    avatar: '/assets/head/screenshot_20251114_131601.png'
+    avatar: '/api/avatar/1' // 使用后端头像API
   });
   const [nickname, setNickname] = useState(profile.nickname);
   const [bio, setBio] = useState(profile.bio);
@@ -86,32 +86,8 @@ export default function MinePage() {
       console.log('我的页面-用户数据:', userData);
       const user = userData.user;
       setPoints(user.count || 0);
-      // 更新用户资料（昵称和头像）
-      const avatarList = [
-        '/assets/head/screenshot_20251114_131601.png',
-        '/assets/head/screenshot_20251114_131629.png',
-        '/assets/head/screenshot_20251114_131937.png',
-        '/assets/head/screenshot_20251114_131951.png',
-        '/assets/head/screenshot_20251114_132014.png',
-        '/assets/head/screenshot_20251114_133459.png',
-        '/assets/head/微信图片_20251115203432_32_227.jpg',
-        '/assets/head/微信图片_20251115203433_33_227.jpg',
-        '/assets/head/微信图片_20251115203434_34_227.jpg',
-        '/assets/head/微信图片_20251115203434_35_227.jpg',
-        '/assets/head/微信图片_20251115203435_36_227.jpg',
-        '/assets/head/微信图片_20251115203436_37_227.jpg',
-        '/assets/head/微信图片_20251116131024_45_227.jpg',
-        '/assets/head/微信图片_20251116131024_46_227.jpg',
-        '/assets/head/微信图片_20251116131025_47_227.jpg',
-        '/assets/head/微信图片_20251116131026_48_227.jpg',
-        '/assets/head/微信图片_20251116131027_49_227.jpg',
-        '/assets/head/微信图片_20251116131028_50_227.jpg',
-        '/assets/head/微信图片_20251116131029_51_227.jpg',
-        '/assets/head/微信图片_20251116131030_52_227.jpg',
-        '/assets/head/微信图片_20251116131031_53_227.jpg'
-      ];
-      const avatarIndex = (user.head_show && user.head_show >= 1 && user.head_show <= 21) ? user.head_show - 1 : 0;
-      const avatarPath = avatarList[avatarIndex];
+      // 使用后端head_show生成头像URL（后端提供/api/avatar/:id接口）
+      const avatarPath = user.head_show ? `/api/avatar/${user.head_show}` : '';
       setProfile(prev => ({
         ...prev,
         nickname: user.name || prev.nickname,
@@ -155,6 +131,10 @@ export default function MinePage() {
     { id: 9, name: '夜猫子', icon: Star, color: 'cyan' },
     { id: 10, name: '完美主义', icon: Target, color: 'amber' },
     { id: 11, name: '全能选手', icon: Trophy, color: 'lime' },
+    { id: 12, name: '学习狂人', icon: Star, color: 'violet' },
+    { id: 13, name: '社交达人', icon: MessageSquare, color: 'rose' },
+    { id: 14, name: '时间管理者', icon: Target, color: 'emerald' },
+    { id: 15, name: '成就收集者', icon: Award, color: 'slate' },
   ], []);
   
   // P1修复：加载用户成就系统（支持实时刷新）
@@ -187,7 +167,7 @@ export default function MinePage() {
           isUnlocked: false
         })));
       } else {
-        // 后端返回了12个成就数据
+        // 后端返回了16个成就数据
         console.log(`✅ 加载了 ${data.achievements.length} 个成就`);
         setBadges(data.achievements);
       }
@@ -226,9 +206,9 @@ export default function MinePage() {
   const achievedBadges = badges.filter(b => b.isUnlocked).length;
   const totalBadges = badges.length > 0 ? badges.length : allBadges.length;
   
-  // 合并后端成就数据和前端配置
+  // 合并后端成就数据和前端配置，确保只显示16个成就
   const displayBadges = badges.length > 0 
-    ? badges.map((badge, index) => ({
+    ? badges.slice(0, 16).map((badge, index) => ({
         id: badge.id,
         name: badge.name,
         description: badge.description,
@@ -260,6 +240,10 @@ export default function MinePage() {
       cyan: 'bg-cyan-50 dark:bg-cyan-950/30',
       amber: 'bg-amber-50 dark:bg-amber-950/30',
       lime: 'bg-lime-50 dark:bg-lime-950/30',
+      violet: 'bg-violet-50 dark:bg-violet-950/30',
+      rose: 'bg-rose-50 dark:bg-rose-950/30',
+      emerald: 'bg-emerald-50 dark:bg-emerald-950/30',
+      slate: 'bg-slate-50 dark:bg-slate-950/30',
     };
     return colorMap[color] || 'bg-slate-50';
   };
@@ -281,35 +265,16 @@ export default function MinePage() {
       cyan: 'text-cyan-600 dark:text-cyan-400',
       amber: 'text-amber-600 dark:text-amber-400',
       lime: 'text-lime-600 dark:text-lime-400',
+      violet: 'text-violet-600 dark:text-violet-400',
+      rose: 'text-rose-600 dark:text-rose-400',
+      emerald: 'text-emerald-600 dark:text-emerald-400',
+      slate: 'text-slate-600 dark:text-slate-400',
     };
     return colorMap[color] || 'text-slate-400';
   };
 
-  /**
-   * 预设头像列表 - 使用图片路径（包含原始6个screenshot和6个微信图片）
-   */
-  const avatarOptions = [
-    '/assets/head/screenshot_20251114_131601.png',
-    '/assets/head/screenshot_20251114_131629.png',
-    '/assets/head/screenshot_20251114_131937.png',
-    '/assets/head/screenshot_20251114_131951.png',
-    '/assets/head/screenshot_20251114_132014.png',
-    '/assets/head/screenshot_20251114_133459.png',
-    '/assets/head/微信图片_20251115203432_32_227.jpg',
-    '/assets/head/微信图片_20251115203433_33_227.jpg',
-    '/assets/head/微信图片_20251115203434_34_227.jpg',
-    '/assets/head/微信图片_20251115203434_35_227.jpg',
-    '/assets/head/微信图片_20251115203435_36_227.jpg',
-    '/assets/head/微信图片_20251115203436_37_227.jpg',
-    '/assets/head/微信图片_20251116131024_45_227.jpg',
-    '/assets/head/微信图片_20251116131024_46_227.jpg',
-    '/assets/head/微信图片_20251116131025_47_227.jpg',
-    '/assets/head/微信图片_20251116131026_48_227.jpg',
-    '/assets/head/微信图片_20251116131027_49_227.jpg',
-    '/assets/head/微信图片_20251116131028_50_227.jpg',
-    '/assets/head/微信图片_20251116131029_51_227.jpg',
-    '/assets/head/微信图片_20251116131031_53_227.jpg'
-  ];
+  // 头像选项（1-21对应前端本地头像文件）
+  const avatarOptions = AVATAR_FILES;
 
   // ========== 事件处理器 ==========
   /**
@@ -335,22 +300,20 @@ export default function MinePage() {
 
   /**
    * 选择头像
-   * P1修复：调用后端切换头像 API
    */
   const handleSelectAvatar = async (selectedAvatar: string) => {
-    const avatarIndex = avatarOptions.indexOf(selectedAvatar);
+    // 直接本地切换头像
+    const avatarIndex = AVATAR_FILES.indexOf(selectedAvatar);
     if (avatarIndex !== -1) {
+      const avatarId = avatarIndex + 1;
       try {
+        // 同步到后端头像索引
         const { switchAvatar } = await import('../services/set.service');
-        // 后端需要的1-12的索引，所以要+1
-        await switchAvatar(avatarIndex + 1);
+        await switchAvatar(avatarId);
         setAvatar(selectedAvatar);
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
-        
-        // 重新加载用户数据以同步头像
         await loadUserStats();
-        
         toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
@@ -386,7 +349,7 @@ export default function MinePage() {
           <Card className="p-4 rounded-xl">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                <AvatarImage src={getAvatarUrl(avatar)} alt="Avatar" />
+                <AvatarImage src={typeof avatar === 'string' && avatar.startsWith('http') ? avatar : (typeof avatar === 'string' && avatar.startsWith('/api/avatar/') ? getAvatarUrl(avatar) : avatar)} alt="Avatar" />
                 <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">知</AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -570,7 +533,7 @@ export default function MinePage() {
                   onClick={() => setAvatarPopoverOpen(true)}
                   className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0"
                 >
-                  <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
+                  <img src={typeof avatar === 'string' && avatar.startsWith('http') ? avatar : (typeof avatar === 'string' && avatar.startsWith('/api/avatar/') ? getAvatarUrl(avatar) : avatar)} alt="Avatar" className="h-full w-full object-cover" />
                 </button>
 
                 <Dialog open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
@@ -579,14 +542,13 @@ export default function MinePage() {
                       <DialogTitle>选择头像</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-3 gap-3 py-2">
-                      {avatarOptions.map((option) => (
+                      {avatarOptions.map((option, index) => (
                         <button
-                          key={option}
-                          onClick={async () => {
-                            await handleSelectAvatar(option);
-                            setAvatarPopoverOpen(false);
-                          }}
-                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'}`}
+                          key={index}
+                          onClick={() => handleSelectAvatar(option)}
+                          className={`h-20 w-20 rounded-full flex items-center justify-center overflow-hidden transition-all ${
+                            avatar === option ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-slate-300'
+                          }`}
                         >
                           <img src={option} alt="Avatar option" className="h-full w-full object-cover" />
                         </button>
