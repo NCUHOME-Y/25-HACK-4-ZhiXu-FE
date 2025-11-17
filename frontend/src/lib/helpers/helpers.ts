@@ -156,6 +156,9 @@ export const formatTimeAgo = (dateString: string): string => {
 };
 
 // ========== 社交相关工具函数 ==========
+// 导出资源URL辅助函数
+export { getAssetUrl, getAvatarUrl } from './asset-helpers';
+
 // 将后端 Post 类型转换为前端 ContactUser 类型
 export const adaptPostToUser = (post: {
   id: number | string;
@@ -177,25 +180,30 @@ export const adaptPostToUser = (post: {
   }>;
   created_at?: string;
   createdAt?: string;
-}): import('../types/types').ContactUser => ({
-  id: String(post.id || '0'),
-  userId: String(post.user_id || '0'),  // 添加用户ID映射
-  name: post.userName || post.user_name || '用户',
-  avatar: post.userAvatar || post.user_avatar || '',
-  message: post.content || '',
-  likes: post.likes || post.like || 0,
-  comments: (post.comments || []).map(c => ({
-    id: String(c.id || '0'),
-    userId: String(c.userId || c.user_id || '0'),
-    userName: c.userName || c.user_name || '用户',
-    userAvatar: c.userAvatar || c.user_avatar || '',
-    content: c.content || '',
-    time: formatTimeAgo(c.createdAt || c.created_at || new Date().toISOString())
-  })),
-  totalDays: 0,
-  completedFlags: 0,
-  totalPoints: 0
-});
+}): import('../types/types').ContactUser => {
+  // 导入头像URL辅助函数
+  const { getAvatarUrl } = require('./asset-helpers');
+  
+  return {
+    id: String(post.id || '0'),
+    userId: String(post.user_id || '0'),  // 添加用户ID映射
+    name: post.userName || post.user_name || '用户',
+    avatar: getAvatarUrl(post.userAvatar || post.user_avatar || ''),
+    message: post.content || '',
+    likes: post.likes || post.like || 0,
+    comments: (post.comments || []).map(c => ({
+      id: String(c.id || '0'),
+      userId: String(c.userId || c.user_id || '0'),
+      userName: c.userName || c.user_name || '用户',
+      userAvatar: getAvatarUrl(c.userAvatar || c.user_avatar || ''),
+      content: c.content || '',
+      time: formatTimeAgo(c.createdAt || c.created_at || new Date().toISOString())
+    })),
+    totalDays: 0,
+    completedFlags: 0,
+    totalPoints: 0
+  };
+};
 
 // 聊天页面自动滚动到底部
 export const scrollToBottom = (ref: React.RefObject<HTMLDivElement | null>) => {

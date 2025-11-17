@@ -5,6 +5,7 @@ import { Card, Avatar, AvatarImage, AvatarFallback, Button } from "../components
 
 import { useEffect } from 'react';
 import rankService from '../services/rank.service';
+import { getAvatarUrl } from '../lib/helpers/helpers';
 
 // 排行榜用户数据
 interface RankUser {
@@ -207,7 +208,7 @@ export default function RankPage() {
                 {/* 用户信息 */}
                 <div className="flex-1 flex items-center gap-3">
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={user.avatar} />
+                    <AvatarImage src={getAvatarUrl(user.avatar)} />
                     <AvatarFallback>{user.name[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
@@ -249,7 +250,7 @@ export default function RankPage() {
               {/* 用户信息 */}
               <div className="flex-1 flex items-center gap-3">
                 <Avatar className="w-10 h-10 ring-2 ring-blue-500">
-                  <AvatarImage src={currentUser.avatar} />
+                  <AvatarImage src={getAvatarUrl(currentUser.avatar)} />
                   <AvatarFallback>{currentUser.name}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">

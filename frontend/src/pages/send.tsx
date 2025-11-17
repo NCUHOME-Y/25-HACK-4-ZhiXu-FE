@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
 import { Separator } from "../components/ui/separator";
 import type { PrivateMessage } from '../lib/types/types';
-import { scrollToBottom } from '../lib/helpers/helpers';
+import { scrollToBottom, getAvatarUrl } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
 import { API_BASE, makeWsUrl } from '../services/apiClient';
 
@@ -221,7 +221,7 @@ export default function SendPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.avatar} />
+            <AvatarImage src={getAvatarUrl(user.avatar)} />
             <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
           </Avatar>
           <h1 className="text-lg font-semibold bg-transparent shadow-none border-none m-0 p-0">{user.name}</h1>
@@ -237,7 +237,7 @@ export default function SendPage() {
             >
               <div className="flex flex-col items-center gap-1">
                 <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarImage src={msg.avatar || user.avatar} />
+                  <AvatarImage src={getAvatarUrl(msg.avatar || user.avatar)} />
                   <AvatarFallback>{(msg.userName || user.name).slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div className="text-[10px] text-muted-foreground text-center max-w-[60px] truncate">

@@ -4,7 +4,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
 import { Separator } from "../components/ui/separator";
 import type { ChatMessage } from '../lib/types/types';
-import { scrollToBottom } from '../lib/helpers/helpers';
+import { scrollToBottom, getAvatarUrl } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
 import { api, makeWsUrl } from '../services/apiClient';
 
@@ -203,7 +203,7 @@ export default function PublicPage() {
               >
                 <div className="flex flex-col items-center gap-1">
                   <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={msg.avatar} />
+                    <AvatarImage src={getAvatarUrl(msg.avatar)} />
                     <AvatarFallback>{msg.userName.slice(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div className="text-[10px] text-muted-foreground text-center max-w-[60px] truncate">

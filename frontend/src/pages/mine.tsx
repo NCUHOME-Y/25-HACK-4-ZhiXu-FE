@@ -28,6 +28,7 @@ import {
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
 import { toast } from 'sonner';
+import { getAvatarUrl } from '../lib/helpers/helpers';
 
 /**
  * 我的页面
@@ -385,7 +386,7 @@ export default function MinePage() {
           <Card className="p-4 rounded-xl">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600">
-                <AvatarImage src={avatar} alt="Avatar" />
+                <AvatarImage src={getAvatarUrl(avatar)} alt="Avatar" />
                 <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">知</AvatarFallback>
               </Avatar>
               <div className="flex-1">

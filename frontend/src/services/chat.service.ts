@@ -54,7 +54,8 @@ class PrivateChatService {
     this.disconnect();
 
     this.currentTargetUserId = targetUserId;
-    const wsUrl = makeWsUrl(`/ws/private-chat?target_user_id=${targetUserId}&token=${token}`);
+    // 修复：后端统一使用 /ws/chat 路由，通过 target_user_id 参数区分私聊
+    const wsUrl = makeWsUrl(`/ws/chat?target_user_id=${targetUserId}&token=${token}`);
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
@@ -63,7 +64,8 @@ class PrivateChatService {
 
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === 'private_message') {
+      // 修复：后端返回的消息类型是 'message'，不是 'private_message'
+      if (data.type === 'message' || data.type === 'private_message') {
         this.messageCallbacks.forEach(callback => callback(data.message));
       }
     };
@@ -99,8 +101,9 @@ class PrivateChatService {
       return;
     }
 
+    // 修复：后端期望的消息类型是 'message'
     this.ws.send(JSON.stringify({
-      type: 'private_message',
+      type: 'message',
       content: content
     }));
   }
