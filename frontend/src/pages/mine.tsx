@@ -35,6 +35,7 @@ import {
 } from "../components";
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
+import { useUser } from '../lib/stores/userContext';
 import { getUserAchievements } from '../services/mine.service';
 import { toast } from 'sonner';
 import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
@@ -51,6 +52,7 @@ import { authService } from '../services/auth.service';
  */
 export default function MinePage() {
   const navigate = useNavigate();
+  const { updateUserProfile: updateUserContextProfile } = useUser();
   
   // ========== 本地状态 ========== 
   // Zustand 全局状态
@@ -382,21 +384,16 @@ export default function MinePage() {
     console.log('[handleSaveProfile] 开始保存个人资料');
 
     try {
-      await updateUserProfile({ 
-        nickname, 
-        bio, 
+      await updateUserProfile({
+        nickname,
+        bio,
         avatar,
-        originalNickname: profile.nickname // 传递原始用户名
+        originalNickname: profile.nickname
       });
       setProfile({ nickname, bio, avatar });
       setEditDialogOpen(false);
-      // 通过全局用户上下文触发刷新（localStorage 写入在 userContext 中统一处理）
-      try {
-        const evt = new Event('userUpdated');
-        window.dispatchEvent(evt);
-      } catch (e) {
-        console.warn('触发用户更新事件失败', e);
-      }
+      // 使用全局上下文统一更新并分发事件
+      updateUserContextProfile({ name: nickname, avatar });
       toast.success('个人信息更新成功');
       console.log('[handleSaveProfile] 个人资料保存成功');
     } catch (error) {
@@ -427,8 +424,8 @@ export default function MinePage() {
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
         await loadUserStats();
-        // 触发头像更新事件供上下文刷新
-        try { window.dispatchEvent(new Event('userUpdated')); } catch (e) { console.warn('头像刷新事件失败', e); }
+        // 更新全局上下文（内部会分发 userUpdated）
+        updateUserContextProfile({ avatar: selectedAvatar });
         toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
