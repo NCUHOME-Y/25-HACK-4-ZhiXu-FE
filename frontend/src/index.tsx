@@ -4,6 +4,7 @@ import { BrowserRouter, useRoutes, useNavigate, useLocation } from 'react-router
 import { useEffect } from 'react'
 import './styles/globals.css'
 import { routes } from './routes/routes'
+import { UserProvider } from './lib/stores/userContext'
 import { Toaster } from './components/ui/sonner'
 import { authService } from './services/auth.service'
 
@@ -51,7 +52,9 @@ const App = () => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <UserProvider>
+        <App />
+      </UserProvider>
     </BrowserRouter>
   </StrictMode>
 )

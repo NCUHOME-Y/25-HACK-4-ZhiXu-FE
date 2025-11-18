@@ -6,6 +6,7 @@ import { Separator } from "../components/ui/separator";
 import type { ChatMessage } from '../lib/types/types';
 import { scrollToBottom, getAvatarUrl } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
+import { useUser } from '../lib/stores/userContext';
 import { api, makeWsUrl } from '../services/apiClient';
 
 /**
@@ -15,6 +16,7 @@ export default function PublicPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { user: currentUserCtx } = useUser();
 
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -26,14 +28,10 @@ export default function PublicPage() {
   const roomName = (location.state as { roomName?: string })?.roomName || '学习交流室';
 
   useEffect(() => {
-    const loadUser = async () => {
-      const user = await authService.getCurrentUser();
-      if (user) {
-        setCurrentUserId(user.id);
-      }
-    };
-    loadUser();
-  }, []);
+    if (currentUserCtx?.id) {
+      setCurrentUserId(currentUserCtx.id);
+    }
+  }, [currentUserCtx]);
 
   // 加载历史消息
   useEffect(() => {
@@ -152,15 +150,14 @@ export default function PublicPage() {
     console.log('WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
     
     if (wsRef.current.readyState === WebSocket.OPEN) {
-      // 获取当前用户头像
-      const currentUserData = localStorage.getItem('user');
-      const currentUserAvatar = currentUserData ? JSON.parse(currentUserData).avatar : '';
+      // React上下文中的当前用户头像
+      const currentUserAvatar = currentUserCtx?.avatar || '';
       
       // 立即在本地显示自己的消息
       const newMessage: ChatMessage = {
         id: `local-${Date.now()}`,
         userId: currentUserId,
-        userName: '我',
+        userName: currentUserCtx?.name || '我',
         avatar: currentUserAvatar,
         message: message.trim(),
         time: new Date().toLocaleTimeString('zh-CN', { 

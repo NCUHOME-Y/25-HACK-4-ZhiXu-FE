@@ -3,6 +3,7 @@ import { ArrowLeft, MessageCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Button, Card } from "../components";
 import authService from '../services/auth.service';
+import { useUser } from '../lib/stores/userContext';
 import { api } from '../services/apiClient';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 
@@ -57,36 +58,29 @@ interface CommentData {
  */
 export default function ReceivePage() {
   const navigate = useNavigate();
+  const { user: currentUserCtx, refreshFromStorage } = useUser();
   const [conversations, setConversations] = useState<PrivateConversation[]>([]);
   const [comments, setComments] = useState<CommentNotification[]>([]);
   const [commentsRedDot, setCommentsRedDot] = useState(() => {
-    const userId = localStorage.getItem('currentUserId');
-    return localStorage.getItem(`commentsRead_${userId}`) !== 'true';
+    const userId = currentUserCtx?.id || localStorage.getItem('currentUserId');
+    return userId ? localStorage.getItem(`commentsRead_${userId}`) !== 'true' : false;
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCommentDetails, setShowCommentDetails] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const user = await authService.getCurrentUser();
-        if (user) {
-          localStorage.setItem('currentUserId', user.id);
-          await Promise.all([
-            loadPrivateConversations(user.id),
-            loadComments(user.id)
-          ]);
-          localStorage.setItem(`lastReadTime_${user.id}`, new Date().toISOString());
-        }
-      } catch (error) {
-        console.error('加载数据失败:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+    const id = currentUserCtx?.id;
+    if (!id) return;
+    localStorage.setItem('currentUserId', id); // 向旧逻辑兼容存储
+    Promise.all([
+      loadPrivateConversations(id),
+      loadComments(id)
+    ]).finally(() => {
+      localStorage.setItem(`lastReadTime_${id}`, new Date().toISOString());
+      setLoading(false);
+    });
+  }, [currentUserCtx]);
 
   const loadPrivateConversations = async (_userId: string) => {
     try {
@@ -210,8 +204,11 @@ export default function ReceivePage() {
   const handleCommentsClick = () => {
     setShowCommentDetails(!showCommentDetails);
     setCommentsRedDot(false);
-    const userId = localStorage.getItem('currentUserId');
-    localStorage.setItem(`commentsRead_${userId}`, 'true');
+    const userId = currentUserCtx?.id || localStorage.getItem('currentUserId');
+    if (userId) {
+      localStorage.setItem(`commentsRead_${userId}`, 'true');
+      refreshFromStorage();
+    }
   };
 
   const formatTime = (timestamp: string) => {

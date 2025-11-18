@@ -7,6 +7,7 @@ import type { PrivateMessage } from '../lib/types/types';
 import { scrollToBottom } from '../lib/helpers/helpers';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import authService from '../services/auth.service';
+import { useUser } from '../lib/stores/userContext';
 import { API_BASE, makeWsUrl } from '../services/apiClient';
 
 /**
@@ -26,6 +27,7 @@ interface PrivateMessageApi {
 export default function SendPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: currentUserCtx } = useUser();
   const user = useMemo(() => location.state?.user || { id: '', name: '用户', avatar: '' }, [location.state]);
   
   const [message, setMessage] = useState('');
@@ -46,14 +48,10 @@ export default function SendPage() {
   }, [user, navigate]);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const currentUser = await authService.getCurrentUser();
-      if (currentUser) {
-        setCurrentUserId(currentUser.id);
-      }
-    };
-    loadUser();
-  }, []);
+    if (currentUserCtx?.id) {
+      setCurrentUserId(currentUserCtx.id);
+    }
+  }, [currentUserCtx]);
 
   // 加载历史消息
   useEffect(() => {
@@ -96,18 +94,17 @@ export default function SendPage() {
                 isMine
               });
               return {
-              id: String(msg.id || msg.ID),
-              message: msg.content,
-              time: new Date(msg.created_at).toLocaleTimeString('zh-CN', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              }),
-              isMe: isMine,
-              avatar: isMine 
-                ? (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).avatar : '') 
-                : user.avatar,
-              userName: isMine ? '我' : user.name,
-            }});
+                id: String(msg.id || msg.ID),
+                message: msg.content,
+                time: new Date(msg.created_at).toLocaleTimeString('zh-CN', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                isMe: isMine,
+                avatar: isMine ? (currentUserCtx?.avatar || '') : user.avatar,
+                userName: isMine ? (currentUserCtx?.name || '我') : user.name,
+              };
+            });
             
             setMessages(historyMessages);
             console.log('✅ 历史消息加载成功，共', historyMessages.length, '条');
@@ -205,9 +202,7 @@ export default function SendPage() {
     
     if (wsRef.current.readyState === WebSocket.OPEN) {
       // 获取当前用户头像
-      const currentUserData = localStorage.getItem('user');
-      const currentUserAvatar = currentUserData ? JSON.parse(currentUserData).avatar : '';
-      
+      const currentUserAvatar = currentUserCtx?.avatar || '';
       // 立即在本地显示
       const newMessage: PrivateMessage = {
         id: `${currentUserId}-${Date.now()}`,
@@ -218,7 +213,7 @@ export default function SendPage() {
         }),
         isMe: true,
         avatar: currentUserAvatar,
-        userName: '我',
+        userName: currentUserCtx?.name || '我',
       };
       setMessages((prev) => [...prev, newMessage]);
       
@@ -269,13 +264,13 @@ export default function SendPage() {
               >
                 <div className="flex flex-col items-center gap-1">
                   <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-white shadow-sm">
-                    <AvatarImage src={msg.isMe ? getAvatarUrl(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).avatar : '') : getAvatarUrl(user.avatar)} />
+                    <AvatarImage src={msg.isMe ? getAvatarUrl(currentUserCtx?.avatar || '') : getAvatarUrl(user.avatar)} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs">
-                      {msg.isMe ? (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我') : user.name.slice(0, 2)}
+                      {msg.isMe ? (currentUserCtx?.name ? currentUserCtx.name.slice(0,2) : '我') : user.name.slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="text-[10px] text-gray-500 text-center max-w-[60px] truncate">
-                    {msg.isMe ? (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name : '我') : user.name}
+                    {msg.isMe ? (currentUserCtx?.name || '我') : user.name}
                   </div>
                 </div>
                 

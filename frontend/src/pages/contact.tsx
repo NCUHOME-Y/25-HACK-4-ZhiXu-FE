@@ -17,6 +17,7 @@ import contactService, { type SearchUserResult } from '../services/contact.servi
 import { api } from '../services/apiClient';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser, formatTimeAgo } from '../lib/helpers/helpers';
+import { useUser } from '../lib/stores/userContext';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import { BirdMascot } from '../components/feature';
@@ -67,6 +68,7 @@ const UserStatsBlock: React.FC<{ userId: string }> = ({ userId }) => {
  */
 export default function ContactPage() {
   const navigate = useNavigate();
+  const { user: currentUserCtx } = useUser();
 
   // ========== 本地状态 ==========
   const [displayedPosts, setDisplayedPosts] = useState<User[]>([]);
@@ -155,24 +157,11 @@ export default function ContactPage() {
    * 获取当前用户信息
    */
   useEffect(() => {
-    const loadCurrentUser = async () => {
-      try {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          setCurrentUserId(String(user.id));
-          setCurrentUser({
-            id: String(user.id),
-            name: user.name || '用户',
-            avatar: user.avatar || ''
-          });
-        }
-      } catch (error) {
-        console.error('获取当前用户信息失败:', error);
-      }
-    };
-    loadCurrentUser();
-  }, []);
+    if (currentUserCtx) {
+      setCurrentUserId(currentUserCtx.id);
+      setCurrentUser(currentUserCtx);
+    }
+  }, [currentUserCtx]);
 
   /**
    * 初始加载和搜索触发
@@ -671,8 +660,9 @@ export default function ContactPage() {
                       {showComments[user.id] && (
                         <div className="flex items-end gap-3 mt-4">
                           <Avatar className="h-8 w-8 flex-shrink-0">
+                            <AvatarImage src={currentUser?.avatar ? getAvatarUrl(currentUser.avatar) : undefined} />
                             <AvatarFallback className="text-xs bg-blue-100 text-blue-700 font-semibold">
-                              {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我'}
+                              {currentUser?.name ? currentUser.name.slice(0,2) : '我'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 flex gap-2">
@@ -953,8 +943,9 @@ export default function ContactPage() {
               {showComments[user.id] && (
                 <div className="flex items-end gap-3 mt-3">
                   <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={currentUser?.avatar ? getAvatarUrl(currentUser.avatar) : undefined} />
                     <AvatarFallback className="text-xs bg-blue-100 text-blue-700 font-semibold">
-                      {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我'}
+                      {currentUser?.name ? currentUser.name.slice(0,2) : '我'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 flex gap-2">

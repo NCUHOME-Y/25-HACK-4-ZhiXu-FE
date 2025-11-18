@@ -390,15 +390,13 @@ export default function MinePage() {
       });
       setProfile({ nickname, bio, avatar });
       setEditDialogOpen(false);
-      // 同步本地缓存昵称（avatar 在选择头像时同步）
+      // 通过全局用户上下文触发刷新（localStorage 写入在 userContext 中统一处理）
       try {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const userObj = JSON.parse(userStr);
-          userObj.name = nickname;
-          localStorage.setItem('user', JSON.stringify(userObj));
-        }
-      } catch {}
+        const evt = new Event('userUpdated');
+        window.dispatchEvent(evt);
+      } catch (e) {
+        console.warn('触发用户更新事件失败', e);
+      }
       toast.success('个人信息更新成功');
       console.log('[handleSaveProfile] 个人资料保存成功');
     } catch (error) {
@@ -429,15 +427,8 @@ export default function MinePage() {
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
         await loadUserStats();
-        // 同步本地缓存，供聊天/评论实时读取
-        try {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const userObj = JSON.parse(userStr);
-            userObj.avatar = `/api/avatar/${avatarId}`;
-            localStorage.setItem('user', JSON.stringify(userObj));
-          }
-        } catch {}
+        // 触发头像更新事件供上下文刷新
+        try { window.dispatchEvent(new Event('userUpdated')); } catch (e) { console.warn('头像刷新事件失败', e); }
         toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
