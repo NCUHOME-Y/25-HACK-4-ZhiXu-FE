@@ -152,12 +152,16 @@ export default function PublicPage() {
     console.log('WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
     
     if (wsRef.current.readyState === WebSocket.OPEN) {
+      // 获取当前用户头像
+      const currentUserData = localStorage.getItem('user');
+      const currentUserAvatar = currentUserData ? JSON.parse(currentUserData).avatar : '';
+      
       // 立即在本地显示自己的消息
       const newMessage: ChatMessage = {
         id: `local-${Date.now()}`,
         userId: currentUserId,
         userName: '我',
-        avatar: '',
+        avatar: currentUserAvatar,
         message: message.trim(),
         time: new Date().toLocaleTimeString('zh-CN', { 
           hour: '2-digit', 

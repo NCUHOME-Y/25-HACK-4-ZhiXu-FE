@@ -31,10 +31,18 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
         const axiosError = error as { response?: { data?: unknown; status?: number } };
         
         console.error('📊 后端响应状态码:', axiosError.response?.status);
-        console.error('📦 后端响应完整数据:', JSON.stringify(axiosError.response?.data, null, 2));
+        
+        const responseData = axiosError.response?.data;
+        
+        // 检查是否返回了HTML（前端页面）而不是JSON
+        if (typeof responseData === 'string' && responseData.includes('<!doctype html>')) {
+          console.error('🚨 后端API未正确配置，返回了HTML页面而不是JSON');
+          throw new Error('服务器配置错误，请联系管理员（API返回HTML）');
+        }
+        
+        console.error('📦 后端响应完整数据:', JSON.stringify(responseData, null, 2));
         
         // 尝试提取错误信息
-        const responseData = axiosError.response?.data;
         if (responseData && typeof responseData === 'object') {
           const errorData = responseData as { error?: string; message?: string };
           const errorMsg = errorData.error || errorData.message;

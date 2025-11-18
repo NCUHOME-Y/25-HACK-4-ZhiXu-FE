@@ -204,6 +204,10 @@ export default function SendPage() {
     console.log('私聊WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
     
     if (wsRef.current.readyState === WebSocket.OPEN) {
+      // 获取当前用户头像
+      const currentUserData = localStorage.getItem('user');
+      const currentUserAvatar = currentUserData ? JSON.parse(currentUserData).avatar : '';
+      
       // 立即在本地显示
       const newMessage: PrivateMessage = {
         id: `${currentUserId}-${Date.now()}`,
@@ -213,6 +217,7 @@ export default function SendPage() {
           minute: '2-digit' 
         }),
         isMe: true,
+        avatar: currentUserAvatar,
         userName: '我',
       };
       setMessages((prev) => [...prev, newMessage]);
