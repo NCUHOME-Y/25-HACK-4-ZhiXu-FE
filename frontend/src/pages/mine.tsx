@@ -380,7 +380,12 @@ export default function MinePage() {
       toast.success('个人信息更新成功');
     } catch (error) {
       console.error('保存个人资料失败:', error);
-      toast.error('保存个人资料失败，请重试');
+      // 显示后端返回的具体错误消息
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('保存个人资料失败,请重试');
+      }
     }
   };
 
@@ -844,6 +849,9 @@ export default function MinePage() {
         <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto rounded-3xl bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-xl font-bold text-slate-900">编辑个人信息</DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 mt-1">
+              修改您的头像、昵称和个人简介
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* 头像和昵称在同一行 */}

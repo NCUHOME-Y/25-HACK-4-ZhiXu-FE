@@ -17,15 +17,19 @@ export const getUserProfile = () =>
  * 注意：后端没有统一的profile更新接口，需要分别调用
  */
 export const updateUserProfile = async (data: Partial<User> & { originalNickname?: string }) => {
-  // 更新用户名（只在用户名实际改变时调用，避免重复错误导致无法只改头像）
+  // 更新用户名(只在用户名实际改变时调用,避免重复错误导致无法只改头像)
   if (data.nickname && data.nickname !== data.originalNickname) {
     try {
+      console.log('[updateUserProfile] 更新用户名:', { old: data.originalNickname, new: data.nickname });
       await api.put('/updateUsername', { new_name: data.nickname });
+      console.log('[updateUserProfile] 用户名更新成功');
     } catch (error) {
-      // 如果是用户名重复错误，抛出具体错误信息
+      console.error('[updateUserProfile] 更新用户名失败:', error);
+      // 如果是用户名重复错误,抛出具体错误信息
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { error?: string } } };
-        throw new Error(axiosError.response?.data?.error || '更新用户名失败');
+        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+        const errorMsg = axiosError.response?.data?.error || axiosError.response?.data?.message || '更新用户名失败';
+        throw new Error(errorMsg);
       }
       throw error;
     }
