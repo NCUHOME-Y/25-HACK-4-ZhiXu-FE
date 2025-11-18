@@ -10,6 +10,20 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      minify: false, // 保留console.log以便调试
+      rollupOptions: {
+        output: {
+          // 确保不移除console.log
+          intro: '',
+        },
+      },
+      // 明确配置esbuild保留console.log
+      esbuild: {
+        drop: [],
+        pure: [],
+      },
+    },
     server: {
       host: '0.0.0.0', // 允许外部访问
       port: 5173,

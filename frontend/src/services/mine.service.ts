@@ -24,25 +24,31 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
       await api.put('/updateUsername', { new_name: data.nickname });
       console.log('[updateUserProfile] 用户名更新成功');
     } catch (error) {
-      console.error('[updateUserProfile] 更新用户名失败:', error);
+      console.error('❌ [updateUserProfile] 更新用户名失败:', error);
+      
       // 正确处理Axios错误，提取后端返回的错误信息
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: unknown; status?: number } };
-        console.log('[updateUserProfile] 后端响应状态:', axiosError.response?.status);
-        console.log('[updateUserProfile] 后端响应数据:', axiosError.response?.data);
+        
+        console.error('📊 后端响应状态码:', axiosError.response?.status);
+        console.error('📦 后端响应完整数据:', JSON.stringify(axiosError.response?.data, null, 2));
         
         // 尝试提取错误信息
         const responseData = axiosError.response?.data;
         if (responseData && typeof responseData === 'object') {
           const errorData = responseData as { error?: string; message?: string };
           const errorMsg = errorData.error || errorData.message;
+          
+          console.error('💬 提取的后端错误信息:', errorMsg);
+          
           if (errorMsg) {
-            console.error('[updateUserProfile] 后端错误信息:', errorMsg);
-            throw new Error(errorMsg);
+            throw new Error(`更新用户名失败: ${errorMsg}`);
           }
         }
       }
+      
       // 如果无法提取具体错误信息，抛出通用错误
+      console.error('⚠️ 无法提取后端错误信息，使用通用错误');
       throw new Error('更新用户名失败，请稍后重试');
     }
   }
