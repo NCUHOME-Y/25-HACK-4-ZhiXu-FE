@@ -27,11 +27,19 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
       console.error('[updateUserProfile] 更新用户名失败:', error);
       // 正确处理Axios错误，提取后端返回的错误信息
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
-        const errorMsg = axiosError.response?.data?.error || axiosError.response?.data?.message;
-        if (errorMsg) {
-          console.error('[updateUserProfile] 后端错误信息:', errorMsg);
-          throw new Error(errorMsg);
+        const axiosError = error as { response?: { data?: unknown; status?: number } };
+        console.log('[updateUserProfile] 后端响应状态:', axiosError.response?.status);
+        console.log('[updateUserProfile] 后端响应数据:', axiosError.response?.data);
+        
+        // 尝试提取错误信息
+        const responseData = axiosError.response?.data;
+        if (responseData && typeof responseData === 'object') {
+          const errorData = responseData as { error?: string; message?: string };
+          const errorMsg = errorData.error || errorData.message;
+          if (errorMsg) {
+            console.error('[updateUserProfile] 后端错误信息:', errorMsg);
+            throw new Error(errorMsg);
+          }
         }
       }
       // 如果无法提取具体错误信息，抛出通用错误
