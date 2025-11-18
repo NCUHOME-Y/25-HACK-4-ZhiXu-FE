@@ -52,6 +52,7 @@ import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
 import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
+import { api } from '../services/apiClient';
 import { BirdMascot } from '../components/feature';
 
 
@@ -552,7 +553,6 @@ export default function FlagPage() {
             
             // 🔧 优化：刷新用户数据（积分和今日学习时长）
             try {
-              const { api } = await import('../services/apiClient');
               const [userData, todayData] = await Promise.all([
                 api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
                 api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')

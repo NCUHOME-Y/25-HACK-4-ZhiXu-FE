@@ -35,9 +35,15 @@ import {
 } from "../components";
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
+import { getUserAchievements } from '../services/mine.service';
 import { toast } from 'sonner';
 import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
 import { BirdMascot } from '../components/feature';
+import { api } from '../services/apiClient';
+import contactService from '../services/contact.service';
+import { fetchPunchDates } from '../services/flag.service';
+import { switchAvatar, updateNotificationEnabled, updateNotificationTime, changePassword } from '../services/set.service';
+import { authService } from '../services/auth.service';
 
 /**
  * 我的页面
@@ -102,7 +108,6 @@ export default function MinePage() {
         return;
       }
       // 获取用户基本信息
-      const { api } = await import('../services/apiClient');
       const userData = await api.get<{ 
         user: {
           count: number; 
@@ -130,11 +135,9 @@ export default function MinePage() {
         dailyElapsed: (user.month_learn_time || 0) * 60 // 分钟转秒
       });
       // 获取点赞总数
-      const contactService = (await import('../services/contact.service')).default;
       const likedPostIds = await contactService.getUserLikedPosts();
       setTotalLikes(likedPostIds.length);
       // 加载打卡数据（保留原逻辑）
-      const { fetchPunchDates } = await import('../services/flag.service');
       const punchData = await fetchPunchDates();
       console.log('我的页面-打卡数据:', punchData);
       useTaskStore.setState({ punchedDates: punchData });
@@ -183,7 +186,6 @@ export default function MinePage() {
         return;
       }
       
-      const { getUserAchievements } = await import('../services/mine.service');
       const data = await getUserAchievements();
       console.log('✅ 成就数据加载成功:', data);
       
@@ -388,6 +390,15 @@ export default function MinePage() {
       });
       setProfile({ nickname, bio, avatar });
       setEditDialogOpen(false);
+      // 同步本地缓存昵称（avatar 在选择头像时同步）
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const userObj = JSON.parse(userStr);
+          userObj.name = nickname;
+          localStorage.setItem('user', JSON.stringify(userObj));
+        }
+      } catch {}
       toast.success('个人信息更新成功');
       console.log('[handleSaveProfile] 个人资料保存成功');
     } catch (error) {
@@ -413,12 +424,20 @@ export default function MinePage() {
       const avatarId = avatarIndex + 1;
       try {
         // 同步到后端头像索引
-        const { switchAvatar } = await import('../services/set.service');
         await switchAvatar(avatarId);
         setAvatar(selectedAvatar);
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
         await loadUserStats();
+        // 同步本地缓存，供聊天/评论实时读取
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const userObj = JSON.parse(userStr);
+            userObj.avatar = `/api/avatar/${avatarId}`;
+            localStorage.setItem('user', JSON.stringify(userObj));
+          }
+        } catch {}
         toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
@@ -441,7 +460,6 @@ export default function MinePage() {
    */
   const handleToggleNotification = async (enabled: boolean) => {
     try {
-      const { updateNotificationEnabled } = await import('../services/set.service');
       await updateNotificationEnabled(enabled);
       setNotificationEnabled(enabled);
     } catch (error) {
@@ -456,7 +474,6 @@ export default function MinePage() {
     setNotificationHour(hour);
     setNotificationMinute(minute);
     try {
-      const { updateNotificationTime } = await import('../services/set.service');
       await updateNotificationTime(hour, minute);
     } catch (error) {
       console.error('更新提醒时间失败:', error);
@@ -476,7 +493,6 @@ export default function MinePage() {
       return;
     }
     try {
-      const { changePassword } = await import('../services/set.service');
       await changePassword(oldPassword, newPassword);
       alert('密码修改成功');
       setChangePasswordDialogOpen(false);
@@ -494,7 +510,6 @@ export default function MinePage() {
    */
   const handleLogout = async () => {
     try {
-      const { authService } = await import('../services/auth.service');
       await authService.logout();
       localStorage.removeItem('auth_token');
       setLogoutDialogOpen(false);

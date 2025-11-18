@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "../services/apiClient"
+import { authService } from "../services/auth.service"
 import {
   LoginForm,
   SignupForm,
@@ -131,7 +132,6 @@ export default function AuthPage() {
     setSendingOTP(true)
     try {
       // P1修复：调用后端发送邮箱验证码API
-      const { authService } = await import("../services/auth.service")
       const result = await authService.sendEmailCode(value)
       if (result.success) {
         setPhone(value)
@@ -243,12 +243,17 @@ export default function AuthPage() {
         return
       }
       
-      const { authService } = await import("../services/auth.service")
       const result = await authService.login({ email, password })
       
       if (result.user) {
-        // 保存用户信息到localStorage，供其他页面使用
-        localStorage.setItem('user', JSON.stringify(result.user));
+        // 补充头像信息：读取后端 head_show 转为 /api/avatar/:id
+        try {
+          const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
+          const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
+          localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
+        } catch {
+          localStorage.setItem('user', JSON.stringify(result.user));
+        }
         // 登录成功后跳转到打卡页面
         navigate("/flag")
       } else {
@@ -282,12 +287,16 @@ export default function AuthPage() {
         return
       }
       
-      const { authService } = await import("../services/auth.service")
       const result = await authService.loginWithOTP(phone, code)
       
       if (result.user) {
-        // 保存用户信息到localStorage，供其他页面使用
-        localStorage.setItem('user', JSON.stringify(result.user));
+        try {
+          const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
+          const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
+          localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
+        } catch {
+          localStorage.setItem('user', JSON.stringify(result.user));
+        }
         navigate("/flag")
       }
     } catch (error) {
@@ -322,12 +331,16 @@ export default function AuthPage() {
       }
       
       // 调用后端验证邮箱API（验证成功后会返回token并自动登录）
-      const { authService } = await import("../services/auth.service")
       const result = await authService.verifyEmail(phone, code) // phone变量存储邮箱
       
       if (result.user && result.token) {
-        // 保存用户信息到localStorage，供其他页面使用
-        localStorage.setItem('user', JSON.stringify(result.user));
+        try {
+          const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
+          const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
+          localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
+        } catch {
+          localStorage.setItem('user', JSON.stringify(result.user));
+        }
         // 验证成功，已自动登录，跳转到打卡页面
         navigate("/flag")
       } else {
@@ -366,7 +379,6 @@ export default function AuthPage() {
     
     setSendingResetCode(true)
     try {
-      const { authService } = await import("../services/auth.service")
       const result = await authService.sendEmailCode(value)
       if (result.success) {
         setAlertMessage("验证码已发送至邮箱")
@@ -408,7 +420,6 @@ export default function AuthPage() {
     
     setResettingPassword(true)
     try {
-      const { authService } = await import("../services/auth.service")
       const result = await authService.resetPassword(forgotEmail, resetCode, newPassword)
       if (result.success) {
         setAlertMessage("密码重置成功，请登录")

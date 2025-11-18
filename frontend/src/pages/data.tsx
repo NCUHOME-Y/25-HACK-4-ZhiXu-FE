@@ -13,10 +13,13 @@ import {
   TabsContent
 } from '../components';
 import { getStudyTimeTrend } from '../services/data.service';
+import { getFlagLabels } from '../services/data.service';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
 import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
 import { BirdMascot } from '../components/feature';
+import { fetchTasks, fetchPunchDates } from '../services/flag.service';
+import { api } from '../services/apiClient';
 
 /**
  * 数据统计页面
@@ -126,12 +129,10 @@ export default function DataPage() {
         }
         
         // 加载标签统计
-        const { getFlagLabels } = await import('../services/data.service');
         const labelData = await getFlagLabels();
         console.log('标签系统统计:', labelData);
         
         // 加载任务和打卡数据
-        const { fetchTasks, fetchPunchDates } = await import('../services/flag.service');
         const [tasksData, punchData] = await Promise.all([
           fetchTasks(),
           fetchPunchDates()
@@ -160,7 +161,6 @@ export default function DataPage() {
   // 🔧 新增：刷新用户数据函数
   const refreshUserData = async () => {
     try {
-      const { api } = await import('../services/apiClient');
       const [userData, todayData, todayPointsResp] = await Promise.all([
         api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
         api.get<{ today_learn_time: number }>('/api/getTodayLearnTime'),

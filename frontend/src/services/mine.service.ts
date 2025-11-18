@@ -23,6 +23,13 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
       console.log('[updateUserProfile] 更新用户名:', { old: data.originalNickname, new: data.nickname });
       await api.put('/updateUsername', { new_name: data.nickname });
       console.log('[updateUserProfile] 用户名更新成功');
+      // 同步本地缓存的用户名，供聊天/评论等实时读取
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        userObj.name = data.nickname;
+        localStorage.setItem('user', JSON.stringify(userObj));
+      }
     } catch (error) {
       console.error('❌ [updateUserProfile] 更新用户名失败:', error);
       
@@ -69,7 +76,15 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
   // 更新头像（如果有avatar且是数字编号）
   if (data.avatar && /^\d+$/.test(data.avatar)) {
     try {
-      await api.post('/api/swithhead', { number: parseInt(data.avatar) });
+      const number = parseInt(data.avatar);
+      await api.post('/api/swithhead', { number });
+      // 同步本地缓存头像为后端统一路径 /api/avatar/:id
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        userObj.avatar = `/api/avatar/${number}`;
+        localStorage.setItem('user', JSON.stringify(userObj));
+      }
     } catch {
       throw new Error('更新头像失败');
     }
@@ -101,6 +116,7 @@ export async function logout() {
 
   // 清除本地存储
   localStorage.removeItem('authToken');
+  localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
 
   return { success: true };

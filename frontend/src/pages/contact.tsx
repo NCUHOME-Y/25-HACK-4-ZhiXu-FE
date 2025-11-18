@@ -14,12 +14,52 @@ import {
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 import contactService, { type SearchUserResult } from '../services/contact.service';
-import type { Conversation } from '../services/chat.service';
+import { api } from '../services/apiClient';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser, formatTimeAgo } from '../lib/helpers/helpers';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import { BirdMascot } from '../components/feature';
+
+// 用户统计弹窗内部动态组件：实时获取指定用户的打卡天数、完成flag数、总积分
+const UserStatsBlock: React.FC<{ userId: string }> = ({ userId }) => {
+  const [stats, setStats] = useState<{ daka_days: number; completed_flags: number; total_points: number } | null>(null);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    interface UserStatsResponse { daka_days?: number; completed_flags?: number; total_points?: number }
+    api.get(`/api/getUserStats?user_id=${userId}`)
+      .then((raw) => {
+        if (!active) return;
+        const res = raw as UserStatsResponse;
+        setStats({
+          daka_days: res.daka_days ?? 0,
+          completed_flags: res.completed_flags ?? 0,
+          total_points: res.total_points ?? 0,
+        });
+      })
+      .catch(() => active && setStats({ daka_days: 0, completed_flags: 0, total_points: 0 }))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, [userId]);
+  return (
+    <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-xl p-3">
+      <div className="space-y-1">
+        <div className="font-bold text-xl text-blue-600">{loading ? '…' : stats?.daka_days ?? 0}</div>
+        <div className="text-xs text-slate-500 font-medium">打卡天数</div>
+      </div>
+      <div className="space-y-1">
+        <div className="font-bold text-xl text-green-600">{loading ? '…' : stats?.completed_flags ?? 0}</div>
+        <div className="text-xs text-slate-500 font-medium">完成flag</div>
+      </div>
+      <div className="space-y-1">
+        <div className="font-bold text-xl text-purple-600">{loading ? '…' : stats?.total_points ?? 0}</div>
+        <div className="text-xs text-slate-500 font-medium">总积分</div>
+      </div>
+    </div>
+  );
+};
 
 /**
  * 联系页面(翰林院论)
@@ -53,150 +93,62 @@ export default function ContactPage() {
     return commentsUnread || privateUnread;
   });
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
 
-  // 鸟消息 - 针对contact页面的社交功能
+  // 鸟消息 - 简化为纯字符串数组（修复被污染的 JSX）
   const messages = useMemo(() => {
     const hour = new Date().getHours();
-    let timeKey = 'morning';
-    if (hour < 6) timeKey = 'early';
-    else if (hour < 12) timeKey = 'morning';
-    else if (hour < 18) timeKey = 'afternoon';
-    else if (hour < 22) timeKey = 'evening';
-    else timeKey = 'night';
-    
-    const timeMessages = [
-      ...(timeKey === 'early' ? [
-        '翰林院这么早就有人在交流了！',
-        '清晨的翰林院，智慧的火花在闪烁~',
-        '早起的翰林们，交流学习心得！',
-        '早起的鸟儿，翰林院最活跃！',
-      ] : []),
-      ...(timeKey === 'morning' ? [
-        '上午好，翰林们！',
-        '分享你的学习感悟吧！',
-        '翰林院是交流的好地方！',
-        '看看大家的精彩帖子！',
-      ] : []),
-      ...(timeKey === 'afternoon' ? [
-        '下午茶时间，聊聊学习吧！',
-        '翰林院等你来交流！',
-        '分享你的进步和心得！',
-        '翰林院，学习交流的乐园！',
-      ] : []),
-      ...(timeKey === 'evening' ? [
-        '晚上好，翰林们！',
-        '晚上的翰林院最热闹！',
-        '交流学习经验的好时机！',
-        '看看大家的精彩分享！',
-      ] : []),
-      ...(timeKey === 'night' ? [
-        '夜深了，翰林院还在活跃~',
-        '别熬夜，多交流少熬夜！',
-        '翰林院，永不眠的学习社区！',
-        '休息吧，明天继续交流！',
-      ] : []),
-    ];
-    
-    const generalMessages = [
-      '翰林院欢迎你！',
-      '分享你的学习心得吧！',
-      '翰林院是交流的好地方~',
-      '多点赞，多评论，多交流！',
-      '翰林院，学习者的家园！',
-      '相信交流，更相信进步！',
-      '翰林院见证你的每一次分享！',
-      '交流让学习更有趣！',
-    ];
-    
-    return [...timeMessages, ...generalMessages];
+    let phase: 'early' | 'morning' | 'afternoon' | 'evening' | 'night' = 'morning';
+    if (hour < 6) phase = 'early';
+    else if (hour < 12) phase = 'morning';
+    else if (hour < 18) phase = 'afternoon';
+    else if (hour < 22) phase = 'evening';
+    else phase = 'night';
+    const base: string[] = [];
+    if (phase === 'early') base.push('清晨的翰林院已经苏醒');
+    if (phase === 'morning') base.push('上午好，分享你的学习感悟吧');
+    if (phase === 'afternoon') base.push('下午茶时间，聊聊进步与心得');
+    if (phase === 'evening') base.push('傍晚了，整理今日收获');
+    if (phase === 'night') base.push('夜深了，注意休息与总结');
+    base.push('点击头像可查看实时统计');
+    return base;
   }, []);
 
-  // ========== 事件处理器 ==========
-  /**
-   * 加载更多帖子(分页加载)
-   */
+  // 未读消息检查（简化为本地存储标志）
+  const checkUnreadMessages = useCallback(() => {
+    try {
+      const userId = localStorage.getItem('currentUserId');
+      if (!userId) return;
+      const commentsRead = localStorage.getItem(`commentsRead_${userId}`) === 'true';
+      const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
+      setHasUnreadMessages(!commentsRead || privateUnread);
+    } catch (e) {
+      console.error('检查未读消息失败:', e);
+    }
+  }, []);
+
+  // 分页加载更多帖子
   const loadMorePosts = useCallback(() => {
     if (loading || !hasMore) return;
-    
     setLoading(true);
-    setError(null);
-    
     contactService.getPosts(page, POSTS_PER_PAGE)
-      .then((response) => {
-        if (!response || !Array.isArray(response.data) || response.data.length === 0) {
-          setHasMore(false);
-        } else {
-          const adaptedPosts = response.data.map(adaptPostToUser);
-          setDisplayedPosts(prev => [...prev, ...adaptedPosts]);
-          // 合并已点赞状态（确保翻页时也能标注已点赞）
-          contactService.getUserLikedPosts()
-            .then((ids) => {
-              setLikedPosts(prev => {
-                const s = new Set(prev);
-                ids.forEach(id => s.add(String(id)));
-                return s;
-              });
-            })
-            .catch((e) => console.warn('无法获取已点赞帖子', e));
+      .then(response => {
+        if (response && Array.isArray(response.data)) {
+          const newPosts = response.data.map(adaptPostToUser);
+          setDisplayedPosts(prev => [...prev, ...newPosts]);
           setPage(prev => prev + 1);
           setHasMore(response.hasMore);
+        } else {
+          setHasMore(false);
         }
         setLoading(false);
       })
-      .catch((error: unknown) => {
-        console.error('加载帖子失败:', error);
-        setError('无法连接到服务器，请检查后端服务是否启动');
+      .catch(err => {
+        console.error('分页加载失败:', err);
         setLoading(false);
         setHasMore(false);
       });
   }, [loading, hasMore, page]);
-
-  /**
-   * 检查是否有未读消息/评论
-   */
-  const checkUnreadMessages = async () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-      
-      const user = JSON.parse(userStr);
-      const lastReadTime = localStorage.getItem(`lastReadTime_${user.id}`);
-      
-      if (!lastReadTime) {
-        setHasUnreadMessages(true);
-        return;
-      }
-
-      // 检查是否有新的私聊消息
-      const conversationsResponse = await contactService.getPrivateConversations();
-      const hasNewPrivateMsg = conversationsResponse?.conversations?.some((conv: Conversation) => 
-        new Date(conv.last_message_at) > new Date(lastReadTime)
-      ) || false;
-
-      // 检查是否有新的评论
-      const postsResponse = await contactService.getAllPosts();
-      const posts = postsResponse?.posts || [];
-      let hasNewComment = false;
-      
-      posts.forEach((post) => {
-        // 断言 post 结构，保证类型安全
-        const p = post as unknown as { user_id?: string; comments?: Array<{ userId: string; created_at?: string }> };
-        if (p.user_id && String(p.user_id) === String(user.id) && p.comments) {
-          p.comments.forEach((comment) => {
-            // 兼容 comment.created_at 可能不存在的情况
-            if (String(comment.userId) !== String(user.id) && 
-                comment.created_at && new Date(comment.created_at) > new Date(lastReadTime)) {
-              hasNewComment = true;
-            }
-          });
-        }
-      });
-
-      setHasUnreadMessages(hasNewPrivateMsg || hasNewComment);
-    } catch (error) {
-      console.error('检查未读消息失败:', error);
-    }
-  };
 
   // ========== 副作用 ==========
   /**
@@ -209,6 +161,11 @@ export default function ContactPage() {
         if (userStr) {
           const user = JSON.parse(userStr);
           setCurrentUserId(String(user.id));
+          setCurrentUser({
+            id: String(user.id),
+            name: user.name || '用户',
+            avatar: user.avatar || ''
+          });
         }
       } catch (error) {
         console.error('获取当前用户信息失败:', error);
@@ -224,77 +181,60 @@ export default function ContactPage() {
     setDisplayedPosts([]);
     setPage(1);
     setHasMore(true);
+    setSearchUserResults([]);
     setLoading(true);
     setError(null);
-    
-    // 检查未读消息
     checkUnreadMessages();
-    
+
     if (activeSearchQuery.trim()) {
-      // 同时搜索帖子和用户
       Promise.all([
-        contactService.searchPosts({ query: searchQuery, page: 1, pageSize: POSTS_PER_PAGE }),
-        contactService.searchUsers(searchQuery)
+        contactService.searchPosts({ query: activeSearchQuery, page: 1, pageSize: POSTS_PER_PAGE }),
+        contactService.searchUsers(activeSearchQuery)
       ])
         .then(([postsResponse, usersResponse]) => {
-          // 处理帖子搜索结果
           if (postsResponse && Array.isArray(postsResponse.data)) {
-            const adaptedPosts = postsResponse.data.map(adaptPostToUser);
-            setDisplayedPosts(adaptedPosts);
+            setDisplayedPosts(postsResponse.data.map(adaptPostToUser));
             setPage(2);
             setHasMore(postsResponse.hasMore);
           } else {
             setDisplayedPosts([]);
             setHasMore(false);
           }
-          
-          // 处理用户搜索结果
           if (usersResponse && Array.isArray(usersResponse)) {
             setSearchUserResults(usersResponse);
-          } else {
-            setSearchUserResults([]);
           }
-          
           setLoading(false);
         })
-        .catch((error: unknown) => {
-          console.error('搜索失败:', error);
-          setError('搜索失败，请检查网络连接或稍后再试');
+        .catch(err => {
+          console.error('搜索失败:', err);
+          setError('搜索失败，请稍后再试');
           setLoading(false);
           setHasMore(false);
         });
     } else {
       contactService.getPosts(1, POSTS_PER_PAGE)
-        .then((response) => {
+        .then(response => {
           if (response && Array.isArray(response.data)) {
-            const adaptedPosts = response.data.map(adaptPostToUser);
-            setDisplayedPosts(adaptedPosts);
+            setDisplayedPosts(response.data.map(adaptPostToUser));
             setPage(2);
             setHasMore(response.hasMore);
-              // 加载当前用户的已点赞帖子并设置状态
-              contactService.getUserLikedPosts()
-                .then((ids) => {
-                  const setIds = new Set(ids.map(id => String(id)));
-                  setLikedPosts(setIds);
-                })
-                .catch((e) => console.warn('无法获取已点赞帖子', e));
-              contactService.getUserLikedPosts()
-                .then((ids) => setLikedPosts(new Set(ids.map(id => String(id)))))
-                .catch((e) => console.warn('无法获取已点赞帖子', e));
+            contactService.getUserLikedPosts()
+              .then(ids => setLikedPosts(new Set(ids.map(id => String(id)))))
+              .catch(e => console.warn('无法获取已点赞帖子', e));
           } else {
             setDisplayedPosts([]);
             setHasMore(false);
           }
           setLoading(false);
         })
-        .catch((error: unknown) => {
-          console.error('加载帖子失败:', error);
-          setError('无法连接到服务器，请确保后端服务已启动（http://localhost:8080）');
+        .catch(err => {
+          console.error('加载帖子失败:', err);
+          setError('无法连接到服务器');
           setLoading(false);
           setHasMore(false);
         });
     }
-  }, [activeSearchQuery, searchQuery]);
+  }, [activeSearchQuery, checkUnreadMessages]);
 
   /**
    * 滚动监听(触发分页加载)
@@ -385,14 +325,17 @@ export default function ContactPage() {
     // 调用后端接口添加评论
     contactService.addComment({ postId, content: comment })
       .then(savedComment => {
-        // 用后端返回的评论数据更新UI
+        // 使用React状态中的最新用户信息，确保评论显示最新的用户名、头像等信息
+        const userName = currentUser?.name || savedComment.userName;
+        const userAvatar = currentUser?.avatar || savedComment.userAvatar;
+
         const adaptedComment: Comment = {
           id: savedComment.id,
           userId: savedComment.userId,
-          userName: savedComment.userName,
-          userAvatar: savedComment.userAvatar,
-          content: savedComment.content,
-          time: savedComment.createdAt
+          userName: userName, // 使用状态中的最新用户名
+          userAvatar: userAvatar, // 使用状态中的最新头像
+          content: comment, // 使用用户输入的评论内容
+          time: formatTimeAgo(new Date().toISOString()) // 使用相对时间格式，与其他评论保持一致
         };
         setDisplayedPosts(displayedPosts.map(post => {
           if (post.id === postId) {
@@ -592,20 +535,7 @@ export default function ContactPage() {
                                   <p className="text-sm text-slate-500">点击查看详情</p>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-xl p-3">
-                                <div className="space-y-1">
-                                  <div className="font-bold text-xl text-blue-600">{user.totalDays}</div>
-                                  <div className="text-xs text-slate-500 font-medium">打卡天数</div>
-                                </div>
-                                <div className="space-y-1">
-                                  <div className="font-bold text-xl text-green-600">{user.completedFlags}</div>
-                                  <div className="text-xs text-slate-500 font-medium">完成flag</div>
-                                </div>
-                                <div className="space-y-1">
-                                  <div className="font-bold text-xl text-purple-600">{user.totalPoints}</div>
-                                  <div className="text-xs text-slate-500 font-medium">总积分</div>
-                                </div>
-                              </div>
+                              <UserStatsBlock userId={String(user.userId)} />
                               {(!currentUserId || currentUserId === '' || String(user.userId) !== currentUserId) && (
                                 <Button
                                   size="sm"
@@ -774,40 +704,48 @@ export default function ContactPage() {
                     <p>没有找到相关用户</p>
                   </Card>
                 ) : (
-                  searchUserResults.map((searchUser) => (
-                    <Card key={searchUser.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 border-slate-200">
-                      <div className="flex items-center gap-4 min-w-0">
-                        <Avatar className="h-14 w-14 bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0">
-                          <AvatarImage src={getAvatarUrl(searchUser.avatar)} alt="Avatar" />
-                          <AvatarFallback className="text-lg font-bold text-white bg-blue-500">
-                            {searchUser.name.slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
+                  searchUserResults.map(u => (
+                    <Card key={u.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-blue-100 hover:ring-blue-300 transition-all duration-200">
+                              <AvatarImage src={getAvatarUrl(u.avatar || '')} />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-purple-100 text-slate-700 font-semibold">{u.name.slice(0,2)}</AvatarFallback>
+                            </Avatar>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 p-4 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-14 w-14 ring-2 ring-blue-100">
+                                  <AvatarImage src={getAvatarUrl(u.avatar || '')} />
+                                  <AvatarFallback>{u.name.slice(0,2)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-slate-900 text-lg">{u.name}</h4>
+                                  <p className="text-sm text-slate-500">用户统计</p>
+                                </div>
+                              </div>
+                              <UserStatsBlock userId={String(u.id)} />
+                              {String(u.id) !== currentUserId && (
+                                <Button
+                                  size="sm"
+                                  className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                                  onClick={() => navigate('/send', { state: { user: { id: String(u.id), name: u.name, avatar: u.avatar || '' } } })}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  发消息
+                                </Button>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                         <div className="flex-1 min-w-0">
-                          <h2 className="text-lg font-bold text-slate-900 truncate">{searchUser.name}</h2>
-                          <p className="text-sm text-slate-600 truncate">{searchUser.email}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-base truncate">{u.name}</span>
+                          </div>
+                          <span className="text-xs text-slate-500 mt-1 block">{u.email}</span>
                         </div>
-                        {(() => {
-                          const isMe = String(searchUser.id) === String(currentUserId);
-                          return !isMe && (
-                            <Button
-                              size="sm"
-                              className="rounded-full bg-blue-600 hover:bg-blue-700 px-4 flex-shrink-0 ml-auto"
-                              onClick={() => navigate('/send', {
-                                state: {
-                                  user: {
-                                    id: String(searchUser.id),
-                                    name: searchUser.name,
-                                    avatar: searchUser.avatar
-                                  }
-                                }
-                              })}
-                            >
-                              <Send className="h-3 w-3 mr-2" />
-                              发消息
-                            </Button>
-                          );
-                        })()}
                       </div>
                     </Card>
                   ))
@@ -880,20 +818,7 @@ export default function ContactPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-xl p-3">
-                        <div className="space-y-1">
-                          <div className="font-bold text-xl text-blue-600">{user.totalDays}</div>
-                          <div className="text-xs text-slate-500 font-medium">打卡天数</div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="font-bold text-xl text-green-600">{user.completedFlags}</div>
-                          <div className="text-xs text-slate-500 font-medium">完成flag</div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="font-bold text-xl text-purple-600">{user.totalPoints}</div>
-                          <div className="text-xs text-slate-500 font-medium">总积分</div>
-                        </div>
-                        </div>
+                      <UserStatsBlock userId={String(user.userId)} />
                       
                         {(() => {
                           const isMe = String(user.userId) === String(currentUserId);

@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  // 使用 .env 文件中的 VITE_API_BASE
+  // 使用 .env 文件中的 VITE_API_BASE_URL
   const env = loadEnv(mode, process.cwd(), '');
-  const apiBase = env.VITE_API_BASE || 'http://localhost:8080';
+  const apiBase = env.VITE_API_BASE_URL || 'http://localhost:8080';
   const wsBase = apiBase.replace(/^http/, 'ws');
 
   return {
