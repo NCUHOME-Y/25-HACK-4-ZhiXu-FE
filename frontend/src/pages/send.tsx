@@ -4,7 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
 import { Separator } from "../components/ui/separator";
 import type { PrivateMessage } from '../lib/types/types';
-import { scrollToBottom, getAvatarUrl } from '../lib/helpers/helpers';
+import { scrollToBottom } from '../lib/helpers/helpers';
+import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import authService from '../services/auth.service';
 import { API_BASE, makeWsUrl } from '../services/apiClient';
 
@@ -17,7 +18,9 @@ interface PrivateMessageApi {
   ID?: string | number;
   content: string;
   created_at: string;
-  from_user_id: string | number;
+  from_user_id?: string | number;
+  from?: string | number;  // 后端实际返回的字段
+  to?: string | number;
 }
 
 export default function SendPage() {
@@ -83,17 +86,28 @@ export default function SendPage() {
           console.log('📦 API返回数据:', data);
           
           if (data.messages && Array.isArray(data.messages)) {
-              const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => ({
+              const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => {
+              // 后端返回的字段是 from 和 to，不是 from_user_id
+              const fromUserId = msg.from || msg.from_user_id;
+              const isMine = String(fromUserId) === String(currentUserId);
+              console.log('🔍 消息判断:', {
+                msgFrom: fromUserId,
+                currentUserId,
+                isMine
+              });
+              return {
               id: String(msg.id || msg.ID),
               message: msg.content,
               time: new Date(msg.created_at).toLocaleTimeString('zh-CN', { 
                 hour: '2-digit', 
                 minute: '2-digit' 
               }),
-              isMe: String(msg.from_user_id) === currentUserId,
-              avatar: String(msg.from_user_id) === currentUserId ? undefined : user.avatar,
-              userName: String(msg.from_user_id) === currentUserId ? '我' : user.name,
-            }));
+              isMe: isMine,
+              avatar: isMine 
+                ? (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).avatar : '') 
+                : user.avatar,
+              userName: isMine ? '我' : user.name,
+            }});
             
             setMessages(historyMessages);
             console.log('✅ 历史消息加载成功，共', historyMessages.length, '条');
@@ -250,13 +264,13 @@ export default function SendPage() {
               >
                 <div className="flex flex-col items-center gap-1">
                   <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-white shadow-sm">
-                    <AvatarImage src={getAvatarUrl(msg.avatar || user.avatar)} />
+                    <AvatarImage src={msg.isMe ? getAvatarUrl(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).avatar : '') : getAvatarUrl(user.avatar)} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs">
-                      {(msg.userName || user.name).slice(0, 2)}
+                      {msg.isMe ? (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name.slice(0, 2) : '我') : user.name.slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="text-[10px] text-gray-500 text-center max-w-[60px] truncate">
-                    {msg.userName || (msg.isMe ? '我' : user.name)}
+                    {msg.isMe ? (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).name : '我') : user.name}
                   </div>
                 </div>
                 
@@ -279,37 +293,34 @@ export default function SendPage() {
         )}
       </div>
 
-      {/* 如果是自己，不显示发送消息区域 */}
-      {(!currentUserId || currentUserId === '' || String(user.id) !== currentUserId) && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent px-4 py-4">
-          <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-full shadow-lg overflow-hidden">
-            <div className="flex items-center flex-1 pl-4 pr-2 h-full">
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="输入消息..."
-                className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSendMessage();
-                  }
-                }}
-              />
-            </div>
-            <Separator orientation="vertical" className="h-8" />
-            <Button
-              type="submit"
-              variant="default"
-              size="sm"
-              onClick={handleSendMessage}
-              className="h-full px-6 rounded-none bg-blue-600 hover:bg-blue-700 transition-all duration-200"
-              style={{ borderRadius: 0 }}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent px-4 py-4">
+        <div className="flex items-center w-full max-w-md mx-auto h-12 bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-full shadow-lg overflow-hidden">
+          <div className="flex items-center flex-1 pl-4 pr-2 h-full">
+            <Input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="输入消息..."
+              className="border-none shadow-none focus-visible:ring-0 focus-visible:border-none bg-transparent text-base h-8"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSendMessage();
+                }
+              }}
+            />
           </div>
+          <Separator orientation="vertical" className="h-8" />
+          <Button
+            type="submit"
+            variant="default"
+            size="sm"
+            onClick={handleSendMessage}
+            className="h-full px-6 rounded-none bg-blue-600 hover:bg-blue-700 transition-all duration-200"
+            style={{ borderRadius: 0 }}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

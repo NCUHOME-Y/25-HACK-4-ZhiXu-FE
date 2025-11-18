@@ -37,6 +37,7 @@ import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
 import { toast } from 'sonner';
 import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
+import { BirdMascot } from '../components/feature';
 
 /**
  * 我的页面
@@ -302,6 +303,65 @@ export default function MinePage() {
   // 头像选项（1-32对应前端本地头像文件）
   const avatarOptions = AVATAR_FILES;
 
+  // 鸟消息 - 针对mine页面的个人中心功能
+  const messages = useMemo(() => {
+    const hour = new Date().getHours();
+    let timeKey = 'morning';
+    if (hour < 6) timeKey = 'early';
+    else if (hour < 12) timeKey = 'morning';
+    else if (hour < 18) timeKey = 'afternoon';
+    else if (hour < 22) timeKey = 'evening';
+    else timeKey = 'night';
+    
+    const timeMessages = [
+      ...(timeKey === 'early' ? [
+        '这么早就来看个人中心了！',
+        '早起的成就收集者！',
+        '清晨的个人中心，最适合规划一天！',
+        '早起的鸟儿有成就！',
+      ] : []),
+      ...(timeKey === 'morning' ? [
+        '上午好！来看看今天的成就吧！',
+        '早上是规划的好时机~',
+        '个人中心等你来探索！',
+        '早上好，成就收集者！',
+      ] : []),
+      ...(timeKey === 'afternoon' ? [
+        '下午好！休息一下看看成就吧！',
+        '个人中心，记录你的进步！',
+        '下午茶时间，查看个人数据！',
+        '成就之路，从个人中心开始！',
+      ] : []),
+      ...(timeKey === 'evening' ? [
+        '晚上好！回顾一下今天的成就吧！',
+        '个人中心，陪伴你每一天！',
+        '晚上是总结的好时机~',
+        '看看你又获得了哪些成就！',
+      ] : []),
+      ...(timeKey === 'night' ? [
+        '夜深了，别忘了查看成就哦~',
+        '个人中心，永不眠的学习伙伴！',
+        '晚安，明天继续进步！',
+        '成就收集，永无止境！',
+      ] : []),
+    ];
+    
+    const generalMessages = [
+      '个人中心，记录你的每一次进步！',
+      '成就系统等你来解锁！',
+      '数据统计，量化你的努力！',
+      '个人设置，让学习更舒适！',
+      '徽章收集，证明你的坚持！',
+      '积分系统，激励你的进步！',
+      '个人中心，你的专属空间！',
+      '成就之路，从这里开始！',
+      '数据可视化，看得见的进步！',
+      '个性化设置，打造专属体验！',
+    ];
+    
+    return [...timeMessages, ...generalMessages];
+  }, []);
+
   // ========== 事件处理器 ==========
   /**
    * 保存个人资料
@@ -461,7 +521,7 @@ export default function MinePage() {
                 <p className="text-sm text-muted-foreground mt-1">{bio}</p>
               </div>
             </div>
-          </Card>
+          </Card> 
         </section>
 
         {/* 数据统计（压缩版） */}
@@ -487,9 +547,11 @@ export default function MinePage() {
         </section>
 
         {/* 已获得徽章 */}
-        <section className="px-4">
+        <section className="px-4 relative">
           <h2 className="text-lg font-semibold mb-4">已获得徽章 ({achievedBadges}/{totalBadges})</h2>
-          <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
+          {/* 小鸟绝对定位在Card上方，z-index低于Card内容 */}
+          <BirdMascot position="mine" messages={messages} />
+          <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-200" style={{position: 'relative', zIndex: 2}}>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="badges" className="border-none">
                 <div className="space-y-3">

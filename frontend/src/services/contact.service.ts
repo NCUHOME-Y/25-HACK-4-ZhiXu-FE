@@ -176,7 +176,7 @@ const contactService = {
   // 删除帖子
   deletePost: (postId: string) =>
     api.delete<{ success: boolean }>('/api/deleteUserPost', {
-      data: { post_id: postId }
+      data: { post_id: parseInt(postId, 10) }
     }),
 
   // 从Flag创建帖子（分享Flag到社交页面）
@@ -199,20 +199,20 @@ const contactService = {
     return api.post<Post>('/api/postUserPost', {
       title: task.title,
       content,
-      task_id: task.id
+      flag_id: parseInt(task.id) // 添加flag_id关联
     });
   },
 
   // 根据任务ID删除关联的帖子（后端可能没有这个接口）
   deletePostByTaskId: (taskId: string) =>
     api.delete<{ success: boolean }>('/api/deleteUserPost', {
-      data: { task_id: taskId }
+      data: { task_id: parseInt(taskId, 10) }
     }),
 
   // P1修复：搜索用户（支持32个头像映射）
   searchUsers: async (query: string): Promise<SearchUserResult[]> => {
     const response = await api.post<{ users: Array<{
-      id: number;
+      user_id: number;
       name: string;
       email: string;
       head_show?: number;
@@ -220,7 +220,7 @@ const contactService = {
     
     // 头像由后端提供，通过/api/avatar/:id获取
     return (response.users || []).map(user => ({
-      id: user.id,
+      id: user.user_id,
       name: user.name,
       email: user.email,
       avatar: user.head_show ? `/api/avatar/${user.head_show}` : ''

@@ -52,6 +52,7 @@ import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
 import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
+import { BirdMascot } from '../components/feature';
 
 
 export default function FlagPage() {
@@ -159,6 +160,18 @@ export default function FlagPage() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [loadData]);
+  
+  // 监听帖子删除事件，同步更新flag状态
+  useEffect(() => {
+    const handlePostDeleted = () => {
+      console.log('📢 检测到帖子删除，重新加载flag数据');
+      loadData();
+    };
+    
+    window.addEventListener('postDeleted', handlePostDeleted);
+    return () => window.removeEventListener('postDeleted', handlePostDeleted);
+  }, [loadData]);
+  
   const studying = useTaskStore((s) => s.studying);
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
   const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
@@ -286,6 +299,86 @@ export default function FlagPage() {
   const todayStr = useMemo(() => formatDateYMD(new Date()), []);
   /** 今日是否已打卡 */
   const isPunchedToday = punchedDates.includes(todayStr);
+  // 鸟消息池
+  const birdMessagePool = {
+    punched: [
+      '已打卡：太棒了！继续保持～',
+      '今天也要元气满满哦！',
+      '打卡达人就是你！',
+      '继续加油，明天也别忘了！',
+      '你是最棒的！',
+      '坚持打卡，未来可期！',
+      '打卡+1，成就+1！',
+      '优秀！明天也来哦！',
+      '打卡小能手上线！',
+      '你离目标又近了一步！',
+      '今日份自律已完成√',
+      '打卡路上，有我陪你！',
+      '继续冲鸭！',
+      '自律给你自由！',
+      '打卡打卡，快乐加倍！',
+    ],
+    unpunched: [
+      '打卡有积分奖励哦！',
+      '坚持就是胜利！',
+      '快来打卡，和我一起进步！',
+      '别忘了今日打卡！',
+      '打卡一小步，成长一大步！',
+      '今天也要元气满满！',
+      '打卡后记得奖励自己哦！',
+      '打卡养成好习惯！',
+      '你可以的，快来打卡！',
+      '打卡路上不孤单！',
+      '加油，别让自己失望！',
+      '打卡，开启美好一天！',
+      '再不打卡我就飞走啦！',
+    ],
+    time: {
+      early: [
+        '这么早了，早点休息哦～',
+        '夜猫子也要注意身体！',
+        '凌晨打卡，太自律了！',
+        '天还没亮就来啦，棒！',
+      ],
+      morning: [
+        '早安！别忘了打卡～',
+        '新的一天，新的flag！',
+        '清晨的第一件事：打卡！',
+        '一天之计在于晨，快来打卡！',
+      ],
+      afternoon: [
+        '午安！现在记个打卡吧～',
+        '下午也要元气满满！',
+        '学习/工作累了，打个卡休息下！',
+        '午后阳光正好，别忘打卡！',
+      ],
+      evening: [
+        '晚上好，临睡前打个卡吧～',
+        '夜深了，打卡后早点休息！',
+        '一天结束前再坚持一下！',
+        '夜晚的flag也很重要！',
+      ],
+      night: [
+        '深夜了，早点休息，明天继续～',
+        '夜深人静，别忘打卡！',
+        '自律的人连深夜都不放过！',
+        '明天见，晚安！',
+      ],
+    },
+  };
+  // 计算时间段
+  const hour = new Date().getHours();
+  let timeKey = 'morning';
+  if (hour < 6) timeKey = 'early';
+  else if (hour < 12) timeKey = 'morning';
+  else if (hour < 18) timeKey = 'afternoon';
+  else if (hour < 22) timeKey = 'evening';
+  else timeKey = 'night';
+  const timeMessages = birdMessagePool.time[timeKey as keyof typeof birdMessagePool.time];
+  // 当前消息
+  const messages = isPunchedToday
+    ? [...timeMessages, ...birdMessagePool.punched]
+    : [...timeMessages, ...birdMessagePool.unpunched];
   /** 未完成flag列表，按优先级升序，且过滤只显示今日有效的 flag */
   const incompleteTasks = useMemo(() =>
     tasks
@@ -743,7 +836,7 @@ export default function FlagPage() {
 
   // ========== 渲染 ==========
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
       {alertVisible && (
         <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[9999] w-11/12 max-w-md">
           <Alert variant="destructive" className={alertHiding ? 'alert-hide' : ''}>
@@ -859,17 +952,19 @@ export default function FlagPage() {
         </section>
 
         {/* 打卡与计时模块 */}
-        <section>
-          <div className="grid grid-cols-2 gap-4">
+        <section className="relative">
+          <div className="relative grid grid-cols-2 gap-4">
+            <BirdMascot position="flag" messages={messages} />
           {/* 打卡模块 */}
           <Card 
-            className={`p-3 flex flex-col justify-between gap-2 min-h-[120px] transition-all rounded-xl border-slate-200 shadow-sm ${
+            className={`relative z-20 p-3 flex flex-col justify-between gap-2 min-h-[120px] transition-all rounded-xl border-slate-200 shadow-sm ${
               isPunchedToday 
                 ? 'bg-gradient-to-br from-green-50 to-emerald-50 cursor-default' 
                 : 'bg-gradient-to-br from-blue-50 to-cyan-50 cursor-pointer hover:shadow-md active:scale-[0.98]'
             }`}
             onClick={isPunchedToday ? undefined : togglePunchToday}
           >
+            {/* 鸟与对话气泡 已移至卡片容器之外，作为同级绝对元素用于被卡片部分遮挡 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isPunchedToday ? (

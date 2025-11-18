@@ -126,6 +126,7 @@ export interface ContactUser {
   totalDays?: number;
   completedFlags?: number;
   totalPoints?: number;
+  createdAt?: string;  // 帖子创建时间
 }
 
 // 评论类型（联系页面使用）

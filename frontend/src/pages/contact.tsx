@@ -1,13 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, MessageCircle, Heart, MessageSquare, Send, Search as SearchIcon, Plus, Inbox } from 'lucide-react';
+import { MessageCircle, SearchIcon, Heart, MessageSquare, Send, Trophy, Inbox, Plus, Trash2 } from 'lucide-react';
 import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea, Tabs, TabsList, TabsTrigger, TabsContent } from "../components";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
 import contactService, { type SearchUserResult } from '../services/contact.service';
 import type { Conversation } from '../services/chat.service';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
-import { adaptPostToUser } from '../lib/helpers/helpers';
+import { adaptPostToUser, formatTimeAgo } from '../lib/helpers/helpers';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
+import { BirdMascot } from '../components/feature';
 
 /**
  * 联系页面(翰林院论)
@@ -41,6 +53,63 @@ export default function ContactPage() {
     return commentsUnread || privateUnread;
   });
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // 鸟消息 - 针对contact页面的社交功能
+  const messages = useMemo(() => {
+    const hour = new Date().getHours();
+    let timeKey = 'morning';
+    if (hour < 6) timeKey = 'early';
+    else if (hour < 12) timeKey = 'morning';
+    else if (hour < 18) timeKey = 'afternoon';
+    else if (hour < 22) timeKey = 'evening';
+    else timeKey = 'night';
+    
+    const timeMessages = [
+      ...(timeKey === 'early' ? [
+        '翰林院这么早就有人在交流了！',
+        '清晨的翰林院，智慧的火花在闪烁~',
+        '早起的翰林们，交流学习心得！',
+        '早起的鸟儿，翰林院最活跃！',
+      ] : []),
+      ...(timeKey === 'morning' ? [
+        '上午好，翰林们！',
+        '分享你的学习感悟吧！',
+        '翰林院是交流的好地方！',
+        '看看大家的精彩帖子！',
+      ] : []),
+      ...(timeKey === 'afternoon' ? [
+        '下午茶时间，聊聊学习吧！',
+        '翰林院等你来交流！',
+        '分享你的进步和心得！',
+        '翰林院，学习交流的乐园！',
+      ] : []),
+      ...(timeKey === 'evening' ? [
+        '晚上好，翰林们！',
+        '晚上的翰林院最热闹！',
+        '交流学习经验的好时机！',
+        '看看大家的精彩分享！',
+      ] : []),
+      ...(timeKey === 'night' ? [
+        '夜深了，翰林院还在活跃~',
+        '别熬夜，多交流少熬夜！',
+        '翰林院，永不眠的学习社区！',
+        '休息吧，明天继续交流！',
+      ] : []),
+    ];
+    
+    const generalMessages = [
+      '翰林院欢迎你！',
+      '分享你的学习心得吧！',
+      '翰林院是交流的好地方~',
+      '多点赞，多评论，多交流！',
+      '翰林院，学习者的家园！',
+      '相信交流，更相信进步！',
+      '翰林院见证你的每一次分享！',
+      '交流让学习更有趣！',
+    ];
+    
+    return [...timeMessages, ...generalMessages];
+  }, []);
 
   // ========== 事件处理器 ==========
   /**
@@ -340,6 +409,25 @@ export default function ContactPage() {
   };
 
   /**
+   * 删除帖子
+   */
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await contactService.deletePost(postId);
+      // 从本地状态中移除该帖子
+      setDisplayedPosts(displayedPosts.filter(post => post.id !== postId));
+      
+      // 通知其他页面（如flag页面）更新状态
+      // 使用localStorage触发跨页面通信
+      const event = new CustomEvent('postDeleted', { detail: { postId } });
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.error('删除帖子失败:', error);
+      alert('删除失败，请重试');
+    }
+  };
+
+  /**
    * 发布新帖子
    */
   const handleCreatePost = async () => {
@@ -369,18 +457,20 @@ export default function ContactPage() {
 
   // ========== 渲染 ==========
   return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col relative">
       <div className="pb-20">
         {/* 页面标题 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
           <div className="px-4 py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-blue-100">
-                <MessageCircle className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">翰林</h1>
-                <p className="text-sm text-slate-600">分享学习心得，交流生活感悟</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-blue-100">
+                  <MessageCircle className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900">翰林</h1>
+                  <p className="text-sm text-slate-600">分享学习心得，交流生活感悟</p>
+                </div>
               </div>
             </div>
           </div>
@@ -455,6 +545,9 @@ export default function ContactPage() {
           </div>
         </div>
 
+        {/* 鸟装饰与气泡 - 挪到帖子 section 之前，和帖子同级，避免被高 z-index fixed 元素影响 */}
+        <BirdMascot position="contact" messages={messages} />
+
         {/* 动态列表标题 */}
         <div className="px-4 py-2">
           <h2 className="text-lg font-semibold text-slate-800">翰林院论</h2>
@@ -477,7 +570,7 @@ export default function ContactPage() {
                   </Card>
                 ) : (
                   displayedPosts.map((user) => (
-                    <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
+                    <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden" style={{ position: 'relative', zIndex: 10 }}>
                       {/* 用户信息行 */}
                       <div className="flex items-center gap-3 mb-3">
                         <Popover>
@@ -543,12 +636,42 @@ export default function ContactPage() {
                               </span>
                             )}
                           </div>
-                          {user.comments.length > 0 && (
-                            <span className="text-xs text-slate-500 mt-1 block">
-                              最后回复: {user.comments[user.comments.length - 1].time}
-                            </span>
-                          )}
+                          <span className="text-xs text-slate-500 mt-1 block">
+                            发布时间: {formatTimeAgo(user.createdAt || '')}
+                          </span>
                         </div>
+
+                        {/* 删除按钮 - 只对自己的帖子显示 */}
+                        {String(user.userId) === currentUserId && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>确认删除</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  确定要删除这条帖子吗？此操作无法撤销。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeletePost(user.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
 
                       {/* 帖子内容 */}
@@ -573,13 +696,13 @@ export default function ContactPage() {
                                   : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
                               }`}
                             >
-                      <Heart className={`h-3.5 w-3.5 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
+                      <Heart className={`h-3.5 w-3.5 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-red-300'}`} />
                               <span className="font-bold">{user.likes}</span>
                             </ToggleGroupItem>
                           </ToggleGroup>
 
                           <button
-                            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-8 px-3 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
+                            className="flex items-center gap-2 text-blue-300 hover:text-blue-600 transition-all duration-200 h-8 px-3 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
                             onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
                           >
                             <MessageSquare className={`h-3.5 w-3.5 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />
@@ -664,24 +787,27 @@ export default function ContactPage() {
                           <h2 className="text-lg font-bold text-slate-900 truncate">{searchUser.name}</h2>
                           <p className="text-sm text-slate-600 truncate">{searchUser.email}</p>
                         </div>
-                        {(!currentUserId || currentUserId === '' || String(searchUser.id) !== currentUserId) && (
-                          <Button
-                            size="sm"
-                            className="rounded-full bg-blue-600 hover:bg-blue-700 px-4 flex-shrink-0 ml-auto"
-                            onClick={() => navigate('/send', {
-                              state: {
-                                user: {
-                                  id: String(searchUser.id),
-                                  name: searchUser.name,
-                                  avatar: searchUser.avatar
+                        {(() => {
+                          const isMe = String(searchUser.id) === String(currentUserId);
+                          return !isMe && (
+                            <Button
+                              size="sm"
+                              className="rounded-full bg-blue-600 hover:bg-blue-700 px-4 flex-shrink-0 ml-auto"
+                              onClick={() => navigate('/send', {
+                                state: {
+                                  user: {
+                                    id: String(searchUser.id),
+                                    name: searchUser.name,
+                                    avatar: searchUser.avatar
+                                  }
                                 }
-                              }
-                            })}
-                          >
-                            <Send className="h-3 w-3 mr-2" />
-                            发消息
-                          </Button>
-                        )}
+                              })}
+                            >
+                              <Send className="h-3 w-3 mr-2" />
+                              发消息
+                            </Button>
+                          );
+                        })()}
                       </div>
                     </Card>
                   ))
@@ -731,7 +857,7 @@ export default function ContactPage() {
             </Card>
           ) : (
             displayedPosts.map((user) => (
-            <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden">
+            <Card key={user.id} className="p-4 mx-4 bg-white shadow-sm hover:shadow-lg transition-all duration-300 border-slate-200 rounded-2xl overflow-hidden" style={{ position: 'relative', zIndex: 10 }}>
               {/* 用户信息行 */}
               <div className="flex items-center gap-3 mb-3">
                 <Popover>
@@ -769,24 +895,27 @@ export default function ContactPage() {
                         </div>
                         </div>
                       
-                        {(!currentUserId || currentUserId === '' || String(user.userId) !== currentUserId) && (
-                          <Button 
-                            size="sm"
-                            className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
-                            onClick={() => navigate('/send', { 
-                              state: { 
-                                user: {
-                                  id: user.userId,  // 使用userId而不是id
-                                  name: user.name,
-                                  avatar: user.avatar
-                                }
-                              } 
-                            })}
-                          >
-                            <Send className="h-3 w-3 mr-2" />
-                            发消息
-                          </Button>
-                        )}
+                        {(() => {
+                          const isMe = String(user.userId) === String(currentUserId);
+                          return !isMe && (
+                            <Button 
+                              size="sm"
+                              className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                              onClick={() => navigate('/send', { 
+                                state: { 
+                                  user: {
+                                    id: user.userId,  // 使用userId而不是id
+                                    name: user.name,
+                                    avatar: user.avatar
+                                  }
+                                } 
+                              })}
+                            >
+                              <Send className="h-3 w-3 mr-2" />
+                              发消息
+                            </Button>
+                          );
+                        })()}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -795,12 +924,46 @@ export default function ContactPage() {
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-900 text-base truncate">{user.name}</span>
                   </div>
-                  {user.comments.length > 0 && (
-                    <span className="text-xs text-slate-500 mt-1 block">
-                      最后回复: {user.comments[user.comments.length - 1].time}
-                    </span>
-                  )}
+                  <span className="text-xs text-slate-500 mt-1 block">
+                    发布时间: {formatTimeAgo(user.createdAt || '')}
+                  </span>
                 </div>
+
+                {/* 删除按钮 - 只对自己的帖子显示 */}
+                {String(user.userId) === currentUserId && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="w-[90vw] max-w-[400px] mx-auto rounded-2xl border-0 shadow-2xl bg-white">
+                      <AlertDialogHeader className="space-y-3 pb-4">
+                        <AlertDialogTitle className="text-lg font-bold text-slate-900 text-center">
+                          确认删除
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm text-slate-600 text-center leading-relaxed px-2">
+                          确定要删除这条帖子吗？此操作无法撤销。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+                        <AlertDialogCancel className="flex-1 h-11 rounded-xl border-slate-200 text-slate-700 font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                          取消
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeletePost(user.id)}
+                          className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-sm hover:shadow-md"
+                        >
+                          删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
 
               {/* 帖子内容 */}
@@ -816,22 +979,22 @@ export default function ContactPage() {
                             size="sm"
                             onValueChange={(value) => handleLike(user.id, value)}
                           >
-                            <ToggleGroupItem 
-                              value="liked" 
-                              aria-label="点赞" 
+                            <ToggleGroupItem
+                              value="liked"
+                              aria-label="点赞"
                               className={`h-8 px-3 gap-2 rounded-full transition-all duration-200 font-semibold data-[state=on]:bg-red-100 data-[state=on]:text-red-600 data-[state=on]:border-red-300 ${
-                                likedPosts.has(user.id) 
-                                  ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md' 
-                                  : 'text-slate-600 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                                likedPosts.has(user.id)
+                                  ? 'text-red-600 bg-red-100 border-red-300 shadow-sm hover:shadow-md'
+                                  : 'text-red-300 bg-white border-slate-200 shadow-sm hover:shadow-md hover:text-red-600 hover:bg-red-50 hover:border-red-200'
                               }`}
                             >
-                      <Heart className={`h-3.5 w-3.5 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-slate-600'}`} />
+                      <Heart className={`h-3.5 w-3.5 transition-all duration-200 ${likedPosts.has(user.id) ? 'text-red-600 fill-red-600 scale-110' : 'text-red-300'}`} />
                               <span className="font-bold">{user.likes}</span>
                             </ToggleGroupItem>
                           </ToggleGroup>
                           
                           <button 
-                            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-all duration-200 h-8 px-3 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
+                            className="flex items-center gap-2 text-blue-300 hover:text-blue-600 transition-all duration-200 h-8 px-3 rounded-full hover:bg-blue-50 border border-transparent hover:border-blue-200 font-semibold shadow-sm hover:shadow-md"
                             onClick={() => setShowComments({ ...showComments, [user.id]: !showComments[user.id] })}
                           >
                             <MessageSquare className={`h-3.5 w-3.5 transition-all duration-200 ${showComments[user.id] ? 'scale-110' : ''}`} />

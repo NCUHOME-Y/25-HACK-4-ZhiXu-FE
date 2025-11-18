@@ -141,6 +141,18 @@
     100% { opacity: 1; }
   }
 
+  /* 浮动微动画 - 供页面装饰性插画使用 */
+  @keyframes floatY {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* 可复用的浮动动画类 */
+  .animate-float {
+    animation: floatY 6s var(--bounce-easing) infinite;
+  }
+
   /* ===========================================
      CSS变量定义
      =========================================== */

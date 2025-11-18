@@ -39,12 +39,30 @@ export async function togglePunch(date: string): Promise<boolean> {
 export async function fetchTasks(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
+  
+  console.log('📥 从后端获取到的原始 flags 数据（前5个）:', response.flags?.slice(0, 5));
+  
   // 映射后端字段到前端字段
-  const flags = (response.flags || []).map(flag => ({
-    ...flag,
-    startDate: (flag as any).start_time || flag.startDate,
-    endDate: (flag as any).end_time || flag.endDate
-  }));
+  const flags = (response.flags || []).map(flag => {
+    const mapped = {
+      ...flag,
+      startDate: (flag as any).start_time || flag.startDate,
+      endDate: (flag as any).end_time || flag.endDate,
+      isPublic: (flag as any).is_public ?? flag.isPublic ?? false  // 确保从后端正确读取 is_public
+    };
+    
+    // 如果有 isPublic 为 true 的，打印出来
+    if (mapped.isPublic) {
+      console.log('✅ 发现公开的 flag:', {
+        id: mapped.id,
+        title: mapped.title,
+        isPublic: mapped.isPublic,
+        raw_is_public: (flag as any).is_public
+      });
+    }
+    
+    return mapped;
+  });
   return flags;
 }
 
@@ -142,17 +160,29 @@ export async function updateTask(id: string, taskData: {
   endDate?: string;
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.put('/api/updateFlag', { 
+  
+  console.log('📤 更新Flag请求:', {
     id: parseInt(id),
     title: taskData.title,
-    detail: taskData.detail,
-    label: taskData.label,
-    priority: taskData.priority,
-    total: taskData.total,
-    is_public: taskData.isPublic,
-    start_date: taskData.startDate,
-    end_date: taskData.endDate
+    is_public: taskData.isPublic
   });
+  
+  const updatePayload = { 
+    id: parseInt(id),
+    title: taskData.title,
+    detail: taskData.detail || '',
+    label: taskData.label || 2,
+    priority: taskData.priority || 3,
+    total: taskData.total || 1,
+    is_public: taskData.isPublic,
+    start_date: taskData.startDate || '',
+    end_date: taskData.endDate || ''
+  };
+  
+  console.log('📤 完整更新数据:', updatePayload);
+  await api.put('/api/updateFlag', updatePayload);
+  
+  console.log('✅ 更新Flag成功，isPublic:', taskData.isPublic);
   return true;
 }
 

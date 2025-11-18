@@ -203,7 +203,8 @@ export const adaptPostToUser = (post: {
   })),
   totalDays: 0,
   completedFlags: 0,
-  totalPoints: 0
+  totalPoints: 0,
+  createdAt: post.createdAt || post.created_at || new Date().toISOString()
 });
 
 // 聊天页面自动滚动到底部

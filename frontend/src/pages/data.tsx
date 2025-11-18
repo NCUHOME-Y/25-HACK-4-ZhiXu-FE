@@ -16,6 +16,7 @@ import { getStudyTimeTrend } from '../services/data.service';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
 import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
+import { BirdMascot } from '../components/feature';
 
 /**
  * 数据统计页面
@@ -33,6 +34,63 @@ export default function DataPage() {
   const [monthLearnTime, setMonthLearnTime] = useState(0);
   const [studyData, setStudyData] = useState<StudyTimeTrend[]>([]); // 学习趋势数据
   
+  // 鸟消息
+  const messages = useMemo(() => {
+    const hour = new Date().getHours();
+    let timeKey = 'morning';
+    if (hour < 6) timeKey = 'early';
+    else if (hour < 12) timeKey = 'morning';
+    else if (hour < 18) timeKey = 'afternoon';
+    else if (hour < 22) timeKey = 'evening';
+    else timeKey = 'night';
+    
+    const timeMessages = [
+      ...(timeKey === 'early' ? [
+        '清晨看璇历，开启高效一天！',
+        '璇历统计显示，早起学习效果更好~',
+        '晨间数据分析，头脑清醒！',
+        '早起的鸟儿，璇历更新得最早！',
+      ] : []),
+      ...(timeKey === 'morning' ? [
+        '上午数据分析黄金时段！',
+        '看看你的学习曲线在上涨吗？',
+        '连续打卡数据，让人开心！',
+        '积分系统在默默记录你的努力！',
+      ] : []),
+      ...(timeKey === 'afternoon' ? [
+        '下午看看Flag完成情况吧！',
+        '数据告诉你，进步看得见！',
+        '坚持的痕迹，都在璇历里！',
+        '学习时长稳步增长，真棒！',
+      ] : []),
+      ...(timeKey === 'evening' ? [
+        '晚上总结璇历，明天更精彩~',
+        '数据证明，你一直在进步！',
+        '看看今日积分，收获满满！',
+        '学习记录是最好的见证！',
+      ] : []),
+      ...(timeKey === 'night' ? [
+        '夜深了，璇历还在为你工作~',
+        '明天的数据会更好看！',
+        '晚安，璇历会记录你的每一次努力！',
+        '休息吧，明天继续创造好数据！',
+      ] : []),
+    ];
+    
+    const generalMessages = [
+      '数据是最好的老师！',
+      '你的学习轨迹清晰可见！',
+      '数据分析，让进步看得见！',
+      '每一次Flag完成，都是数据上的亮点！',
+      '学习数据在为你加油打气~',
+      '相信数据，更相信你自己！',
+      '积分系统见证你的每一次坚持！',
+      '数据统计，让学习更有成就感！',
+    ];
+    
+    return [...timeMessages, ...generalMessages];
+  }, []);
+
   // 计算连续打卡天数
   const streak = useMemo(() => {
     if (punchedDates.length === 0) return 0;
@@ -260,7 +318,7 @@ export default function DataPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
       <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
@@ -279,10 +337,12 @@ export default function DataPage() {
 
         {/* 本月概览 */}
         <section className="px-4">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-500" />
-            本月概览
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-500" />
+              本月概览
+            </h2>
+          </div>
           <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50 hover:shadow-md transition-all duration-200">
@@ -313,11 +373,15 @@ export default function DataPage() {
 
         {/* 数据统计模块 */}
         <section className="px-4">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-500" />
-            今日数据
-          </h2>
-          <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              今日数据
+            </h2>
+            {/* 鸟装饰与气泡 - 放在今日数据标题旁边 */}
+            <BirdMascot position="data" messages={messages} />
+          </div>
+          <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 z-1">
             <div className="grid grid-cols-3 gap-2">
               {/* 连续打卡天数 */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">

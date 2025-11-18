@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Target, Loader2, User, BookOpen, Flag } from 'lucide-react';
 import { CalendarDays, Timer } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
 import { generateStudyPlan, type StudyPlan, type Difficulty } from '../services/ai.service';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion';
 import { FLAG_LABELS } from '../lib/constants/constants';
+import { BirdMascot } from '../components/feature';
 
 // 本地存储键
 const STORAGE_KEYS = {
@@ -45,6 +46,61 @@ export default function AIPage() {
   
   // 已添加的flag追踪（用于防止重复添加）
   const [addedFlags, setAddedFlags] = useState<Set<string>>(new Set());
+
+  // 鸟消息
+  const messages = useMemo(() => {
+    const hour = new Date().getHours();
+    let timeKey = 'morning';
+    if (hour < 6) timeKey = 'early';
+    else if (hour < 12) timeKey = 'morning';
+    else if (hour < 18) timeKey = 'afternoon';
+    else if (hour < 22) timeKey = 'evening';
+    else timeKey = 'night';
+    
+    const timeMessages = [
+      ...(timeKey === 'early' ? [
+        '早起的鸟儿有虫吃！',
+        '新的一天，新的开始！',
+        '清晨最适合学习啦~',
+        '太傅：晨读效果加倍哦！',
+      ] : []),
+      ...(timeKey === 'morning' ? [
+        '上午头脑最清醒，冲刺吧！',
+        '太傅：别忘了喝水休息~',
+        '坚持就是胜利！',
+        '知识的积累从现在开始！',
+      ] : []),
+      ...(timeKey === 'afternoon' ? [
+        '下午也要加油哦！',
+        '困了就活动一下身体~',
+        '太傅：保持专注，效率翻倍！',
+        '再坚持一会儿，胜利就在前方！',
+      ] : []),
+      ...(timeKey === 'evening' ? [
+        '晚上适合复盘总结~',
+        '太傅：别熬夜，注意休息！',
+        '一天的努力值得表扬！',
+        '夜深了，早点休息哦~',
+      ] : []),
+      ...(timeKey === 'night' ? [
+        '夜深人静，适合思考人生~',
+        '太傅：别忘了明天的计划！',
+        '晚安，明天继续加油！',
+        '休息好，明天更有精神！',
+      ] : []),
+    ];
+    
+    const generalMessages = [
+      '太傅陪你一起进步！',
+      '遇到困难别怕，太傅在！',
+      '目标明确，行动自会有力量！',
+      '每一步都算数，加油！',
+      '学习路上不孤单~',
+      '太傅：相信自己！',
+    ];
+    
+    return [...timeMessages, ...generalMessages];
+  }, []);
 
   // 加载历史记录
   useEffect(() => {
@@ -252,9 +308,8 @@ export default function AIPage() {
     }
   };
 
-  // ========== 渲染 ==========
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
       <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
@@ -272,8 +327,8 @@ export default function AIPage() {
         </header>
 
         {/* 输入区域 */}
-        <section className="px-4">
-          <Card className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+        <section className="px-4 relative">
+          <Card className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 relative">
             {/* 头部渐变区域 */}
             <div className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-b border-blue-100/50">
               <div className="space-y-6">
@@ -395,11 +450,15 @@ export default function AIPage() {
         )}
 
         {/* 已生成学习计划 */}
-        <section className="px-4">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-blue-500" />
-            已生成学习计划
-          </h2>
+        <section className="px-4 relative">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Target className="h-5 w-5 text-blue-500 z-10" />
+              已生成学习计划
+                      {/* 鸟装饰与气泡 - 放在标题旁边 */}
+        <BirdMascot position="ai" messages={messages} />
+            </h2>
+          </div>
           {generatedPlans.length === 0 ? (
             <Card className="p-8 text-center rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
               <div className="flex flex-col items-center gap-3">
