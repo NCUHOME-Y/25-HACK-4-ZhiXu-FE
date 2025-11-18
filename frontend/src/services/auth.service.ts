@@ -22,7 +22,7 @@ class AuthService {
   // P1修复：调用后端获取用户信息
   async getCurrentUser(): Promise<User | null> {
     if (!this.isAuthenticated()) {
-      throw new Error('No valid token');
+      return null;
     }
     try {
       const response = await api.get<{ user: { user_id: number; name: string; email: string } }>('/api/getUser');
@@ -31,11 +31,13 @@ class AuthService {
         name: response.user.name,
         phone: response.user.email,
       };
-    } catch (error) {
-      console.error('获取用户信息失败:', error);
-      // 清除无效token
-      localStorage.removeItem('auth_token');
-      throw error;
+    } catch (error: unknown) {
+      // 401 错误会被 apiClient 拦截器处理,这里只处理其他错误
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status !== 401) {
+        console.error('获取用户信息失败:', error);
+      }
+      return null;
     }
   }
 

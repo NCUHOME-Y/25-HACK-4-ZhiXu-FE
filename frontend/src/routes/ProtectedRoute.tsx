@@ -35,10 +35,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           setShouldRedirect(true);
         }
       } catch (error) {
-        console.error('[ProtectedRoute] 验证token失败:', error);
+        // 网络错误或其他异常
+        console.error('[ProtectedRoute] 验证失败:', error);
         setIsAuthenticated(false);
         setShouldRedirect(true);
-        localStorage.removeItem('auth_token');
       } finally {
         setIsChecking(false);
       }

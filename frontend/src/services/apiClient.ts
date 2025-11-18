@@ -49,14 +49,19 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 401错误：token无效或过期，立即清除并跳转
+    // 401错误:token无效或过期,立即清除并跳转
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
-      // 如果不在认证页面，清除token并跳转
-      if (currentPath !== '/auth' && currentPath !== '/') {
-        console.log('[apiClient] 401错误，清除token并跳转到登录页');
+      const isAuthPage = currentPath === '/auth' || currentPath === '/' || currentPath === '/start';
+      
+      // 如果不在认证页面,清除token并跳转
+      if (!isAuthPage) {
+        console.log('[apiClient] 401错误,清除token并跳转到登录页');
         localStorage.removeItem('auth_token');
-        window.location.href = '/auth';
+        // 使用 replace 避免历史记录堆积
+        if (typeof window !== 'undefined') {
+          window.location.replace('/auth');
+        }
         return Promise.reject(error);
       }
     }

@@ -3,6 +3,13 @@
 
 import type { Task, StudyRecord } from "../lib/types/types";
 
+// 后端返回的 flag 扩展字段
+export interface BackendFlag extends Task {
+  start_time?: string;
+  end_time?: string;
+  is_public?: boolean;
+}
+
 export interface CreateTaskPayload {
   title: string;
   detail?: string;
@@ -46,9 +53,9 @@ export async function fetchTasks(): Promise<Task[]> {
   const flags = (response.flags || []).map(flag => {
     const mapped = {
       ...flag,
-      startDate: (flag as any).start_time || flag.startDate,
-      endDate: (flag as any).end_time || flag.endDate,
-      isPublic: (flag as any).is_public ?? flag.isPublic ?? false  // 确保从后端正确读取 is_public
+      startDate: (flag as BackendFlag).start_time || flag.startDate,
+      endDate: (flag as BackendFlag).end_time || flag.endDate,
+      isPublic: (flag as BackendFlag).is_public ?? flag.isPublic ?? false  // 确保从后端正确读取 is_public
     };
     
     // 如果有 isPublic 为 true 的，打印出来
@@ -57,7 +64,7 @@ export async function fetchTasks(): Promise<Task[]> {
         id: mapped.id,
         title: mapped.title,
         isPublic: mapped.isPublic,
-        raw_is_public: (flag as any).is_public
+        raw_is_public: (flag as BackendFlag).is_public
       });
     }
     
@@ -214,11 +221,11 @@ export async function tickTask(id: string): Promise<boolean> {
     await api.put('/api/doneFlag', { id: parseInt(id) });
     console.log('✅ Flag打卡成功');
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Flag打卡失败:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
+      status: (error as { response?: { status?: number; data?: unknown } })?.response?.status,
+      data: (error as { response?: { data?: unknown } })?.response?.data,
+      message: error instanceof Error ? error.message : String(error),
       id
     });
     throw error;
@@ -250,7 +257,7 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
   // 🔧 新增：刷新用户数据
   try {
     const { useTaskStore } = await import('../lib/stores/stores');
-    const [userData, todayData] = await Promise.all([
+    const [, todayData] = await Promise.all([
       api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
       api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
     ]);
@@ -274,50 +281,48 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
  * P1修复：调用后端添加积分API
  */
 export async function addUserPoints(taskId: string, points: number): Promise<{ success: boolean; totalPoints: number }> {
+  const { api } = await import('./apiClient');
+  // 在外部声明以便 catch 中也能访问（用于日志）
+  const pointsValue = typeof points === 'number' ? points : parseInt(String(points));
+  if (isNaN(pointsValue) || pointsValue <= 0) {
+    throw new Error(`无效的积分值: ${points}`);
+  }
+
   try {
-    const { api } = await import('./apiClient');
-    
-    // 问题2修复：确保points为数字类型
-    const pointsValue = typeof points === 'number' ? points : parseInt(String(points));
-    if (isNaN(pointsValue) || pointsValue <= 0) {
-      throw new Error(`无效的积分值: ${points}`);
-    }
-    
     console.log('💰 请求添加积分:', { points: pointsValue, type: typeof pointsValue });
-    
-    // 问题1&3修复：使用正确的字段名(小写)和JSON结构
+
     const response = await api.put<{ message: string; count: number }>('/api/addPoints', {
       points: pointsValue
     });
-    
+
     console.log('✅ 添加积分成功:', { message: response.message, newCount: response.count });
     return { success: true, totalPoints: response.count || 0 };
-  } catch (error: any) {
-    // 问题4&9修复：详细的错误日志和提示
+  } catch (error: unknown) {
+    // 详细的错误日志和提示
     const errorDetails = {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
+      status: (error as { response?: { status?: number; statusText?: string; data?: unknown } })?.response?.status,
+      statusText: (error as { response?: { statusText?: string } })?.response?.statusText,
+      data: (error as { response?: { data?: unknown } })?.response?.data,
+      message: error instanceof Error ? error.message : String(error),
       taskId,
       points: pointsValue,
       url: '/api/addPoints',
       method: 'PUT'
     };
-    
+
     console.error('❌ 添加积分失败 - 详细信息:', errorDetails);
-    
-    // 根据错误类型给出具体提示
-    if (error.response?.status === 400) {
+
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    if (status === 400) {
       throw new Error('参数错误：请检查积分值是否有效');
-    } else if (error.response?.status === 401) {
+    } else if (status === 401) {
       throw new Error('未登录或登录已过期，请重新登录');
-    } else if (error.response?.status === 404) {
+    } else if (status === 404) {
       throw new Error('接口不存在：/api/addPoints');
-    } else if (error.response?.status === 500) {
+    } else if (status === 500) {
       throw new Error('服务器错误：积分添加失败');
     }
-    
+
     throw error;
   }
 }
@@ -345,9 +350,9 @@ export async function toggleFlagVisibility(flagId: string, _isHidden: boolean): 
 }
 
 // P1修复：获取所有可见的Flag（社交页面显示）
-export async function getVisibleFlags(): Promise<any[]> {
+export async function getVisibleFlags(): Promise<BackendFlag[]> {
   const { api } = await import('./apiClient');
-  const response = await api.get<{ flags: any[] }>('/api/getflag');
+  const response = await api.get<{ flags: BackendFlag[] }>('/api/getflag');
   return response.flags || [];
 }
 
@@ -386,12 +391,12 @@ export async function deleteFlagComment(commentId: string): Promise<boolean> {
 // 新增：获取有日期的flag（用于日历高亮）
 export async function fetchFlagsWithDates(): Promise<Task[]> {
   const { api } = await import('./apiClient');
-  const response = await api.get<{ flags: Task[] }>('/api/flags/with-dates');
+  const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/with-dates');
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => ({
     ...flag,
-    startDate: (flag as any).start_time || flag.startDate,
-    endDate: (flag as any).end_time || flag.endDate
+    startDate: (flag as BackendFlag).start_time || flag.startDate,
+    endDate: (flag as BackendFlag).end_time || flag.endDate
   }));
   return flags;
 }
@@ -399,12 +404,12 @@ export async function fetchFlagsWithDates(): Promise<Task[]> {
 // 新增：获取预设flag（未到起始日期）
 export async function fetchPresetFlags(): Promise<Task[]> {
   const { api } = await import('./apiClient');
-  const response = await api.get<{ flags: Task[] }>('/api/flags/preset');
+  const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/preset');
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => ({
     ...flag,
-    startDate: (flag as any).start_time || flag.startDate,
-    endDate: (flag as any).end_time || flag.endDate
+    startDate: (flag as BackendFlag).start_time || flag.startDate,
+    endDate: (flag as BackendFlag).end_time || flag.endDate
   }));
   return flags;
 }
@@ -412,12 +417,12 @@ export async function fetchPresetFlags(): Promise<Task[]> {
 // 新增：获取过期flag
 export async function fetchExpiredFlags(): Promise<Task[]> {
   const { api } = await import('./apiClient');
-  const response = await api.get<{ flags: Task[] }>('/api/flags/expired');
+  const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/expired');
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => ({
     ...flag,
-    startDate: (flag as any).start_time || flag.startDate,
-    endDate: (flag as any).end_time || flag.endDate
+    startDate: (flag as BackendFlag).start_time || flag.startDate,
+    endDate: (flag as BackendFlag).end_time || flag.endDate
   }));
   return flags;
 }
