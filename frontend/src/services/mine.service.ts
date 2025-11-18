@@ -25,13 +25,17 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
       console.log('[updateUserProfile] 用户名更新成功');
     } catch (error) {
       console.error('[updateUserProfile] 更新用户名失败:', error);
-      // 如果是用户名重复错误,抛出具体错误信息
+      // 正确处理Axios错误，提取后端返回的错误信息
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
-        const errorMsg = axiosError.response?.data?.error || axiosError.response?.data?.message || '更新用户名失败';
-        throw new Error(errorMsg);
+        const errorMsg = axiosError.response?.data?.error || axiosError.response?.data?.message;
+        if (errorMsg) {
+          console.error('[updateUserProfile] 后端错误信息:', errorMsg);
+          throw new Error(errorMsg);
+        }
       }
-      throw error;
+      // 如果无法提取具体错误信息，抛出通用错误
+      throw new Error('更新用户名失败，请稍后重试');
     }
   }
   

@@ -71,6 +71,9 @@ export default function MinePage() {
   // 退出登录状态
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
+  // 保存状态 - 防止重复提交
+  const [isSaving, setIsSaving] = useState(false);
+
   // 关于我们状态
   const [aboutPopoverOpen, setAboutPopoverOpen] = useState(false);
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
@@ -367,7 +370,15 @@ export default function MinePage() {
    * 保存个人资料
    */ 
   const handleSaveProfile = async () => {
-    // 保存到后端
+    // 防止重复提交
+    if (isSaving) {
+      console.log('[handleSaveProfile] 正在保存中，忽略重复点击');
+      return;
+    }
+
+    setIsSaving(true);
+    console.log('[handleSaveProfile] 开始保存个人资料');
+
     try {
       await updateUserProfile({ 
         nickname, 
@@ -378,6 +389,7 @@ export default function MinePage() {
       setProfile({ nickname, bio, avatar });
       setEditDialogOpen(false);
       toast.success('个人信息更新成功');
+      console.log('[handleSaveProfile] 个人资料保存成功');
     } catch (error) {
       console.error('保存个人资料失败:', error);
       // 显示后端返回的具体错误消息
@@ -386,6 +398,8 @@ export default function MinePage() {
       } else {
         toast.error('保存个人资料失败,请重试');
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -932,10 +946,11 @@ export default function MinePage() {
               取消
             </Button>
             <Button 
-              className="rounded-2xl px-6 py-2 bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg" 
+              className="rounded-2xl px-6 py-2 bg-blue-600 hover:bg-blue-700 transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" 
               onClick={handleSaveProfile}
+              disabled={isSaving}
             >
-              保存
+              {isSaving ? '保存中...' : '保存'}
             </Button>
           </DialogFooter>
         </DialogContent>
