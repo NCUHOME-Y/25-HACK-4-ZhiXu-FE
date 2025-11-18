@@ -35,9 +35,14 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
         const responseData = axiosError.response?.data;
         
         // 检查是否返回了HTML（前端页面）而不是JSON
-        if (typeof responseData === 'string' && responseData.includes('<!doctype html>')) {
+        if (typeof responseData === 'string' && (
+          responseData.toLowerCase().includes('<!doctype html>') || 
+          responseData.includes('<html') ||
+          responseData.includes('<body>')
+        )) {
           console.error('🚨 后端API未正确配置，返回了HTML页面而不是JSON');
-          throw new Error('服务器配置错误，请联系管理员（API返回HTML）');
+          console.error('🔍 HTML响应预览:', responseData.substring(0, 200) + '...');
+          throw new Error('服务器配置错误，请联系管理员（API路由未正确配置）');
         }
         
         console.error('📦 后端响应完整数据:', JSON.stringify(responseData, null, 2));
