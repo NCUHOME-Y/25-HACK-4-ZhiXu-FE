@@ -846,10 +846,10 @@ export default function FlagPage() {
         </div>
       )}
       
-      <div className="flex-1 pb-24 space-y-4 px-4">
+      <div className="flex-1 pb-24 space-y-4">
         {/* 页面标题 */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
-          <div className="px-4 py-4">
+                    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
+                  <div className="py-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-blue-100">
                 <CheckSquare className="h-6 w-6 text-blue-600" />

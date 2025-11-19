@@ -2,8 +2,27 @@
 
 @layer base {
   /* ===========================================
-     全局基础样式设置
+     CSS重置 - 确保页面占满整个窗口
      =========================================== */
+
+  /* 全局重置 */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* HTML和Body重置 */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* 确保根容器占满整个视口 */
+  #root {
+    min-height: 100vh;
+    width: 100%;
+  }
 
   /* 全局样式 - 滚动条和光标设置 */
   * {
