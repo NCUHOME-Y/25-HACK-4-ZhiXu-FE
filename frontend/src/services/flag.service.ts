@@ -53,8 +53,8 @@ export async function fetchTasks(): Promise<Task[]> {
   const flags = (response.flags || []).map(flag => {
     const mapped = {
       ...flag,
-      startDate: (flag as BackendFlag).start_time || flag.startDate,
-      endDate: (flag as BackendFlag).end_time || flag.endDate,
+      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
       isPublic: (flag as BackendFlag).is_public ?? flag.isPublic ?? false  // 确保从后端正确读取 is_public
     };
     
@@ -395,8 +395,8 @@ export async function fetchFlagsWithDates(): Promise<Task[]> {
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => ({
     ...flag,
-    startDate: (flag as BackendFlag).start_time || flag.startDate,
-    endDate: (flag as BackendFlag).end_time || flag.endDate
+    startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+    endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
   }));
   return flags;
 }
@@ -408,8 +408,8 @@ export async function fetchPresetFlags(): Promise<Task[]> {
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => ({
     ...flag,
-    startDate: (flag as BackendFlag).start_time || flag.startDate,
-    endDate: (flag as BackendFlag).end_time || flag.endDate
+    startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+    endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
   }));
   return flags;
 }
@@ -421,8 +421,8 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => ({
     ...flag,
-    startDate: (flag as BackendFlag).start_time || flag.startDate,
-    endDate: (flag as BackendFlag).end_time || flag.endDate
+    startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+    endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
   }));
   return flags;
 }

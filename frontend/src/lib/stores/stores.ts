@@ -35,6 +35,7 @@ interface TaskState {
 
 // 全局计时器ID，存储在模块作用域
 let globalTimerId: number | null = null;
+let autoStopTimeoutId: number | null = null; // 自动停止定时器
 
 const fmt = (d: Date) => {
 	const y = d.getFullYear();
@@ -43,6 +44,78 @@ const fmt = (d: Date) => {
 	return `${y}-${m}-${day}`;
 };
 
+// 学习计时相关localStorage键
+const STUDY_START_TIME_KEY = 'study_start_time';
+const STUDY_DAILY_ELAPSED_KEY = 'study_daily_elapsed';
+
+// 获取下一天凌晨4点的毫秒数
+const getNext4AM = () => {
+	const now = new Date();
+	const next4AM = new Date(now);
+	next4AM.setDate(now.getDate() + 1);
+	next4AM.setHours(4, 0, 0, 0);
+	return next4AM.getTime() - now.getTime();
+};
+
+// 自动停止学习（凌晨4点，不计入时长）
+const autoStopStudy = () => {
+	const startTimeStr = localStorage.getItem(STUDY_START_TIME_KEY);
+	if (startTimeStr) {
+		console.log('🌙 凌晨4点自动停止学习计时（不计入时长）');
+		localStorage.removeItem(STUDY_START_TIME_KEY);
+		localStorage.removeItem(STUDY_DAILY_ELAPSED_KEY);
+		
+		// 清除计时器
+		if (globalTimerId !== null) {
+			window.clearInterval(globalTimerId);
+			globalTimerId = null;
+		}
+		
+		// 设置状态为停止
+		useTaskStore.setState({ studying: false, sessionElapsed: 0 });
+		
+		// 设置下一个自动停止
+		autoStopTimeoutId = window.setTimeout(autoStopStudy, getNext4AM());
+	}
+};
+
+// 初始化自动停止定时器
+const initAutoStop = () => {
+	if (autoStopTimeoutId !== null) {
+		window.clearTimeout(autoStopTimeoutId);
+	}
+	autoStopTimeoutId = window.setTimeout(autoStopStudy, getNext4AM());
+};
+
+// 恢复学习计时（页面刷新后）
+const getInitialStudyState = () => {
+	const startTimeStr = localStorage.getItem(STUDY_START_TIME_KEY);
+	const dailyElapsedStr = localStorage.getItem(STUDY_DAILY_ELAPSED_KEY);
+	
+	if (startTimeStr && dailyElapsedStr) {
+		const startTime = parseInt(startTimeStr);
+		const savedDailyElapsed = parseInt(dailyElapsedStr);
+		const now = Date.now();
+		const elapsedSinceStart = Math.floor((now - startTime) / 1000);
+		
+		console.log('✅ 学习计时状态已恢复');
+		
+		return {
+			studying: true,
+			dailyElapsed: savedDailyElapsed,
+			sessionElapsed: elapsedSinceStart
+		};
+	}
+	return {
+		studying: false,
+		dailyElapsed: 0,
+		sessionElapsed: 0
+	};
+};
+
+// 获取初始状态
+const initialStudyState = getInitialStudyState();
+
 export const useTaskStore = create<TaskState>(
 	(
 		set: (partial: Partial<TaskState> | ((state: TaskState) => Partial<TaskState>)) => void,
@@ -50,9 +123,9 @@ export const useTaskStore = create<TaskState>(
 	) => ({
 	tasks: [],
 	punchedDates: [],
-	dailyElapsed: 0,
-	sessionElapsed: 0,
-	studying: false,
+	dailyElapsed: initialStudyState.dailyElapsed,
+	sessionElapsed: initialStudyState.sessionElapsed,
+	studying: initialStudyState.studying,
 	addTask: (task: Task) => set({ tasks: [task, ...get().tasks] }),
 		updateTask: (id: string, partial: Partial<Task>) => set({ tasks: get().tasks.map((t: Task) => (t.id === id ? { ...t, ...partial } : t)) }),
 	deleteTask: (id: string) => set({ tasks: get().tasks.filter((t: Task) => t.id !== id) }),
@@ -76,6 +149,12 @@ export const useTaskStore = create<TaskState>(
 			window.clearInterval(globalTimerId);
 		}
 		
+		const now = Date.now();
+		
+		// 保存到localStorage
+		localStorage.setItem(STUDY_START_TIME_KEY, now.toString());
+		localStorage.setItem(STUDY_DAILY_ELAPSED_KEY, get().dailyElapsed.toString());
+		
 		// 启动全局计时器
 		globalTimerId = window.setInterval(() => {
 			const state = get();
@@ -88,8 +167,13 @@ export const useTaskStore = create<TaskState>(
 		}, 1000);
 		
 		set({ studying: true, sessionElapsed: 0 });
+		console.log('▶️ 开始学习计时');
 	},
 	stopStudy: async () => {
+		// 清除localStorage
+		localStorage.removeItem(STUDY_START_TIME_KEY);
+		localStorage.removeItem(STUDY_DAILY_ELAPSED_KEY);
+		
 		// 清除全局计时器
 		if (globalTimerId !== null) {
 			window.clearInterval(globalTimerId);
@@ -112,6 +196,8 @@ export const useTaskStore = create<TaskState>(
 				console.error('❌ 保存学习时长失败:', error);
 			}
 		}
+		
+		console.log('⏹️ 停止学习计时，已保存时长:', session);
 	},
 	increaseDailyElapsed: () => set({ 
 		dailyElapsed: get().dailyElapsed + 1,
@@ -119,3 +205,19 @@ export const useTaskStore = create<TaskState>(
 	}),
 	})
 	);
+
+// 恢复计时器（如果需要）
+if (initialStudyState.studying) {
+	globalTimerId = window.setInterval(() => {
+		const state = useTaskStore.getState();
+		if (state.studying) {
+			useTaskStore.setState({ 
+				dailyElapsed: state.dailyElapsed + 1,
+				sessionElapsed: state.sessionElapsed + 1
+			});
+		}
+	}, 1000);
+}
+
+// 初始化自动停止定时器
+initAutoStop();

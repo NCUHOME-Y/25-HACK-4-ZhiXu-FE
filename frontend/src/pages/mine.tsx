@@ -88,8 +88,9 @@ export default function MinePage() {
 
   // 消息提醒状态
   const [notificationEnabled, setNotificationEnabled] = useState(true);
-  const [notificationHour, setNotificationHour] = useState('12');
-  const [notificationMinute, setNotificationMinute] = useState('00');
+  const [tempNotificationHour, setTempNotificationHour] = useState('12');
+  const [tempNotificationMinute, setTempNotificationMinute] = useState('00');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // ========== 计算属性 ========== 
   /** 已完成flag数量 */
@@ -118,6 +119,9 @@ export default function MinePage() {
           name: string;
           email: string;
           head_show: number;
+          is_remind: boolean;
+          time_remind: number;
+          min_remind: number;
         }
       }>('/api/getUser');
       console.log('我的页面-用户数据:', userData);
@@ -132,6 +136,13 @@ export default function MinePage() {
       }));
       setNickname(user.name || '');
       setAvatar(avatarPath);
+      // 设置消息提醒状态
+      setNotificationEnabled(user.is_remind ?? true);
+      const hour = (user.time_remind ?? 12).toString().padStart(2, '0');
+      const minute = (user.min_remind ?? 0).toString().padStart(2, '0');
+      setTempNotificationHour(hour);
+      setTempNotificationMinute(minute);
+      setHasUnsavedChanges(false);
       // 更新store中的学习时长
       useTaskStore.setState({
         dailyElapsed: (user.month_learn_time || 0) * 60 // 分钟转秒
@@ -147,9 +158,27 @@ export default function MinePage() {
       console.error('加载用户统计失败:', error);
     }
   };
+
+  // 加载任务数据
+  const loadTasks = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('未登录，跳过加载任务数据');
+        return;
+      }
+      const { fetchTasks } = await import('../services/flag.service');
+      const tasksData = await fetchTasks();
+      console.log('我的页面-加载到的任务数据:', tasksData);
+      useTaskStore.setState({ tasks: tasksData });
+    } catch (error) {
+      console.error('加载任务数据失败:', error);
+    }
+  };
   
   useEffect(() => {
     loadUserStats();
+    loadTasks();
   }, []);
   
   // 所有徽章配置 - 使用useMemo以避免每次渲染都重新创建
@@ -227,14 +256,13 @@ export default function MinePage() {
       if (!document.hidden) {
         console.log('[Mine] 页面可见，重新加载数据');
         loadUserStats();
-        // 重新加载成就数据
-        loadAchievementsData();
+        loadTasks();
       }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [loadAchievementsData]);
+  }, []);
   
   /** 已获得徽章数 */
   const achievedBadges = badges.filter(b => b.isUnlocked).length;
@@ -456,15 +484,25 @@ export default function MinePage() {
   };
 
   /**
-   * 更新提醒时间
+   * 更新提醒时间（临时状态）
    */
-  const handleUpdateNotificationTime = async (hour: string, minute: string) => {
-    setNotificationHour(hour);
-    setNotificationMinute(minute);
+  const handleUpdateNotificationTime = (hour: string, minute: string) => {
+    setTempNotificationHour(hour);
+    setTempNotificationMinute(minute);
+    setHasUnsavedChanges(true);
+  };
+
+  /**
+   * 保存提醒时间设置
+   */
+  const handleSaveNotificationTime = async () => {
     try {
-      await updateNotificationTime(hour, minute);
+      await updateNotificationTime(tempNotificationHour, tempNotificationMinute);
+      setHasUnsavedChanges(false);
+      toast.success('提醒时间设置已保存');
     } catch (error) {
-      console.error('更新提醒时间失败:', error);
+      console.error('保存提醒时间失败:', error);
+      toast.error('保存失败，请重试');
     }
   };
 
@@ -679,7 +717,7 @@ export default function MinePage() {
                       <div className="space-y-3 pt-2 border-t border-gray-200/50">
                         <Label className="text-sm font-medium">提醒时间</Label>
                         <div className="flex gap-2">
-                          <Select value={notificationHour} onValueChange={(value) => handleUpdateNotificationTime(value, notificationMinute)}>
+                          <Select value={tempNotificationHour} onValueChange={(value) => handleUpdateNotificationTime(value, tempNotificationMinute)}>
                             <SelectTrigger className="w-20">
                               <SelectValue />
                             </SelectTrigger>
@@ -692,7 +730,7 @@ export default function MinePage() {
                             </SelectContent>
                           </Select>
                           <span className="text-muted-foreground self-center">:</span>
-                          <Select value={notificationMinute} onValueChange={(value) => handleUpdateNotificationTime(notificationHour, value)}>
+                          <Select value={tempNotificationMinute} onValueChange={(value) => handleUpdateNotificationTime(tempNotificationHour, value)}>
                             <SelectTrigger className="w-20">
                               <SelectValue />
                             </SelectTrigger>
@@ -708,6 +746,17 @@ export default function MinePage() {
                             </SelectContent>
                           </Select>
                         </div>
+                        {hasUnsavedChanges && (
+                          <div className="flex justify-end pt-2">
+                            <Button 
+                              size="sm" 
+                              onClick={handleSaveNotificationTime}
+                              className="rounded-xl px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                            >
+                              保存设置
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

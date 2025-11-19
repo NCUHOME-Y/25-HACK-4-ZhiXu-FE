@@ -36,7 +36,19 @@ export default function ChatRoomsPage() {
     try {
       setLoading(true);
       const response = await api.get<{ rooms: ChatRoom[] }>('/api/chat/rooms');
-      setRooms(response.rooms || []);
+      // 对聊天室进行排序：默认聊天室优先，然后按创建时间倒序
+      const sortedRooms = (response.rooms || []).sort((a, b) => {
+        const isDefaultA = ['room-1', 'room-2', 'room-3'].includes(a.id);
+        const isDefaultB = ['room-1', 'room-2', 'room-3'].includes(b.id);
+        
+        // 默认聊天室排在前面
+        if (isDefaultA && !isDefaultB) return -1;
+        if (!isDefaultA && isDefaultB) return 1;
+        
+        // 同为默认或非默认聊天室，按创建时间倒序（最新的在前）
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      setRooms(sortedRooms);
       setError(null);
     } catch (err) {
       console.error('加载聊天室列表失败:', err);
