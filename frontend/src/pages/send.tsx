@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
@@ -9,6 +9,37 @@ import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import authService from '../services/auth.service';
 import { useUser } from '../lib/stores/userContext';
 import { API_BASE, makeWsUrl } from '../services/apiClient';
+
+/**
+ * 格式化消息时间显示
+ * @param date 消息日期
+ * @returns 格式化后的时间字符串
+ */
+const formatMessageTime = (date: Date): string => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const timeStr = date.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  if (messageDate.getTime() === today.getTime()) {
+    // 今天的消息：只显示时间
+    return timeStr;
+  } else if (messageDate.getTime() === yesterday.getTime()) {
+    // 昨天的消息：显示"昨天 时间"
+    return `昨天 ${timeStr}`;
+  } else {
+    // 更早的消息：显示"月日 时间"
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}月${day}日 ${timeStr}`;
+  }
+};
 
 /**
  * 私聊发送页面
@@ -22,6 +53,8 @@ interface PrivateMessageApi {
   from_user_id?: string | number;
   from?: string | number;  // 后端实际返回的字段
   to?: string | number;
+  user_avatar?: string;  // 添加用户头像字段
+  user_name?: string;    // 添加用户名字段
 }
 
 export default function SendPage() {
@@ -54,74 +87,71 @@ export default function SendPage() {
   }, [currentUserCtx]);
 
   // 加载历史消息
-  useEffect(() => {
-    const loadHistoryMessages = async () => {
-      if (!currentUserId || !user.id) {
-        console.log('⏭️ 跳过加载历史消息，缺少用户信息:', { currentUserId, targetUserId: user.id });
+  const loadHistoryMessages = useCallback(async () => {
+    if (!currentUserId || !user.id) {
+      console.log('⏭️ 跳过加载历史消息，缺少用户信息:', { currentUserId, targetUserId: user.id });
+      return;
+    }
+    
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        console.error('❌ 没有token，无法加载历史消息');
         return;
       }
       
-      try {
-        const token = authService.getToken();
-        if (!token) {
-          console.error('❌ 没有token，无法加载历史消息');
-          return;
-        }
-        
-        console.log('📡 开始加载历史消息...', { currentUserId, targetUserId: user.id });
-        const response = await fetch(
-          `${API_BASE}/api/private-chat/history?target_user_id=${user.id}&limit=50`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+      console.log('📡 开始加载历史消息...', { currentUserId, targetUserId: user.id });
+      const response = await fetch(
+        `${API_BASE}/api/private-chat/history?target_user_id=${user.id}&limit=50`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        );
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📦 API返回数据:', data);
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('📦 API返回数据:', data);
-          
-          if (data.messages && Array.isArray(data.messages)) {
-              const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => {
-              // 后端返回的字段是 from 和 to，不是 from_user_id
-              const fromUserId = msg.from || msg.from_user_id;
-              const isMine = String(fromUserId) === String(currentUserId);
-              console.log('🔍 消息判断:', {
-                msgFrom: fromUserId,
-                currentUserId,
-                isMine
-              });
-              return {
-                id: String(msg.id || msg.ID),
-                message: msg.content,
-                time: new Date(msg.created_at).toLocaleTimeString('zh-CN', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }),
-                isMe: isMine,
-                avatar: isMine ? (currentUserCtx?.avatar || '') : (msg as any).user_avatar || user.avatar,
-                userName: isMine ? (currentUserCtx?.name || '我') : (msg as any).user_name || user.name,
-              };
+        if (data.messages && Array.isArray(data.messages)) {
+            const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => {
+            // 后端返回的字段是 from 和 to，不是 from_user_id
+            const fromUserId = msg.from || msg.from_user_id;
+            const isMine = String(fromUserId) === String(currentUserId);
+            console.log('🔍 消息判断:', {
+              msgFrom: fromUserId,
+              currentUserId,
+              isMine
             });
-            
-            setMessages(historyMessages);
-            console.log('✅ 历史消息加载成功，共', historyMessages.length, '条');
-          } else {
-            console.log('ℹ️ 没有历史消息');
-          }
+            return {
+              id: String(msg.id || msg.ID),
+              message: msg.content,
+              time: formatMessageTime(new Date(msg.created_at)),
+              isMe: isMine,
+              avatar: isMine ? (currentUserCtx?.avatar || '') : msg.user_avatar || user.avatar,
+              userName: isMine ? (currentUserCtx?.name || '我') : msg.user_name || user.name,
+            };
+          });
+          
+          setMessages(historyMessages);
+          console.log('✅ 历史消息加载成功，共', historyMessages.length, '条');
         } else {
-          const errorText = await response.text();
-          console.error('❌ 加载历史消息失败:', response.status, errorText);
+          console.log('ℹ️ 没有历史消息');
         }
-      } catch (error) {
-        console.error('❌ 加载历史消息异常:', error);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ 加载历史消息失败:', response.status, errorText);
       }
-    };
-    
+    } catch (error) {
+      console.error('❌ 加载历史消息异常:', error);
+    }
+  }, [currentUserId, user.id, user.avatar, user.name, currentUserCtx?.avatar, currentUserCtx?.name]);
+  
+  useEffect(() => {
     loadHistoryMessages();
-  }, [currentUserId, user.id, user.avatar, user.name]);
+  }, [loadHistoryMessages]);
 
   useEffect(() => {
     scrollToBottom(messagesEndRef);
@@ -155,10 +185,7 @@ export default function SendPage() {
           const newMessage: PrivateMessage = {
             id: `${data.from}-${Date.now()}`,
             message: data.content,
-            time: new Date(data.created_at).toLocaleTimeString('zh-CN', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }),
+            time: formatMessageTime(new Date(data.created_at)),
             isMe: false,
             avatar: data.user_avatar || user.avatar,
             userName: data.user_name || user.name,
@@ -207,10 +234,7 @@ export default function SendPage() {
       const newMessage: PrivateMessage = {
         id: `${currentUserId}-${Date.now()}`,
         message: message.trim(),
-        time: new Date().toLocaleTimeString('zh-CN', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
+        time: formatMessageTime(new Date()),
         isMe: true,
         avatar: currentUserAvatar,
         userName: currentUserCtx?.name || '我',
