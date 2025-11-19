@@ -711,6 +711,11 @@ export default function MinePage() {
                       <Switch
                         checked={notificationEnabled}
                         onCheckedChange={handleToggleNotification}
+                        className={
+                          notificationEnabled
+                            ? 'data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 data-[state=checked]:shadow-lg'
+                            : 'bg-gray-200 border-gray-300'
+                        }
                       />
                     </div>
                     {notificationEnabled && (
