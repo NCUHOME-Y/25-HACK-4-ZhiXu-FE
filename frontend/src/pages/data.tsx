@@ -285,24 +285,23 @@ export default function DataPage() {
    * 格式化学习时长（秒转小时/分钟/秒）
    */
   // 总时长显示：大于1小时显示小时，否则显示分钟
+  // 累计时长和今日学习时长格式化：XhX 或 XmX
   const formatTotalHours = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     if (hours > 0) {
       return `${hours}h${mins}`;
     }
-    return `${mins}m${seconds % 60}`;
+    return `${mins}m`;
   };
 
-  // 今日时长显示：不足1小时显示XmXs，超过1小时显示XhXm
   const formatTodayTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
     if (hours > 0) {
       return `${hours}h${mins}`;
     }
-    return `${mins}m${secs}`;
+    return `${mins}m`;
   };
 
   // ========== 渲染 ========== 
