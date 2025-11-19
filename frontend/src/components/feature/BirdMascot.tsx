@@ -78,9 +78,9 @@ export default function BirdMascot({ position, messages }: BirdMascotProps) {
     : position === 'ai'
     ? 'absolute left-[-55px] top-[-60px] z-1 select-none'
     : position === 'data'
-    ? 'absolute left-19 top-88 z-0 select-none'
+    ? 'absolute left-25 -top-5 z-0 select-none'
     : position === 'contact'
-    ? 'absolute left-18 top-65 z-0 select-none'
+    ? 'absolute left-25 -top-6 z-0 select-none'
     : position === 'mine'
     ? 'absolute left-31 top-[-23px] z-0 select-none'
     : 'relative left-1/2 -translate-x-1/2 -mb-8 z-10 select-none';

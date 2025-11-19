@@ -318,7 +318,7 @@ export default function DataPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
-      <div className="flex-1 pb-24 space-y-4">
+      <div className="flex-1 pb-24 space-y-4 max-w-2xl mx-auto w-full">
         {/* 页面标题 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
           <div className="px-4 py-4">
@@ -371,7 +371,7 @@ export default function DataPage() {
         </section>
 
         {/* 数据统计模块 */}
-        <section className="px-4">
+        <section className="px-4 relative">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-blue-500" />

@@ -837,6 +837,7 @@ export default function FlagPage() {
   // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
+      <div className="max-w-2xl mx-auto w-full">
       {alertVisible && (
         <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[9999] w-11/12 max-w-md">
           <Alert variant="destructive" className={alertHiding ? 'alert-hide' : ''}>
@@ -1494,6 +1495,7 @@ export default function FlagPage() {
             </section>
           </>
         )}
+      </div>
       </div>
 
       {/* Drawer：新建/编辑flag */}

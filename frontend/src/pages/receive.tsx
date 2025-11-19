@@ -234,6 +234,7 @@ export default function ReceivePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="max-w-2xl mx-auto w-full">
       {/* 顶部导航栏 */}
       <nav className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200/50 shadow-sm">
         <div className="px-4 py-4 flex items-center gap-3">
@@ -384,6 +385,7 @@ export default function ReceivePage() {
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

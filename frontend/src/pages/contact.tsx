@@ -390,7 +390,7 @@ export default function ContactPage() {
   // ========== 渲染 ==========
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col relative">
-      <div className="pb-20">
+      <div className="pb-20 max-w-2xl mx-auto w-full">
         {/* 页面标题 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-slate-200">
           <div className="px-4 py-4">
@@ -477,12 +477,11 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* 鸟装饰与气泡 - 挪到帖子 section 之前，和帖子同级，避免被高 z-index fixed 元素影响 */}
-        <BirdMascot position="contact" messages={messages} />
-
         {/* 动态列表标题 */}
-        <div className="px-4 py-2">
+        <div className="px-4 py-2 relative">
           <h2 className="text-lg font-semibold text-slate-800">翰林院论</h2>
+                                {/* 鸟装饰与气泡 */}
+        <BirdMascot position="contact" messages={messages} />
         </div>
 
         {/* 搜索结果：有搜索关键词时显示 Tabs */}
