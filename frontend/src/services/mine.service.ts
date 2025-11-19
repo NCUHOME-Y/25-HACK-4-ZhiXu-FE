@@ -21,7 +21,7 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
   if (data.nickname && data.nickname !== data.originalNickname) {
     try {
       console.log('[updateUserProfile] 更新用户名:', { old: data.originalNickname, new: data.nickname });
-      await api.put('/updateUsername', { new_name: data.nickname });
+      await api.put('/api/updateUsername', { new_name: data.nickname });
       console.log('[updateUserProfile] 用户名更新成功');
       // 同步本地缓存的用户名，供聊天/评论等实时读取
       const userStr = localStorage.getItem('user');

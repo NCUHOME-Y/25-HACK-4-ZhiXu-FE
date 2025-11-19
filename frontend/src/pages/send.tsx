@@ -101,8 +101,8 @@ export default function SendPage() {
                   minute: '2-digit'
                 }),
                 isMe: isMine,
-                avatar: isMine ? (currentUserCtx?.avatar || '') : user.avatar,
-                userName: isMine ? (currentUserCtx?.name || '我') : user.name,
+                avatar: isMine ? (currentUserCtx?.avatar || '') : (msg as any).user_avatar || user.avatar,
+                userName: isMine ? (currentUserCtx?.name || '我') : (msg as any).user_name || user.name,
               };
             });
             
@@ -160,8 +160,8 @@ export default function SendPage() {
               minute: '2-digit' 
             }),
             isMe: false,
-            avatar: user.avatar,
-            userName: user.name,
+            avatar: data.user_avatar || user.avatar,
+            userName: data.user_name || user.name,
           };
           setMessages((prev) => [...prev, newMessage]);
         } else if (String(data.from) === currentUserId) {
