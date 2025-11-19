@@ -137,6 +137,8 @@ export default function AuthPage() {
         setPhone(value)
         setOtpSent(true)
         setResendCooldown(60) // 设置60秒冷却时间
+        setAlertMessage("验证码已发送至邮箱，请检查收件箱或垃圾箱")
+        setShowAlertDialog(true)
       } else {
         // 如果是429错误，设置倒计时
         if (result.waitSeconds) {
@@ -381,7 +383,7 @@ export default function AuthPage() {
     try {
       const result = await authService.sendEmailCode(value)
       if (result.success) {
-        setAlertMessage("验证码已发送至邮箱")
+        setAlertMessage("验证码已发送至邮箱，请检查收件箱或垃圾箱")
         setShowAlertDialog(true)
         setMode("reset-password")
         setResetCodeCooldown(60) // 设置60秒冷却时间
