@@ -467,7 +467,7 @@ export default function MinePage() {
    */
   const handleFeedback = () => {
     // 反馈链接地址从环境变量获取，默认值为正式文档
-    const feedbackDocUrl = import.meta.env.VITE_FEEDBACK_URL ?? 'https://docs.qq.com/form/page/DQnFvd2h5bkRTWXJ4';
+    const feedbackDocUrl = import.meta.env.VITE_FEEDBACK_URL
     window.open(feedbackDocUrl, '_blank');
   };
 
