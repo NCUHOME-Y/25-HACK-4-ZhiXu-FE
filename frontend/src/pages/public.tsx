@@ -10,6 +10,39 @@ import { useUser } from '../lib/stores/userContext';
 import { api, makeWsUrl } from '../services/apiClient';
 
 /**
+ * 格式化聊天消息时间
+ * - 今天：显示时间（如 14:30）
+ * - 昨天：显示"昨天 14:30"
+ * - 更早：显示月/日 时间（如 11/20 14:30）
+ */
+function formatChatTime(dateString: string | Date): string {
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  const timeStr = date.toLocaleTimeString('zh-CN', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  if (msgDate.getTime() === today.getTime()) {
+    // 今天：只显示时间
+    return timeStr;
+  } else if (msgDate.getTime() === yesterday.getTime()) {
+    // 昨天：显示"昨天 + 时间"
+    return `昨天 ${timeStr}`;
+  } else {
+    // 更早：显示月/日 + 时间
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day} ${timeStr}`;
+  }
+}
+
+/**
  * 群聊室页面
  */
 export default function PublicPage() {
@@ -54,10 +87,7 @@ export default function PublicPage() {
             userName: msg.user_name || `用户${msg.from}`,
             avatar: msg.user_avatar || '',
             message: msg.content,
-            time: new Date(msg.created_at).toLocaleTimeString('zh-CN', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }),
+            time: formatChatTime(msg.created_at),
             isMe: String(msg.from) === currentUserId,
           }));
           setMessages(historyMessages);
@@ -92,6 +122,10 @@ export default function PublicPage() {
       console.log('WebSocket连接已建立', { roomId, roomName });
     };
 
+    ws.onopen = () => {
+      console.log('✅ WebSocket连接成功，房间ID:', roomId);
+    };
+
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -109,10 +143,7 @@ export default function PublicPage() {
           userName: data.user_name || `用户${data.from}`,
           avatar: data.user_avatar || '',
           message: data.content,
-          time: new Date(data.created_at).toLocaleTimeString('zh-CN', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          }),
+          time: formatChatTime(data.created_at || new Date()),
           isMe: false,
         };
         setMessages((prev) => [...prev, newMessage]);
@@ -122,11 +153,20 @@ export default function PublicPage() {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket错误:', error);
+      console.error('❌ WebSocket连接错误:', error);
+      console.error('WebSocket URL:', wsUrl);
+      console.error('请检查：1) 后端服务是否启动 2) nginx WebSocket 代理配置 3) token 是否有效');
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket连接已关闭');
+    ws.onclose = (event) => {
+      console.log('WebSocket连接已关闭', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      });
+      if (event.code !== 1000) {
+        console.error('WebSocket 异常关闭，可能原因：后端服务中断、nginx 配置错误、token 过期');
+      }
     };
 
     return () => {
@@ -137,8 +177,32 @@ export default function PublicPage() {
   }, [roomId, currentUserId, navigate, roomName]);
 
   const handleSendMessage = () => {
-    if (!message.trim() || !wsRef.current) {
-      console.log('无法发送：消息为空或WebSocket未连接');
+    if (!message.trim()) {
+      console.log('⚠️ 消息内容为空，取消发送');
+      return;
+    }
+    
+    if (!wsRef.current) {
+      console.error('❌ WebSocket 对象不存在');
+      alert('聊天连接未建立，请刷新页面重试');
+      return;
+    }
+    
+    const wsState = wsRef.current.readyState;
+    console.log('📡 WebSocket 当前状态:', {
+      state: wsState,
+      stateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][wsState]
+    });
+    
+    if (wsState === WebSocket.CONNECTING) {
+      console.warn('⏳ WebSocket 正在连接中，请稍后再试');
+      alert('正在连接聊天室，请稍后再试');
+      return;
+    }
+    
+    if (wsState === WebSocket.CLOSED || wsState === WebSocket.CLOSING) {
+      console.error('❌ WebSocket 已关闭或正在关闭');
+      alert('聊天连接已断开，请刷新页面重新连接');
       return;
     }
     
@@ -160,10 +224,7 @@ export default function PublicPage() {
         userName: currentUserCtx?.name || '我',
         avatar: currentUserAvatar,
         message: message.trim(),
-        time: new Date().toLocaleTimeString('zh-CN', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
+        time: formatChatTime(new Date()),
         isMe: true,
       };
       setMessages((prev) => [...prev, newMessage]);
