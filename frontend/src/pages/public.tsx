@@ -106,30 +106,51 @@ export default function PublicPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      console.log('⏳ 等待用户ID加载...');
+      return;
+    }
 
     const token = authService.getToken();
     if (!token) {
+      console.error('❌ 未找到token，跳转到登录页');
       navigate('/auth');
       return;
     }
 
+    console.log('🔧 准备建立WebSocket连接:', {
+      roomId,
+      currentUserId,
+      hasToken: !!token,
+      tokenLength: token.length
+    });
+
     const wsUrl = makeWsUrl(`/ws/chat?room_id=${roomId}&token=${token}`);
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    console.log('🌐 WebSocket连接地址:', wsUrl);
+    
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+    } catch (error) {
+      console.error('❌ WebSocket创建失败:', error);
+      alert('无法建立聊天连接，请检查网络设置');
+      return;
+    }
 
     ws.onopen = () => {
-      console.log('WebSocket连接已建立', { roomId, roomName });
-    };
-
-    ws.onopen = () => {
-      console.log('✅ WebSocket连接成功，房间ID:', roomId);
+      console.log('✅ WebSocket连接成功建立', { 
+        roomId, 
+        roomName,
+        readyState: ws.readyState,
+        url: wsUrl
+      });
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 收到消息:', data);
+        console.log('📨 收到WebSocket消息:', data);
         
         // 跳过自己发送的消息（因为已经在本地显示了）
         if (String(data.from) === currentUserId) {
@@ -146,32 +167,56 @@ export default function PublicPage() {
           time: formatChatTime(data.created_at || new Date()),
           isMe: false,
         };
+        console.log('➕ 添加新消息到列表:', newMessage);
         setMessages((prev) => [...prev, newMessage]);
       } catch (error) {
-        console.error('解析消息失败:', error);
+        console.error('❌ 解析WebSocket消息失败:', error, '原始数据:', event.data);
       }
     };
 
     ws.onerror = (error) => {
-      console.error('❌ WebSocket连接错误:', error);
-      console.error('WebSocket URL:', wsUrl);
-      console.error('请检查：1) 后端服务是否启动 2) nginx WebSocket 代理配置 3) token 是否有效');
+      console.error('❌ WebSocket连接错误:', {
+        error,
+        url: wsUrl,
+        readyState: ws.readyState,
+        roomId,
+        timestamp: new Date().toISOString()
+      });
+      console.error('🔍 请检查：');
+      console.error('  1) 后端服务是否启动');
+      console.error('  2) WebSocket路径是否正确: /ws/chat');
+      console.error('  3) Token是否有效');
+      console.error('  4) 网络连接是否正常');
+      console.error('  5) 移动端是否可以访问该地址:', wsUrl.replace(/token=.*/, 'token=***'));
     };
 
     ws.onclose = (event) => {
-      console.log('WebSocket连接已关闭', {
+      console.log('🔌 WebSocket连接已关闭', {
         code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean
+        reason: event.reason || '无原因说明',
+        wasClean: event.wasClean,
+        roomId,
+        timestamp: new Date().toISOString()
       });
+      
       if (event.code !== 1000) {
-        console.error('WebSocket 异常关闭，可能原因：后端服务中断、nginx 配置错误、token 过期');
+        console.error('⚠️ WebSocket异常关闭，错误代码:', event.code);
+        console.error('常见错误代码说明:');
+        console.error('  1000: 正常关闭');
+        console.error('  1001: 端点离开（如页面跳转）');
+        console.error('  1006: 异常关闭（网络中断、服务器崩溃）');
+        console.error('  1008: 策略违规（如token无效）');
+        console.error('  1011: 服务器错误');
       }
     };
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
+      console.log('🧹 清理WebSocket连接:', {
+        readyState: ws.readyState,
+        roomId
+      });
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close(1000, '页面离开');
       }
     };
   }, [roomId, currentUserId, navigate, roomName]);

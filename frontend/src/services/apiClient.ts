@@ -15,14 +15,35 @@ export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (typeof window !== 
  */
 export function makeWsUrl(path: string) {
   let origin = API_BASE;
+  
+  // 如果 API_BASE 是空字符串或相对路径，使用当前页面的 origin
+  if (!origin || origin === '' || !origin.startsWith('http')) {
+    if (typeof window !== 'undefined') {
+      origin = window.location.origin;
+      console.log('📍 使用当前页面origin作为WebSocket地址:', origin);
+    } else {
+      origin = 'http://localhost:8080';
+    }
+  }
+  
+  // 移除末尾的斜杠
   if (origin.endsWith('/')) origin = origin.slice(0, -1);
-  // 如果 API_BASE 是相对路径（例如空字符串），使用当前页面 origin
-  if (origin === '' && typeof window !== 'undefined') origin = window.location.origin;
+  
   // 将 http(s) 协议转换为 ws(s)
-  origin = origin.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+  const wsOrigin = origin.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+  
   // 确保 path 以 '/' 开头
   const p = path.startsWith('/') ? path : `/${path}`;
-  return `${origin}${p}`;
+  
+  const finalUrl = `${wsOrigin}${p}`;
+  console.log('🔗 WebSocket URL构建完成:', {
+    原始API_BASE: API_BASE,
+    使用的origin: origin,
+    WebSocket协议: wsOrigin,
+    完整URL: finalUrl
+  });
+  
+  return finalUrl;
 }
 
 const apiClient = axios.create({

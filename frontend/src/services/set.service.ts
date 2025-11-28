@@ -55,11 +55,11 @@ export const switchAvatar = async (avatarIndex: number): Promise<void> => {
   try {
     const response = await api.post('/api/swithhead', { number: avatarIndex });
     console.log('✅ 头像切换成功:', response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ 头像切换失败:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
+      status: (error as { response?: { status?: number } })?.response?.status,
+      data: (error as { response?: { data?: unknown } })?.response?.data,
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
     throw error;
   }

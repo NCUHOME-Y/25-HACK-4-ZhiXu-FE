@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, MessageCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Button, Card } from "../components";
-import authService from '../services/auth.service';
 import { useUser } from '../lib/stores/userContext';
 import { api } from '../services/apiClient';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
