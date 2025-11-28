@@ -71,6 +71,7 @@ export default function PublicPage() {
     const loadHistory = async () => {
       if (!roomId) return;
       try {
+        console.log('📡 开始加载历史消息...', { roomId, currentUserId });
         interface HistoryMessage {
           id?: number;
           from: number;
@@ -80,7 +81,10 @@ export default function PublicPage() {
           created_at: string;
         }
         const response = await api.get<{ messages: HistoryMessage[] }>(`/api/chat/history/${roomId}?limit=30`);
+        console.log('✅ 历史消息API响应:', response);
+        
         if (response.messages && response.messages.length > 0) {
+          console.log(`📋 收到 ${response.messages.length} 条历史消息`);
           const historyMessages: ChatMessage[] = response.messages.map((msg: HistoryMessage) => ({
             id: `${msg.id || msg.from}-${msg.created_at}`,
             userId: String(msg.from),
@@ -91,9 +95,22 @@ export default function PublicPage() {
             isMe: String(msg.from) === currentUserId,
           }));
           setMessages(historyMessages);
+          console.log('✅ 历史消息加载成功');
+        } else {
+          console.log('⚠️ 没有历史消息或消息列表为空');
+          setMessages([]);
         }
       } catch (error) {
-        console.log('加载历史消息失败:', error);
+        console.error('❌ 加载历史消息失败:', error);
+        if (error && typeof error === 'object' && 'response' in error) {
+          const responseError = error as { response?: { status?: number; data?: unknown } };
+          console.error('错误详情:', {
+            status: responseError.response?.status,
+            data: responseError.response?.data
+          });
+        }
+        // 失败时设置为空数组，避免显示旧数据
+        setMessages([]);
       }
     };
     if (currentUserId) {

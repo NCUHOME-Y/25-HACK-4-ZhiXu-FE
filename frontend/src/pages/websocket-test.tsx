@@ -83,6 +83,11 @@ export default function WebSocketTestPage() {
           addLog(`❌ 发送消息失败: ${error}`);
         }
       }, 1000);
+      
+      // 测试历史消息加载
+      setTimeout(() => {
+        testHistoryAPI(roomId);
+      }, 2000);
     };
 
     ws.onmessage = (event) => {
@@ -108,13 +113,44 @@ export default function WebSocketTestPage() {
       }
     };
 
-    // 5秒后自动关闭
+    // 8秒后自动关闭
     setTimeout(() => {
       if (ws.readyState === WebSocket.OPEN) {
         addLog('⏰ 测试完成，关闭连接');
         ws.close(1000, '测试完成');
       }
-    }, 5000);
+    }, 8000);
+  };
+
+  const testHistoryAPI = async (roomId: string) => {
+    addLog('=== 测试历史消息API ===');
+    try {
+      const { api } = await import('../services/apiClient');
+      const url = `/api/chat/history/${roomId}?limit=30`;
+      addLog(`📡 请求历史消息: ${url}`);
+      
+      const response = await api.get<{ messages: unknown[] }>(url);
+      addLog(`✅ 历史消息请求成功`);
+      
+      if (response.messages) {
+        addLog(`📋 历史消息数量: ${response.messages.length}`);
+        if (response.messages.length > 0) {
+          addLog(`📝 最新一条消息: ${JSON.stringify(response.messages[0]).substring(0, 100)}...`);
+        } else {
+          addLog(`⚠️ 房间内暂无历史消息`);
+        }
+      } else {
+        addLog(`⚠️ 响应中没有messages字段`);
+        addLog(`响应内容: ${JSON.stringify(response).substring(0, 200)}...`);
+      }
+    } catch (error: unknown) {
+      addLog(`❌ 历史消息请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const responseError = error as { response?: { status?: number; data?: unknown } };
+        addLog(`状态码: ${responseError.response?.status}`);
+        addLog(`响应数据: ${JSON.stringify(responseError.response?.data)}`);
+      }
+    }
   };
 
   const testHttpApi = async () => {
