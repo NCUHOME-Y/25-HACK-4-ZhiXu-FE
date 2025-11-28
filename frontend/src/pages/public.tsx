@@ -69,9 +69,8 @@ export default function PublicPage() {
   // 加载历史消息
   useEffect(() => {
     const loadHistory = async () => {
-      if (!roomId) return;
+      if (!roomId || !currentUserCtx?.id) return;
       try {
-        console.log('📡 开始加载历史消息...', { roomId, currentUserId });
         interface HistoryMessage {
           id?: number;
           from: number;
@@ -81,10 +80,8 @@ export default function PublicPage() {
           created_at: string;
         }
         const response = await api.get<{ messages: HistoryMessage[] }>(`/api/chat/history/${roomId}?limit=30`);
-        console.log('✅ 历史消息API响应:', response);
         
         if (response.messages && response.messages.length > 0) {
-          console.log(`📋 收到 ${response.messages.length} 条历史消息`);
           const historyMessages: ChatMessage[] = response.messages.map((msg: HistoryMessage) => ({
             id: `${msg.id || msg.from}-${msg.created_at}`,
             userId: String(msg.from),
@@ -92,31 +89,18 @@ export default function PublicPage() {
             avatar: msg.user_avatar || '',
             message: msg.content,
             time: formatChatTime(msg.created_at),
-            isMe: String(msg.from) === currentUserId,
+            isMe: String(msg.from) === currentUserCtx.id,
           }));
           setMessages(historyMessages);
-          console.log('✅ 历史消息加载成功');
         } else {
-          console.log('⚠️ 没有历史消息或消息列表为空');
           setMessages([]);
         }
-      } catch (error) {
-        console.error('❌ 加载历史消息失败:', error);
-        if (error && typeof error === 'object' && 'response' in error) {
-          const responseError = error as { response?: { status?: number; data?: unknown } };
-          console.error('错误详情:', {
-            status: responseError.response?.status,
-            data: responseError.response?.data
-          });
-        }
-        // 失败时设置为空数组，避免显示旧数据
+      } catch {
         setMessages([]);
       }
     };
-    if (currentUserId) {
-      loadHistory();
-    }
-  }, [roomId, currentUserId]);
+    loadHistory();
+  }, [roomId, currentUserCtx?.id]);
 
   useEffect(() => {
     scrollToBottom(messagesEndRef);
@@ -124,54 +108,36 @@ export default function PublicPage() {
 
   useEffect(() => {
     if (!currentUserId) {
-      console.log('⏳ 等待用户ID加载...');
       return;
     }
 
     const token = authService.getToken();
     if (!token) {
-      console.error('❌ 未找到token，跳转到登录页');
       navigate('/auth');
       return;
     }
 
-    console.log('🔧 准备建立WebSocket连接:', {
-      roomId,
-      currentUserId,
-      hasToken: !!token,
-      tokenLength: token.length
-    });
-
     const wsUrl = makeWsUrl(`/ws/chat?room_id=${roomId}&token=${token}`);
-    console.log('🌐 WebSocket连接地址:', wsUrl);
     
     let ws: WebSocket;
     try {
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
-    } catch (error) {
-      console.error('❌ WebSocket创建失败:', error);
+    } catch {
       alert('无法建立聊天连接，请检查网络设置');
       return;
     }
 
     ws.onopen = () => {
-      console.log('✅ WebSocket连接成功建立', { 
-        roomId, 
-        roomName,
-        readyState: ws.readyState,
-        url: wsUrl
-      });
+      // WebSocket连接成功
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 收到WebSocket消息:', data);
         
         // 跳过自己发送的消息（因为已经在本地显示了）
         if (String(data.from) === currentUserId) {
-          console.log('⏭️ 跳过自己的消息');
           return;
         }
         
@@ -184,86 +150,38 @@ export default function PublicPage() {
           time: formatChatTime(data.created_at || new Date()),
           isMe: false,
         };
-        console.log('➕ 添加新消息到列表:', newMessage);
         setMessages((prev) => [...prev, newMessage]);
-      } catch (error) {
-        console.error('❌ 解析WebSocket消息失败:', error, '原始数据:', event.data);
+      } catch {
+        // 忽略无法解析的消息
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket连接错误:', {
-        error,
-        url: wsUrl,
-        readyState: ws.readyState,
-        roomId,
-        timestamp: new Date().toISOString()
-      });
-      console.error('🔍 请检查：');
-      console.error('  1) 后端服务是否启动');
-      console.error('  2) WebSocket路径是否正确: /ws/chat');
-      console.error('  3) Token是否有效');
-      console.error('  4) 网络连接是否正常');
-      console.error('  5) 移动端是否可以访问该地址:', wsUrl.replace(/token=.*/, 'token=***'));
+    ws.onerror = () => {
+      // WebSocket连接错误
     };
 
-    ws.onclose = (event) => {
-      console.log('🔌 WebSocket连接已关闭', {
-        code: event.code,
-        reason: event.reason || '无原因说明',
-        wasClean: event.wasClean,
-        roomId,
-        timestamp: new Date().toISOString()
-      });
-      
-      if (event.code !== 1000) {
-        console.error('⚠️ WebSocket异常关闭，错误代码:', event.code);
-        console.error('常见错误代码说明:');
-        console.error('  1000: 正常关闭');
-        console.error('  1001: 端点离开（如页面跳转）');
-        console.error('  1006: 异常关闭（网络中断、服务器崩溃）');
-        console.error('  1008: 策略违规（如token无效）');
-        console.error('  1011: 服务器错误');
-      }
+    ws.onclose = () => {
+      // WebSocket连接已关闭
     };
 
     return () => {
-      console.log('🧹 清理WebSocket连接:', {
-        readyState: ws.readyState,
-        roomId
-      });
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close(1000, '页面离开');
       }
     };
-  }, [roomId, currentUserId, navigate, roomName]);
+  }, [roomId, currentUserId, navigate]);
 
   const handleSendMessage = () => {
     if (!message.trim()) {
-      console.log('⚠️ 消息内容为空，取消发送');
       return;
     }
     
     if (!wsRef.current) {
-      console.error('❌ WebSocket 对象不存在');
       alert('聊天连接未建立，请刷新页面重试');
       return;
     }
     
-    const wsState = wsRef.current.readyState;
-    console.log('📡 WebSocket 当前状态:', {
-      state: wsState,
-      stateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][wsState]
-    });
-    
-    if (wsState === WebSocket.CONNECTING) {
-      console.warn('⏳ WebSocket 正在连接中，请稍后再试');
-      alert('正在连接聊天室，请稍后再试');
-      return;
-    }
-    
-    if (wsState === WebSocket.CLOSED || wsState === WebSocket.CLOSING) {
-      console.error('❌ WebSocket 已关闭或正在关闭');
+    if (wsRef.current.readyState !== WebSocket.OPEN) {
       alert('聊天连接已断开，请刷新页面重新连接');
       return;
     }
@@ -273,32 +191,21 @@ export default function PublicPage() {
       to: 0,
     };
     
-    console.log('WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
+    // 立即在本地显示自己的消息
+    const newMessage: ChatMessage = {
+      id: `local-${Date.now()}`,
+      userId: currentUserId,
+      userName: currentUserCtx?.name || '我',
+      avatar: currentUserCtx?.avatar || '',
+      message: message.trim(),
+      time: formatChatTime(new Date()),
+      isMe: true,
+    };
+    setMessages((prev) => [...prev, newMessage]);
     
-    if (wsRef.current.readyState === WebSocket.OPEN) {
-      // React上下文中的当前用户头像
-      const currentUserAvatar = currentUserCtx?.avatar || '';
-      
-      // 立即在本地显示自己的消息
-      const newMessage: ChatMessage = {
-        id: `local-${Date.now()}`,
-        userId: currentUserId,
-        userName: currentUserCtx?.name || '我',
-        avatar: currentUserAvatar,
-        message: message.trim(),
-        time: formatChatTime(new Date()),
-        isMe: true,
-      };
-      setMessages((prev) => [...prev, newMessage]);
-      
-      // 发送到服务器
-      wsRef.current.send(JSON.stringify(messageData));
-      console.log('✅ 消息已发送并显示');
-      setMessage('');
-    } else {
-      console.error('WebSocket未连接，状态:', wsRef.current.readyState);
-      alert('连接已断开，请刷新页面重试');
-    }
+    // 发送到服务器
+    wsRef.current.send(JSON.stringify(messageData));
+    setMessage('');
   };
 
   return (

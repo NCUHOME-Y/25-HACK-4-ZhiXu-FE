@@ -12,7 +12,6 @@ import PublicPage from '../pages/public';
 import SendPage from '../pages/send';
 import ReceivePage from '../pages/receive';
 import ChatRoomsPage from '../pages/chat-rooms';
-import WebSocketTestPage from '../pages/websocket-test';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // 应用路由配置
@@ -110,14 +109,6 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <ReceivePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/ws-test',
-    element: (
-      <ProtectedRoute>
-        <WebSocketTestPage />
       </ProtectedRoute>
     ),
   },
