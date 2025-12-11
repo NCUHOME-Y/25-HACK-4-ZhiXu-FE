@@ -58,7 +58,7 @@ export function SignupForm({ onSwitchToLogin, onSwitchToOTP, error, ...props }: 
               <FieldLabel htmlFor="password">密码</FieldLabel>
               <Input id="password" type="password" required />
               <FieldDescription>
-                密码至少需要 6 个字符。
+                密码至少需要 8 个字符，且包含大写字母、小写字母、数字、特殊符号中的至少两种。
               </FieldDescription>
             </Field>
             <Field>

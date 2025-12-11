@@ -74,6 +74,25 @@ export default function AuthPage() {
   const [resendCooldown, setResendCooldown] = useState(0) // 重新发送验证码的冷却时间(秒)
   const [resetCodeCooldown, setResetCodeCooldown] = useState(0) // 重置密码验证码的冷却时间(秒)
   
+  // 强密码验证函数
+  const validateStrongPassword = (password: string): { valid: boolean; message: string } => {
+    if (password.length < 8) {
+      return { valid: false, message: "密码至少需要 8 个字符" }
+    }
+    
+    let typeCount = 0
+    if (/[a-z]/.test(password)) typeCount++ // 小写字母
+    if (/[A-Z]/.test(password)) typeCount++ // 大写字母
+    if (/[0-9]/.test(password)) typeCount++ // 数字
+    if (/[^a-zA-Z0-9]/.test(password)) typeCount++ // 特殊符号
+    
+    if (typeCount < 2) {
+      return { valid: false, message: "密码需要包含大写字母、小写字母、数字、特殊符号中的至少两种" }
+    }
+    
+    return { valid: true, message: "" }
+  }
+
   // 倒计时定时器
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -182,10 +201,14 @@ export default function AuthPage() {
       setSignupError("请输入有效的邮箱地址")
       return
     }
-    if (pwd.length < 6) {
-      setSignupError("密码至少需要 6 个字符")
+    
+    // 强密码验证
+    const passwordValidation = validateStrongPassword(pwd)
+    if (!passwordValidation.valid) {
+      setSignupError(passwordValidation.message)
       return
     }
+    
     if (pwd !== confirm) {
       setSignupError("两次输入的密码不一致")
       return

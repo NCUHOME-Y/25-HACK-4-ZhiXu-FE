@@ -25,6 +25,9 @@ export interface CreateTaskPayload {
 export async function fetchPunchDates(): Promise<string[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ date: string }[]>('/api/getDakaRecords');
+  if (!response || !Array.isArray(response)) {
+    return [];
+  }
   return response.map(record => record.date);
 }
 
