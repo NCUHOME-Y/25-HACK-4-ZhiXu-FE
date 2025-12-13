@@ -164,6 +164,9 @@ export default function AIPage() {
       // 调用AI服务生成学习计划
       const plan = await generateStudyPlan(goal, background, selectedDifficulty);
       
+      // 确保 goal 字段使用用户输入的目标（而不是 AI 返回的 flag）
+      plan.goal = goal;
+      
       // 添加到计划列表，最多保留3个
       const newPlans = [plan, ...generatedPlans].slice(0, 3);
       setGeneratedPlans(newPlans);

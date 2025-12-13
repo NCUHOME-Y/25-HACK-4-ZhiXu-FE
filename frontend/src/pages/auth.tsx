@@ -86,8 +86,8 @@ export default function AuthPage() {
     if (/[0-9]/.test(password)) typeCount++ // 数字
     if (/[^a-zA-Z0-9]/.test(password)) typeCount++ // 特殊符号
     
-    if (typeCount < 2) {
-      return { valid: false, message: "密码需要包含大写字母、小写字母、数字、特殊符号中的至少两种" }
+    if (typeCount < 3) {
+      return { valid: false, message: "密码需要包含大写字母、小写字母、数字、特殊符号中的至少三种" }
     }
     
     return { valid: true, message: "" }
