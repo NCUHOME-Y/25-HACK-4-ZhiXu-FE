@@ -158,6 +158,25 @@ class AuthService {
     localStorage.setItem('auth_token', response.token);
     return { user, token: response.token };
   }
+
+  // 完成注册（验证验证码后创建用户）
+  async completeRegistration(data: { name: string; email: string; password: string; code: string }): Promise<{ user: User; token: string }> {
+    const response = await api.post<{ 
+      token: string; 
+      user_id: number; 
+      name: string; 
+      email: string 
+    }>('/api/completeRegistration', data);
+    
+    const user: User = {
+      id: String(response.user_id),
+      name: response.name,
+      phone: response.email,
+    };
+    
+    localStorage.setItem('auth_token', response.token);
+    return { user, token: response.token };
+  }
 }
 
 export const authService = new AuthService();

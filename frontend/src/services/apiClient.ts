@@ -6,9 +6,10 @@ import { createApiWrapper } from '../lib/helpers/api-helpers';
  * API 客户端配置
  * 包含请求拦截器和响应拦截器
  */
-// 后端地址通过 Vite 环境变量 `VITE_API_BASE_URL` 注入，回退到本地开发默认值
-// 优先使用 Vite 注入的环境变量，其次使用页面 origin（部署在同域时），最后回退到本地开发地址
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080');
+// 后端地址通过 Vite 环境变量 `VITE_API_BASE_URL` 注入
+// 开发环境：undefined 使用相对路径，通过 Vite 代理转发
+// 生产环境：使用 .env.production 中的完整 URL  
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || undefined;
 
 /**
  * 将 http(s) 地址转换为 ws(s) 地址并拼接路径

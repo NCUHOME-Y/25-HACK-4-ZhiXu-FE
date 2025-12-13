@@ -42,6 +42,8 @@ export default function AuthPage() {
   const [otpSent, setOtpSent] = useState(false)
   // OTP使用场景：login（验证码登录）或 signup（注册验证）
   const [otpPurpose, setOtpPurpose] = useState<'login' | 'signup'>('login')
+  // 临时存储注册信息，等待验证码验证后再提交
+  const [pendingSignupData, setPendingSignupData] = useState<{ name: string; email: string; password: string } | null>(null)
   
   // P1修复：忘记密码相关状态
   const [forgotEmail, setForgotEmail] = useState("")
@@ -214,7 +216,7 @@ export default function AuthPage() {
       return
     }
 
-    // 调用后端注册API（会创建用户并发送验证码）
+    // 第一步：只发送验证码，不创建用户
     setSendingOTP(true)
     try {
       const response = await api.post('/api/register', {
@@ -224,15 +226,21 @@ export default function AuthPage() {
       })
       
       if (response) {
-        // 注册成功，切换到验证码输入页面
+        // 暂存注册信息，等待验证码验证
+        setPendingSignupData({
+          name: name,
+          email: value,
+          password: pwd
+        })
+        // 切换到验证码输入页面
         setPhone(value)
         setOtpPurpose('signup') // 设置为注册验证
         setOtpSent(true) // 标记验证码已发送
         setMode("otp")
       }
     } catch (error) {
-      console.error('注册失败:', error)
-      let errorMessage = "注册失败，请重试"
+      console.error('发送验证码失败:', error)
+      let errorMessage = "发送验证码失败，请重试"
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string } } }
         errorMessage = axiosError.response?.data?.error || errorMessage
@@ -354,11 +362,27 @@ export default function AuthPage() {
         setVerifyingOTP(false)
         return
       }
+
+      // 检查是否有待提交的注册信息
+      if (!pendingSignupData) {
+        setSignupError("注册信息丢失，请重新注册")
+        setMode('signup')
+        setVerifyingOTP(false)
+        return
+      }
       
-      // 调用后端验证邮箱API（验证成功后会返回token并自动登录）
-      const result = await authService.verifyEmail(phone, code) // phone变量存储邮箱
+      // 第二步：验证验证码并完成注册
+      const result = await authService.completeRegistration({
+        name: pendingSignupData.name,
+        email: pendingSignupData.email,
+        password: pendingSignupData.password,
+        code: code
+      })
       
       if (result.user && result.token) {
+        // 清除临时数据
+        setPendingSignupData(null)
+        
         try {
           const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
           const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
@@ -366,14 +390,14 @@ export default function AuthPage() {
         } catch {
           localStorage.setItem('user', JSON.stringify(result.user));
         }
-        // 验证成功，已自动登录，跳转到打卡页面
+        // 注册成功，已自动登录，跳转到打卡页面
         navigate("/flag")
       } else {
-        setSignupError("验证失败，请重试")
+        setSignupError("注册失败，请重试")
       }
     } catch (error) {
-      console.error('验证邮箱失败:', error)
-      let errorMessage = "验证失败，请重试"
+      console.error('完成注册失败:', error)
+      let errorMessage = "注册失败，请重试"
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: string } } }
         errorMessage = axiosError.response?.data?.error || errorMessage
