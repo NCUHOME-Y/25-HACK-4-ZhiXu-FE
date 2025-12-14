@@ -30,20 +30,25 @@ export default function RankPage() {
   const [rankUsers, setRankUsers] = useState<RankUser[]>([]);
   const [currentUser, setCurrentUser] = useState<RankUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // ========== 副作用 ==========
   useEffect(() => {
     const loadRankData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const [rankData, userData] = await Promise.all([
           rankService.getRankList(activeTab),
           rankService.getCurrentUserRank(activeTab)
         ]);
-        setRankUsers(rankData);
+        setRankUsers(rankData || []);
         setCurrentUser(userData);
       } catch (error) {
         console.error('加载封神榜数据失败:', error);
+        setError('加载封神榜数据失败，请稍后重试');
+        setRankUsers([]);
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -103,6 +108,29 @@ export default function RankPage() {
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="px-4 py-4">
           <p className="text-gray-500 text-center">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="max-w-2xl mx-auto w-full">
+          <nav className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200/50 shadow-sm">
+            <div className="px-4 py-4 flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-gray-100 rounded-full">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-lg font-semibold text-gray-900">封神榜</h1>
+            </div>
+          </nav>
+          <div className="px-4 py-8 text-center space-y-4">
+            <p className="text-red-600 font-medium">{error}</p>
+            <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+              重新加载
+            </Button>
+          </div>
         </div>
       </div>
     );

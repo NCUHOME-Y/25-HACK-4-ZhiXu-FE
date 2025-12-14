@@ -65,28 +65,38 @@ const rankService = {
    * @param type 封神榜类型: 'days' | 'flags' | 'points'
    */
   getRankList: async (type: 'days' | 'flags' | 'points'): Promise<FrontendRankUser[]> => {
-    // 根据类型选择对应的后端 API
-    let endpoint = '';
-    if (type === 'days') {
-      endpoint = '/api/dakaRanking';
-    } else if (type === 'flags') {
-      endpoint = '/api/getUseflagrRank';
-    } else {
-      endpoint = '/api/countranking';
+    try {
+      // 根据类型选择对应的后端 API
+      let endpoint = '';
+      if (type === 'days') {
+        endpoint = '/api/dakaRanking';
+      } else if (type === 'flags') {
+        endpoint = '/api/getUseflagrRank';
+      } else {
+        endpoint = '/api/countranking';
+      }
+      
+      const response = await api.get<{ data: RankUser[] }>(endpoint);
+      
+      // 转换为前端格式，使用全局 PRESET_AVATARS
+      if (!response.data || !Array.isArray(response.data)) {
+        console.error('封神榜数据格式错误:', response);
+        return [];
+      }
+      
+      return response.data.map((user, index) => ({
+        id: user.user_id.toString(),
+        rank: index + 1,
+        name: user.name,
+        avatar: user.head_show ? `/api/avatar/${user.head_show}` : undefined,
+        totalDays: user.daka || 0,
+        completedFlags: user.flag_number || 0,
+        totalPoints: user.count || 0
+      }));
+    } catch (error) {
+      console.error('获取封神榜列表失败:', error);
+      return [];
     }
-    
-    const response = await api.get<{ data: RankUser[] }>(endpoint);
-    
-    // 转换为前端格式，使用全局 PRESET_AVATARS
-    return response.data.map((user, index) => ({
-      id: user.user_id.toString(),
-      rank: index + 1,
-      name: user.name,
-      avatar: user.head_show ? `/api/avatar/${user.head_show}` : undefined,
-      totalDays: user.daka || 0,
-      completedFlags: user.flag_number || 0,
-      totalPoints: user.count || 0
-    }));
   },
 
   /**
