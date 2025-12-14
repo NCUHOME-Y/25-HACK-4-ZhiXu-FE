@@ -265,12 +265,13 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
       api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
     ]);
     
-    const todayTime = todayData.today_learn_time || 0;
+    // 🐛 修复：后端返回的 today_learn_time 已经是秒，不需要乘 60
+    const todayTime = todayData.today_learn_time || 0; // 单位：秒
     useTaskStore.setState({
-      dailyElapsed: todayTime * 60, // 今日学习时长（转秒）
+      dailyElapsed: todayTime, // 直接使用，不要转换
     });
     
-    console.log('✅ 学习时长已同步:', { todayTime, dailyElapsed: todayTime * 60 });
+    console.log('✅ 学习时长已同步(秒):', todayTime);
   } catch (error) {
     console.error('刷新用户数据失败:', error);
   }

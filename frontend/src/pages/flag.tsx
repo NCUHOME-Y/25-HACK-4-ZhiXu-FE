@@ -460,7 +460,7 @@ export default function FlagPage() {
    * 任务记次
    */
   const handleTickTask = async (taskId: string) => {
-      // 每日积分上限逻辑
+      // ⚠️ TODO: 每日积分上限应该由后端统计，防止用户清除缓存绕过
       const todayDateStr = formatDateYMD(new Date());
       const dailyPointsKey = `flag_daily_points_${todayDateStr}`;
       const dailyPoints = parseInt(localStorage.getItem(dailyPointsKey) || '0');
@@ -471,6 +471,7 @@ export default function FlagPage() {
       toast.warning(`冷却中，还需等待 ${Math.ceil(globalCooldown / 60)} 分钟 ⏱️`);
       return;
     }
+    // ⚠️ TODO: 冷却机制应该由后端统一管理，防止用户清除缓存绕过
     // 只有真正完成 flag 时才计入完成时间
     const now = Date.now();
     const completeTimesKey = 'flag_complete_times';

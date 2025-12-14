@@ -49,7 +49,7 @@ export function makeWsUrl(path: string) {
 
 const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 30000, // 30秒超时，适配AI接口的长时间响应
+  timeout: 30000, // 30秒超时，适配AI接口等需要较长响应时间的接口
   headers: { 'Content-Type': 'application/json' },
 });
 

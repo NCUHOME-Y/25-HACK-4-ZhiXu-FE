@@ -143,17 +143,28 @@ export default function MinePage() {
       setTempNotificationHour(hour);
       setTempNotificationMinute(minute);
       setHasUnsavedChanges(false);
-      // 更新store中的学习时长
+      // 🐛 修复：后端返回的 month_learn_time 已经是秒，不需要乘 60
       useTaskStore.setState({
-        dailyElapsed: (user.month_learn_time || 0) * 60 // 分钟转秒
+        dailyElapsed: user.month_learn_time || 0 // 本月学习时长（秒）
       });
-      // 获取点赞总数
-      const likedPostIds = await contactService.getUserLikedPosts();
-      setTotalLikes(likedPostIds.length);
-      // 加载打卡数据（保留原逻辑）
-      const punchData = await fetchPunchDates();
-      console.log('我的页面-打卡数据:', punchData);
-      useTaskStore.setState({ punchedDates: punchData });
+      
+      // 获取点赞总数（静默失败）
+      try {
+        const likedPostIds = await contactService.getUserLikedPosts();
+        setTotalLikes(likedPostIds.length);
+      } catch (err) {
+        console.warn('获取点赞数据失败:', err);
+        setTotalLikes(0);
+      }
+      
+      // 加载打卡数据（静默失败）
+      try {
+        const punchData = await fetchPunchDates();
+        console.log('我的页面-打卡数据:', punchData);
+        useTaskStore.setState({ punchedDates: punchData });
+      } catch (err) {
+        console.warn('获取打卡数据失败:', err);
+      }
     } catch (error) {
       console.error('加载用户统计失败:', error);
     }
@@ -451,7 +462,8 @@ export default function MinePage() {
         setAvatar(selectedAvatar);
         setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
         setAvatarPopoverOpen(false);
-        await loadUserStats();
+        // 移除 loadUserStats 调用，减少不必要的网络请求
+        // await loadUserStats();
         // 更新全局上下文（内部会分发 userUpdated）
         updateUserContextProfile({ avatar: selectedAvatar });
         toast.success('头像更改成功');

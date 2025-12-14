@@ -13,7 +13,6 @@ import {
   TabsContent
 } from '../components';
 import { getStudyTimeTrend } from '../services/data.service';
-import { getFlagLabels } from '../services/data.service';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
 import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
@@ -118,39 +117,53 @@ export default function DataPage() {
 
 
 
-  // P1修复：从后端加载标签统计数据和用户数据
+  // P1修复：从后端加载用户数据
   useEffect(() => {
     const loadAllData = async () => {
       try {
         const token = localStorage.getItem('auth_token');
         if (!token) {
           console.log('未登录，跳过加载数据');
+          setLoading(false);
           return;
         }
         
-        // 加载标签统计
-        const labelData = await getFlagLabels();
-        console.log('标签系统统计:', labelData);
+        // 移除 getFlagLabels 调用，该 API 一直返回 500 错误且前端没有实际使用
+        // try {
+        //   const labelData = await getFlagLabels();
+        //   console.log('标签系统统计:', labelData);
+        // } catch (err) {
+        //   console.warn('加载标签统计失败，继续加载其他数据:', err);
+        // }
         
-        // 加载任务和打卡数据
-        const [tasksData, punchData] = await Promise.all([
-          fetchTasks(),
-          fetchPunchDates()
-        ]);
+        // 加载任务和打卡数据（静默失败）
+        try {
+          const [tasksData, punchData] = await Promise.all([
+            fetchTasks().catch(err => { console.warn('获取任务失败:', err); return []; }),
+            fetchPunchDates().catch(err => { console.warn('获取打卡数据失败:', err); return []; })
+          ]);
+          
+          console.log('数据页加载到的任务:', tasksData);
+          console.log('数据页加载到的打卡:', punchData);
+          
+          // 更新store
+          useTaskStore.setState({ 
+            tasks: tasksData,
+            punchedDates: punchData
+          });
+        } catch (err) {
+          console.warn('加载任务/打卡数据失败:', err);
+        }
         
-        console.log('数据页加载到的任务:', tasksData);
-        console.log('数据页加载到的打卡:', punchData);
-        
-        // 更新store
-        useTaskStore.setState({ 
-          tasks: tasksData,
-          punchedDates: punchData
-        });
-        
-        // 加载用户统计数据
-        await refreshUserData();
+        // 加载用户统计数据（静默失败）
+        try {
+          await refreshUserData();
+        } catch (err) {
+          console.warn('刷新用户数据失败:', err);
+        }
       } catch (error) {
         console.error('加载数据失败:', error);
+        // 不弹出错误页面，只在控制台记录
       } finally {
         setLoading(false);
       }
@@ -162,17 +175,26 @@ export default function DataPage() {
   const refreshUserData = async () => {
     try {
       const [userData, todayData, todayPointsResp] = await Promise.all([
-        api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
-        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime'),
-        api.get<{ today_points: number }>('/api/getTodayPoints')
+        api.get<{ month_learn_time: number; count: number }>('/api/getUser').catch(err => {
+          console.warn('获取用户数据失败:', err);
+          return { month_learn_time: 0, count: 0 };
+        }),
+        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime').catch(err => {
+          console.warn('获取今日学习时长失败:', err);
+          return { today_learn_time: 0 };
+        }),
+        api.get<{ today_points: number }>('/api/getTodayPoints').catch(err => {
+          console.warn('获取今日积分失败:', err);
+          return { today_points: 0 };
+        })
       ]);
 
       console.log('用户学习时长:', userData.month_learn_time);
       console.log('今日学习时长:', todayData.today_learn_time);
       console.log('用户积分:', userData.count);
-      console.log('今日获得积分:', todayPointsResp && todayPointsResp.today_points);
+      console.log('今日获得积分:', todayPointsResp?.today_points);
 
-      setTodayPoints((todayPointsResp && todayPointsResp.today_points) || 0);
+      setTodayPoints(todayPointsResp?.today_points || 0);
 
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
       const todayTime = todayData.today_learn_time || 0; // 今日学习时长（秒）
@@ -183,15 +205,15 @@ export default function DataPage() {
       });
     } catch (error) {
       console.error('刷新用户数据失败:', error);
+      // 设置默认值，避免页面显示异常
+      setTodayPoints(0);
+      setMonthLearnTime(0);
+      useTaskStore.setState({ dailyElapsed: 0 });
     }
   };
 
-  // 🔧 新增：监听任务变化，自动刷新用户数据
-  useEffect(() => {
-    if (!loading) {
-      refreshUserData();
-    }
-  }, [tasks.length, loading]); // 任务数量变化时刷新
+  // 🔧 已移除：不再监听任务变化自动刷新，避免频繁请求
+  // 如需刷新数据，在特定操作后手动调用 refreshUserData()
 
   // 加载学习趋势数据
   useEffect(() => {

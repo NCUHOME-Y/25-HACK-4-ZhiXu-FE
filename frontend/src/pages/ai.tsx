@@ -18,12 +18,30 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '..
 import { FLAG_LABELS } from '../lib/constants/constants';
 import { BirdMascot } from '../components/feature';
 
-// 本地存储键
-const STORAGE_KEYS = {
-  BACKGROUND: 'ai_user_background',
-  LAST_GOAL: 'ai_last_goal',
-  GENERATED_PLANS: 'ai_generated_plans',
-  ADDED_FLAGS: 'ai_added_flags', // 记录已添加的flag（防止重复添加）
+// 🔧 获取当前用户 ID 的函数（从 token 中提取或使用默认值）
+const getCurrentUserId = (): string => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return 'default';
+    
+    // 尝试从 JWT token 中解析用户 ID
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.user_id?.toString() || payload.sub?.toString() || 'default';
+  } catch (error) {
+    console.warn('无法解析用户 ID，使用默认值:', error);
+    return 'default';
+  }
+};
+
+// 本地存储键（加入用户 ID 实现用户隔离）
+const getStorageKeys = () => {
+  const userId = getCurrentUserId();
+  return {
+    BACKGROUND: `ai_user_background_${userId}`,
+    LAST_GOAL: `ai_last_goal_${userId}`,
+    GENERATED_PLANS: `ai_generated_plans_${userId}`,
+    ADDED_FLAGS: `ai_added_flags_${userId}`,
+  };
 };
 
 /**
@@ -104,6 +122,7 @@ export default function AIPage() {
 
   // 加载历史记录
   useEffect(() => {
+    const STORAGE_KEYS = getStorageKeys();
     const savedBackground = localStorage.getItem(STORAGE_KEYS.BACKGROUND);
     const savedLastGoal = localStorage.getItem(STORAGE_KEYS.LAST_GOAL);
     const savedPlans = localStorage.getItem(STORAGE_KEYS.GENERATED_PLANS);
@@ -154,6 +173,7 @@ export default function AIPage() {
     setIsGenerating(true);
     try {
       // 保存背景和目标
+      const STORAGE_KEYS = getStorageKeys();
       if (background.trim()) {
         localStorage.setItem(STORAGE_KEYS.BACKGROUND, background);
         setLastBackground(background);
@@ -187,6 +207,7 @@ export default function AIPage() {
   const handleAddSingleFlag = async (plan: StudyPlan, flagIndex: number) => {
     const flag = plan.flags[flagIndex];
     const flagKey = `${plan.goal}_${flag.title}`;
+    const STORAGE_KEYS = getStorageKeys();
     
     // 检查是否已添加
     if (addedFlags.has(flagKey)) {
@@ -234,6 +255,7 @@ export default function AIPage() {
       return;
     }
 
+    const STORAGE_KEYS = getStorageKeys();
     const toastId = toast.loading(`正在添加 ${plan.flags.length} 个Flag...`);
     
     try {
