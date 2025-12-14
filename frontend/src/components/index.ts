@@ -39,6 +39,8 @@ export * from "./feature/otp-form"
 export { ChartRadialStacked, setChartData } from "./feature/chart-radial-stacked";
 export { ChartPieLabel } from "./feature/chart-pie-label"
 export { StudyTimeChart } from "./feature/study-time-chart"
+export { ProgressRing } from "./feature/ProgressRing"
+export { default as BirdMascot } from "./feature/BirdMascot"
 
 // 导出功能日历组件(统一从 index 导入)
 export { default as Calendar21 } from "./feature/calendar-21"

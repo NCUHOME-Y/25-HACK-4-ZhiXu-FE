@@ -1,8 +1,6 @@
-import { useMemo, useState, useEffect } from 'react';
-import { ProgressRing } from '../components/feature/ProgressRing';
-import { useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Plus, CheckSquare, Clock,CalendarDays, Check } from 'lucide-react';
+import { Pencil, Plus, CheckSquare, Clock,CalendarDays, Check, Bell, BellOff } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -30,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  BirdMascot,
   Empty,
   EmptyHeader,
   EmptyTitle,
@@ -45,6 +44,7 @@ import {
   PopoverTrigger,
   PopoverContent,
   Progress,
+  ProgressRing,
 } from '../components';
 import { useTaskStore } from '../lib/stores/stores';
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
@@ -53,7 +53,6 @@ import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
 import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
 import { api } from '../services/apiClient';
-import { BirdMascot } from '../components/feature';
 
 
 export default function FlagPage() {
@@ -212,6 +211,11 @@ export default function FlagPage() {
   const [presetFlags, setPresetFlags] = useState<typeof tasks>([]);
   const [expiredFlags, setExpiredFlags] = useState<typeof tasks>([]);
   const [flagsWithDates, setFlagsWithDates] = useState<typeof tasks>([]);
+
+  // 计算当前启用提醒的flag数量
+  const enabledNotificationCount = useMemo(() => {
+    return tasks.filter(t => t.enableNotification).length;
+  }, [tasks]);
 
   // ========== 副作用 ========== 
   // 错误提示动画副作用
@@ -768,6 +772,37 @@ export default function FlagPage() {
   };
 
   /**
+   * 切换flag提醒状态（最多3个）
+   */
+  const handleToggleFlagNotification = async (flagId: string, currentState: boolean) => {
+    const newState = !currentState;
+    
+    // 如果要启用提醒，检查是否已达3个上限
+    if (newState && enabledNotificationCount >= 3) {
+      toast.error('最多只能同时为3个flag启用提醒');
+      return;
+    }
+
+    try {
+      const { toggleFlagNotification } = await import('../services/flag.service');
+      await toggleFlagNotification(flagId, newState);
+      
+      // 更新本地状态
+      updateTaskInStore(flagId, { enableNotification: newState });
+      toast.success(newState ? 'flag提醒已启用' : 'flag提醒已关闭');
+    } catch (error: unknown) {
+      console.error('切换flag提醒失败:', error);
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'data' in error.response &&
+          error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data) {
+        toast.error((error.response.data as { error: string }).error);
+      } else {
+        toast.error('操作失败，请重试');
+      }
+    }
+  };
+
+  /**
    * 关闭抽屉并重置状态
    */
   const closeDrawer = () => {
@@ -1223,6 +1258,24 @@ export default function FlagPage() {
                           </span>
                         </div>
                         
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">消息提醒</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFlagNotification(t.id, t.enableNotification || false);
+                            }}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded transition-colors ${
+                              t.enableNotification
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {t.enableNotification ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
+                            {t.enableNotification ? '已启用' : '已关闭'}
+                          </button>
+                        </div>
+                        
                         {t.createdAt && (
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">创建时间</span>
@@ -1346,6 +1399,23 @@ export default function FlagPage() {
                           <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${t.isPublic ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
                             {t.isPublic ? '已分享' : '未分享'}
                           </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">消息提醒</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFlagNotification(t.id, t.enableNotification || false);
+                            }}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded transition-colors ${
+                              t.enableNotification
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {t.enableNotification ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
+                            {t.enableNotification ? '已启用' : '已关闭'}
+                          </button>
                         </div>
                         {t.createdAt && (
                           <div className="flex items-center justify-between">

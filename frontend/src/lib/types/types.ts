@@ -49,6 +49,7 @@ export interface Task {
   todayCount?: number // 今日已打卡次数（后端返回）
   completedAt?: string // 完成时间戳（用于排序已完成列表）
   lastTickTime?: number // 上次打卡时间戳（用于冷却检查）
+  enableNotification?: boolean // 是否启用该flag的消息提醒（最多3个）
 }
 
 // 打卡相关类型

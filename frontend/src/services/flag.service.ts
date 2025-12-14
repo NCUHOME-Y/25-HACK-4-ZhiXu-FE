@@ -430,3 +430,13 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
   }));
   return flags;
 }
+
+// 切换flag提醒状态（最多3个）
+export async function toggleFlagNotification(flagId: string, enableNotification: boolean): Promise<{ success: boolean; enable_notification: boolean }> {
+  const { api } = await import('./apiClient');
+  const response = await api.post<{ success: boolean; enable_notification: boolean }>('/api/toggleFlagNotification', {
+    flag_id: parseInt(flagId),
+    enable_notification: enableNotification
+  });
+  return response;
+}
