@@ -428,11 +428,11 @@ export default function FlagPage() {
   const getFlagDateStatus = (flag: Task) => {
     // 只显示 YYYY-MM-DD，不显示时分秒
     const format = (d?: string) => d ? formatDateYMD(new Date(d)) : '';
-    if (!flag.startDate && !flag.endDate) return '无限期';
+    if (!flag.startDate && !flag.endDate) return '每天';
     if (flag.startDate && flag.endDate) return `${format(flag.startDate)} ~ ${format(flag.endDate)}`;
     if (flag.startDate) return `开始：${format(flag.startDate)}`;
     if (flag.endDate) return `截止：${format(flag.endDate)}`;
-    return '无限期';
+    return '每天';
   };
 
   /**
@@ -610,7 +610,8 @@ export default function FlagPage() {
               title: newTask.title,
               detail: newTask.detail,
               label: newTask.label,
-              priority: newTask.priority
+              startDate: newTask.startDate,
+              endDate: newTask.endDate
             });
             updateTaskInStore(editingTaskId, { ...newTask, postId: post.id });
             toast.success('flag已分享到翰林院论', {
@@ -692,7 +693,8 @@ export default function FlagPage() {
             title: newTask.title,
             detail: newTask.detail,
             label: newTask.label,
-            priority: newTask.priority
+            startDate: newTask.startDate,
+            endDate: newTask.endDate
           });
           updateTaskInStore(created.id, { postId: post.id });
           toast.success('flag已创建并分享到翰林院论', {

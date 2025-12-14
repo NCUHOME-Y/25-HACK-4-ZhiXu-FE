@@ -180,7 +180,7 @@ const contactService = {
     }),
 
   // 从Flag创建帖子（分享Flag到社交页面）
-  createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; priority?: number }): Promise<Post> => {
+  createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<Post> => {
     const labelNames: Record<number, string> = {
       1: '学习提升',
       2: '健康运动',
@@ -188,14 +188,27 @@ const contactService = {
       4: '兴趣爱好',
       5: '生活习惯'
     };
-    const priorityNames: Record<number, string> = {
-      1: '急切',
-      2: '较急',
-      3: '一般',
-      4: '不急'
+    
+    // 不使用 emoji，采用简洁优雅的文本格式
+    // 格式化日期范围
+    const formatDate = (dateStr?: string) => {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     };
     
-    const content = `【我的Flag】${task.title}\n${task.detail || ''}\n\n标签: ${labelNames[task.label || 1]} | 优先级: ${priorityNames[task.priority || 3]}`;
+    let dateRange = '每天';
+    if (task.startDate && task.endDate) {
+      dateRange = `${formatDate(task.startDate)} ~ ${formatDate(task.endDate)}`;
+    } else if (task.startDate) {
+      dateRange = `${formatDate(task.startDate)}开始`;
+    } else if (task.endDate) {
+      dateRange = `${formatDate(task.endDate)}前`;
+    }
+    
+    const content = task.detail
+      ? `flag：${task.title} 详情：${task.detail}\n标签：${labelNames[task.label || 1]} · 日期：${dateRange}`
+      : `flag：${task.title}\n标签：${labelNames[task.label || 1]} · 日期：${dateRange}`;
     return api.post<Post>('/api/postUserPost', {
       title: task.title,
       content,
