@@ -439,8 +439,19 @@ export default function AuthPage() {
       setResetPasswordError("请输入验证码")
       return
     }
-    if (!newPassword || newPassword.length < 6) {
-      setResetPasswordError("密码长度至少6位")
+    if (!newPassword || newPassword.length < 8) {
+      setResetPasswordError("密码长度至少需要8个字符")
+      return
+    }
+    
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword);
+    const typeCount = [hasUpperCase, hasLowerCase, hasNumber, hasSpecial].filter(Boolean).length;
+    
+    if (typeCount < 3) {
+      setResetPasswordError("密码必须包含大写字母、小写字母、数字、特殊符号中的至少三种")
       return
     }
     if (newPassword !== confirmNewPassword) {

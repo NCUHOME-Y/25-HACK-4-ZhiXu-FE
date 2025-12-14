@@ -492,14 +492,36 @@ export default function MinePage() {
     }
   };
 
+  /** 验证密码强度 */
+  const validatePasswordStrength = (password: string): { valid: boolean; message: string } => {
+    if (password.length < 8) {
+      return { valid: false, message: '密码长度至少需要8个字符' };
+    }
+    
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+    
+    const typeCount = [hasUpperCase, hasLowerCase, hasNumber, hasSpecial].filter(Boolean).length;
+    
+    if (typeCount < 3) {
+      return { valid: false, message: '密码必须包含大写字母、小写字母、数字、特殊符号中的至少三种' };
+    }
+    
+    return { valid: true, message: '' };
+  };
+
   /** 修改密码 */
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       alert('两次输入的密码不一致');
       return;
     }
-    if (newPassword.length < 6) {
-      alert('密码长度至少6位');
+    
+    const validation = validatePasswordStrength(newPassword);
+    if (!validation.valid) {
+      alert(validation.message);
       return;
     }
     try {
@@ -1031,7 +1053,7 @@ export default function MinePage() {
           <DialogHeader className="pb-2">
             <DialogTitle className="text-xl font-bold text-slate-900">修改密码</DialogTitle>
             <DialogDescription className="text-sm text-slate-600 mt-1">
-              请输入旧密码和新密码。新密码长度至少6位。
+              请输入旧密码和新密码。新密码至少需要8个字符，且包含大写字母、小写字母、数字、特殊符号中的至少三种。
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1053,7 +1075,7 @@ export default function MinePage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="请输入新密码（至少6位）"
+                placeholder="请输入新密码（至少8位，含3种字符类型）"
                 className="rounded-2xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
