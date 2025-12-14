@@ -83,16 +83,9 @@ export default function ReceivePage() {
 
   const loadPrivateConversations = async (_userId: string) => {
     try {
-      console.log('📡 正在加载私聊会话列表...');
-      // 调用后端API获取私聊会话列表
       const response = await api.get<{ conversations: ConversationResponse[] }>('/api/private-chat/conversations');
       
-      console.log('✅ API响应:', response);
-      console.log('✅ 会话数据:', response.conversations);
-      
-      // 检查响应数据
       if (!response || !response.conversations) {
-        console.warn('⚠️ API返回空数据');
         setConversations([]);
         setError(null);
         return;
@@ -116,51 +109,27 @@ export default function ReceivePage() {
       setConversations(conversationList);
       setError(null);
     } catch (error: unknown) {
-      console.error('❌ 加载私聊会话失败:', error);
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       const responseError = (error as { response?: { data?: { error?: string } } }).response?.data?.error;
-      console.error('❌ 错误详情:', responseError || errorMessage);
       setError(`加载会话列表失败: ${responseError || errorMessage}`);
     }
   };
 
   const loadComments = async (userId: string) => {
     try {
-      console.log('📡 正在加载评论通知...');
-      // 获取所有帖子评论
       const response = await api.get<{ success: boolean; posts: PostData[]; total: number }>('/api/getAllPosts');
-      console.log('✅ API原始响应:', response);
-      
       const postsResponse = response.posts || [];
-      console.log('✅ 帖子列表:', postsResponse);
-      console.log('✅ 帖子数量:', postsResponse.length);
       
       // 过滤出对当前用户帖子的评论
       const myComments: CommentNotification[] = [];
       
       if (postsResponse && Array.isArray(postsResponse)) {
-        console.log('🔍 开始遍历帖子，当前用户ID:', userId);
         postsResponse.forEach((post: PostData) => {
-          console.log('📝 检查帖子:', {
-            post_id: post.id,
-            post_user_id: post.user_id,
-            is_my_post: String(post.user_id) === userId,
-            comments_count: post.comments?.length || 0
-          });
           
-          // 只处理当前用户的帖子
           if (String(post.user_id) === userId && post.comments && Array.isArray(post.comments)) {
-            console.log('✅ 找到我的帖子，评论数:', post.comments.length);
             post.comments.forEach((comment: CommentData) => {
-              console.log('💬 检查评论:', {
-                comment_id: comment.id,
-                comment_user_id: comment.userId,
-                is_my_comment: String(comment.userId) === userId
-              });
               
-              // 排除自己的评论
               if (String(comment.userId) !== userId) {
-                console.log('✅ 添加别人的评论');
                 myComments.push({
                   id: String(comment.id),
                   fromUserId: String(comment.userId),
@@ -176,18 +145,14 @@ export default function ReceivePage() {
         });
       }
       
-      console.log('✅ 评论通知加载成功，总数:', myComments.length);
-      console.log('📋 评论列表:', myComments);
       setComments(myComments);
-    } catch (error) {
-      console.error('❌ 加载评论失败:', error);
+    } catch {
       // 评论加载失败不影响主要功能
       setComments([]);
     }
   };
 
   const handleConversationClick = (conversation: PrivateConversation) => {
-    console.log('🔄 跳转到私聊页面:', conversation);
     navigate('/send', {
       state: {
         user: {

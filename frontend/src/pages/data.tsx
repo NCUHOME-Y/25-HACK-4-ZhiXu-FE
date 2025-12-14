@@ -26,7 +26,6 @@ import { api } from '../services/apiClient';
  * 展示打卡、Flag、学习时长等统计信息
  */
 export default function DataPage() {
-  // ========== 本地状态 ========== 
   const tasks = useTaskStore((s) => s.tasks); // 任务列表
   const punchedDates = useTaskStore((s) => s.punchedDates); // 打卡日期
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed); // 每日学习时长（秒）
@@ -118,9 +117,7 @@ export default function DataPage() {
 
 
 
-  /**
-   * 加载用户数据
-   */
+  /** 加载用户数据 */
   useEffect(() => {
     const loadAllData = async () => {
       try {
@@ -140,8 +137,8 @@ export default function DataPage() {
         // 加载任务和打卡数据（静默失败）
         try {
           const [tasksData, punchData] = await Promise.all([
-            fetchTasks().catch(err => { console.warn('获取任务失败:', err); return []; }),
-            fetchPunchDates().catch(err => { console.warn('获取打卡数据失败:', err); return []; })
+            fetchTasks().catch(() => []),
+            fetchPunchDates().catch(() => [])
           ]);
           
           // 更新store
@@ -149,19 +146,18 @@ export default function DataPage() {
             tasks: tasksData,
             punchedDates: punchData
           });
-        } catch (err) {
-          console.warn('加载任务/打卡数据失败:', err);
+        } catch {
+          // 静默失败
         }
         
         // 加载用户统计数据（静默失败）
         try {
           await refreshUserData();
-        } catch (err) {
-          console.warn('刷新用户数据失败:', err);
+        } catch {
+          // 静默失败
         }
-      } catch (error) {
-        console.error('加载数据失败:', error);
-        // 不弹出错误页面，只在控制台记录
+      } catch {
+        // 静默失败
       } finally {
         setLoading(false);
       }
@@ -169,30 +165,14 @@ export default function DataPage() {
     loadAllData();
   }, []);
 
-  /**
-   * 刷新用户数据
-   */
+  /** 刷新用户数据 */
   const refreshUserData = async () => {
     try {
       const [userData, todayData, todayPointsResp] = await Promise.all([
-        api.get<{ month_learn_time: number; count: number }>('/api/getUser').catch(err => {
-          console.warn('获取用户数据失败:', err);
-          return { month_learn_time: 0, count: 0 };
-        }),
-        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime').catch(err => {
-          console.warn('获取今日学习时长失败:', err);
-          return { today_learn_time: 0 };
-        }),
-        api.get<{ today_points: number }>('/api/getTodayPoints').catch(err => {
-          console.warn('获取今日积分失败:', err);
-          return { today_points: 0 };
-        })
+        api.get<{ month_learn_time: number; count: number }>('/api/getUser').catch(() => ({ month_learn_time: 0, count: 0 })),
+        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime').catch(() => ({ today_learn_time: 0 })),
+        api.get<{ today_points: number }>('/api/getTodayPoints').catch(() => ({ today_points: 0 }))
       ]);
-
-      console.log('用户学习时长:', userData.month_learn_time);
-      console.log('今日学习时长:', todayData.today_learn_time);
-      console.log('用户积分:', userData.count);
-      console.log('今日获得积分:', todayPointsResp?.today_points);
 
       setTodayPoints(todayPointsResp?.today_points || 0);
 
@@ -201,38 +181,29 @@ export default function DataPage() {
       const monthTime = userData.month_learn_time || 0; // 本月累计学习时长（秒）
       setMonthLearnTime(monthTime);
       useTaskStore.setState({
-        dailyElapsed: todayTime // 今日学习时长（秒）
+        dailyElapsed: todayTime
       });
-    } catch (error) {
-      console.error('刷新用户数据失败:', error);
-      // 设置默认值，避免页面显示异常
+    } catch {
       setTodayPoints(0);
       setMonthLearnTime(0);
       useTaskStore.setState({ dailyElapsed: 0 });
     }
   };
 
-  /**
-   * 加载学习趋势数据
-   */
+  /** 加载学习趋势数据 */
   useEffect(() => {
     const loadStudyData = async () => {
       try {
         const data = await getStudyTimeTrend(studyPeriod);
-        console.log(`加载${studyPeriod}学习趋势:`, data);
         setStudyData(data);
-      } catch (err) {
-        console.error('加载学习趋势失败:', err);
+      } catch {
         setStudyData([]);
       }
     };
     loadStudyData();
   }, [studyPeriod]);
 
-  // ========== 计算属性 ========== 
-  /**
-   * 计算本月打卡统计
-   */
+  /** 计算本月打卡统计 */
   const calculatedMonthlyStats = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -256,9 +227,7 @@ export default function DataPage() {
     };
   }, [punchedDates, monthLearnTime]);
 
-  /**
-   * 计算 Flag 统计数据
-   */
+  /** 计算Flag统计数据 */
   const flagStats = useMemo(() => {
     const completedCount = tasks.filter(t => t.completed).length;
     const uncompletedCount = tasks.filter(t => !t.completed).length;
@@ -288,9 +257,7 @@ export default function DataPage() {
     return { completedCount, uncompletedCount, totalCount, labelStats };
   }, [tasks]);
 
-  /**
-   * 饼图数据转换
-   */
+  /** 饼图数据转换 */
   const pieChartData = useMemo(() => {
     if (!flagStats?.labelStats) return [];
     return flagStats.labelStats.map(stat => ({
@@ -301,10 +268,7 @@ export default function DataPage() {
   }, [flagStats]);
 
 
-  // ========== 工具函数 ========== 
-  /**
-   * 格式化学习时长（秒转小时/分钟/秒）
-   */
+  /** 格式化学习时长（秒转小时/分钟/秒）*/
   // 总时长显示：大于1小时显示小时，否则显示分钟
   // 累计时长和今日学习时长格式化：XhX 或 XmX
   const formatTotalHours = (seconds: number) => {

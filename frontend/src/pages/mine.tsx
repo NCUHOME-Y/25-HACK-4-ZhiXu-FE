@@ -53,8 +53,6 @@ export default function MinePage() {
   const navigate = useNavigate();
   const { updateUserProfile: updateUserContextProfile } = useUser();
   
-  // ========== 本地状态 ========== 
-  // Zustand 全局状态
   const tasks = useTaskStore((s) => s.tasks);
   
   // 本地UI状态
@@ -99,9 +97,7 @@ export default function MinePage() {
   const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
   const [totalLikes, setTotalLikes] = useState(0);
   
-  /**
-   * 加载用户统计数据
-   */
+  /** 加载用户统计数据 */
   const loadUserStats = async () => {
     try {
       if (!authService.isAuthenticated()) {
@@ -400,14 +396,10 @@ export default function MinePage() {
     return [...timeMessages, ...generalMessages];
   }, []);
 
-  // ========== 事件处理器 ==========
-  /**
-   * 保存个人资料
-   */ 
+  /** 保存个人资料 */
   const handleSaveProfile = async () => {
     // 防止重复提交
     if (isSaving) {
-      console.log('[handleSaveProfile] 正在保存中，忽略重复点击');
       return;
     }
 
@@ -440,9 +432,7 @@ export default function MinePage() {
     }
   };
 
-  /**
-   * 选择头像
-   */
+  /** 选择头像 */
   const handleSelectAvatar = async (selectedAvatar: string) => {
     // 直接本地切换头像
     const avatarIndex = AVATAR_FILES.indexOf(selectedAvatar);
@@ -466,39 +456,31 @@ export default function MinePage() {
     }
   };
 
-  /**
-   * 打开用户反馈
-   */
+  /** 打开用户反馈 */
   const handleFeedback = () => {
     // 反馈链接地址从环境变量获取，默认值为正式文档
     const feedbackDocUrl = import.meta.env.VITE_FEEDBACK_URL
     window.open(feedbackDocUrl, '_blank');
   };
 
-  /**
-   * 切换消息提醒
-   */
+  /** 切换消息提醒 */
   const handleToggleNotification = async (enabled: boolean) => {
     try {
       await updateNotificationEnabled(enabled);
       setNotificationEnabled(enabled);
-    } catch (error) {
-      console.error('更新消息提醒状态失败:', error);
+    } catch {
+      // 忽略错误
     }
   };
 
-  /**
-   * 更新提醒时间（临时状态）
-   */
+  /** 更新提醒时间（临时状态）*/
   const handleUpdateNotificationTime = (hour: string, minute: string) => {
     setTempNotificationHour(hour);
     setTempNotificationMinute(minute);
     setHasUnsavedChanges(true);
   };
 
-  /**
-   * 保存提醒时间设置
-   */
+  /** 保存提醒时间设置 */
   const handleSaveNotificationTime = async () => {
     try {
       await updateNotificationTime(tempNotificationHour, tempNotificationMinute);
@@ -510,9 +492,7 @@ export default function MinePage() {
     }
   };
 
-  /**
-   * 修改密码
-   */
+  /** 修改密码 */
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       alert('两次输入的密码不一致');
@@ -535,9 +515,7 @@ export default function MinePage() {
     }
   };
 
-  /**
-   * 退出登录
-   */
+  /** 退出登录 */
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -577,7 +555,7 @@ export default function MinePage() {
           <Card className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-white shadow-lg">
-                <AvatarImage src={typeof avatar === 'string' && avatar.startsWith('http') ? avatar : (typeof avatar === 'string' && avatar.startsWith('/api/avatar/') ? getAvatarUrl(avatar) : avatar)} alt="Avatar" />
+                <AvatarImage src={getAvatarUrl(avatar)} alt="Avatar" />
                 <AvatarFallback className="text-2xl font-bold text-white bg-blue-400">知</AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -968,7 +946,7 @@ export default function MinePage() {
                   onClick={() => setAvatarPopoverOpen(true)}
                   className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity flex-shrink-0"
                 >
-                  <img src={typeof avatar === 'string' && avatar.startsWith('http') ? avatar : (typeof avatar === 'string' && avatar.startsWith('/api/avatar/') ? getAvatarUrl(avatar) : avatar)} alt="Avatar" className="h-full w-full object-cover" />
+                  <img src={getAvatarUrl(avatar)} alt="Avatar" className="h-full w-full object-cover" />
                 </button>
 
                 <Dialog open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>

@@ -31,8 +31,6 @@ type AuthMode = "login" | "signup" | "otp" | "otp-input" | "forgot-password" | "
 export default function AuthPage() {
   const navigate = useNavigate()
   
-  // ========== 本地状态 ==========
-  // 当前显示的认证模式
   const [mode, setMode] = useState<AuthMode>("login")
   // 当前手机号（用于跨步骤保留）
   const [phone, setPhone] = useState("")
@@ -114,10 +112,7 @@ export default function AuthPage() {
     }
   }, [resetCodeCooldown])
 
-  // ========== 事件处理器 ==========
-  /**
-   * 切换到验证码页面(从登录)
-   */
+  /** 切换到验证码页面(从登录) */
   const switchToOTPFromLogin = () => {
     // 直接进入验证码登录的邮箱输入页
     setMode("otp")
@@ -127,9 +122,7 @@ export default function AuthPage() {
     setLoginError("") // 清除登录错误信息
   }
 
-  /**
-   * 发送验证码
-   */
+  /** 发送验证码 */
   const handleSendOTP = async () => {
     // 防止重复发送
     if (sendingOTP || resendCooldown > 0) {
@@ -176,9 +169,7 @@ export default function AuthPage() {
     }
   }
 
-  /**
-   * 切换到验证码页面(从注册)
-   */
+  /** 切换到验证码页面(从注册) */
   const switchToOTPFromSignup = async () => {
     // 读取注册表单的各字段并做最小校验（不改子组件，使用 DOM 读取）
     const nameInput = document.getElementById("name") as HTMLInputElement | null
@@ -251,9 +242,7 @@ export default function AuthPage() {
     }
   }
 
-  /**
-   * 处理登录
-   */
+  /** 处理登录 */
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault()
@@ -305,9 +294,7 @@ export default function AuthPage() {
     }
   }
 
-  /**
-   * 验证码登录处理
-   */
+  /** 验证码登录处理 */
   const handleOTPLogin = async () => {
     setVerifyingOTP(true)
     try {
@@ -347,9 +334,7 @@ export default function AuthPage() {
     }
   }
 
-  /**
-   * 验证码验证成功后的处理（用于注册）
-   */
+  /** 验证码验证成功后的处理（用于注册）*/
   const handleOTPVerificationSuccess = async () => {
     setVerifyingOTP(true)
     setSignupError("") // 清除之前的错误
@@ -408,9 +393,7 @@ export default function AuthPage() {
     }
   }
 
-  /**
-   * P1修复：发送邮箱验证码（忘记密码）
-   */
+  /** P1修复：发送邮箱验证码（忘记密码）*/
   const handleSendResetCode = async () => {
     const value = forgotEmail.trim()
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
@@ -448,9 +431,7 @@ export default function AuthPage() {
     }
   }
 
-  /**
-   * P1修复：重置密码
-   */
+  /** P1修复：重置密码 */
   const handleResetPassword = async () => {
     setResetPasswordError("") // 清除之前的错误
     

@@ -56,7 +56,6 @@ import { api } from '../services/apiClient';
 
 
 export default function FlagPage() {
-  // ========== 本地状态 ========== 
   const navigate = useNavigate();
   // Zustand 全局 store
   const tasks = useTaskStore((s) => s.tasks);
@@ -66,7 +65,7 @@ export default function FlagPage() {
   const tickTaskInStore = useTaskStore((s) => s.tickTask);
   const punchedDates = useTaskStore((s) => s.punchedDates);
   const togglePunchTodayInStore = useTaskStore((s) => s.togglePunchToday);
-  // P1修复：从后端加载任务和打卡数据
+
   const loadData = useCallback(async () => {
     try {
       // 检查是否登录
@@ -128,7 +127,6 @@ export default function FlagPage() {
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number } };
         if (axiosError.response?.status === 401) {
-          console.log('Token过期，需要重新登录');
           localStorage.removeItem('auth_token');
           navigate('/auth');
         }
@@ -144,7 +142,6 @@ export default function FlagPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('[Flag] 页面可见，重新加载数据');
         loadData();
       }
     };
@@ -209,8 +206,6 @@ export default function FlagPage() {
     return tasks.filter(t => t.enableNotification).length;
   }, [tasks]);
 
-  // ========== 副作用 ========== 
-  // 错误提示动画副作用
   useEffect(() => {
     // 检查全局冷却状态
     const checkGlobalCooldown = () => {
@@ -234,8 +229,6 @@ export default function FlagPage() {
     return () => clearInterval(interval);
   }, [tasks]);
 
-  // ========== 副作用 ========== 
-  // 错误提示动画副作用
   useEffect(() => {
     if (showError && !alertVisible) {
       setAlertVisible(true);
@@ -260,13 +253,7 @@ export default function FlagPage() {
     }
   }, [alertVisible, alertHiding]);
   
-  // 定时检查冷却状态
-  // 旧的每flag冷却逻辑已废弃，已用新全局冷却逻辑替代
-
-  // ========== 工具函数 ========== 
-  /**
-   * 判断 flag 是否在今日有效日期范围内
-   */
+  /** 判断 flag 是否在今日有效日期范围内 */
   const isFlagActiveToday = useCallback((flag: Task) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -287,7 +274,6 @@ export default function FlagPage() {
     return true; // 在有效范围内或每天
   }, []);
 
-  // ========== 计算属性 ========== 
   /** 连续打卡天数 */
   const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
   /** 本月打卡天数 */
@@ -408,9 +394,7 @@ export default function FlagPage() {
   const { minutes, seconds } = formatElapsedTime(sessionElapsed);
 
   // ========== 工具函数 ========== 
-  /**
-   * 格式化每日累计时长为 HH:MM:SS
-   */
+  /** 格式化每日累计时长为 HH:MM:SS */
   const formatDailyTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -418,9 +402,7 @@ export default function FlagPage() {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  /**
-   * 获取 flag 日期状态显示文本
-   */
+  /** 获取 flag 日期状态显示文本 */
   const getFlagDateStatus = (flag: Task) => {
     // 只显示 YYYY-MM-DD，不显示时分秒
     const format = (d?: string) => d ? formatDateYMD(new Date(d)) : '';
@@ -431,9 +413,7 @@ export default function FlagPage() {
     return '每天';
   };
 
-  /**
-   * 格式化本次学习时长, 超过1小时返回长格式
-   */
+  /** 格式化本次学习时长, 超过1小时返回长格式 */
   const formatSessionTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -451,11 +431,7 @@ export default function FlagPage() {
     }
   };
 
-  // ========== 事件处理器 ========== 
-  /**
-   * 任务记次（打卡/完成）
-   * 注：每日积分上限和冷却机制为前端临时检查，后端应进行权威验证
-   */
+  /** 任务记次（打卡/完成）- 每日积分上限和冷却机制为前端临时检查 */
   const handleTickTask = async (taskId: string) => {
       // 检查每日积分上限（前端临时检查）
       const todayDateStr = formatDateYMD(new Date());
@@ -549,12 +525,11 @@ export default function FlagPage() {
                 api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
                 api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
               ]);
-            } catch (refreshError) {
-              console.warn('⚠️ 刷新用户数据失败:', refreshError);
+            } catch {
+              // 静默失败
             }
             toast.success(`恭喜完成！获得 ${addPoints} 积分 🎉`);
-          } catch (error) {
-            console.error('❌ 添加积分失败:', error);
+          } catch {
             toast.warning('任务已完成，但积分添加失败');
           }
         }
@@ -574,9 +549,7 @@ export default function FlagPage() {
     }
   };
 
-  /**
-   * 保存任务（新建或编辑）
-   */
+  /** 保存任务（新建或编辑） */
   const handleSaveTask = async () => {
     if (!newTask.title.trim()) {
       setShowError(true);
@@ -609,8 +582,7 @@ export default function FlagPage() {
                 onClick: () => navigate('/contact')
               }
             });
-          } catch (error) {
-            console.error('分享失败:', error);
+          } catch {
             toast.error('分享失败，请检查网络连接');
           }
         } else if (!newTask.isPublic && oldTask?.postId) {
@@ -728,9 +700,7 @@ export default function FlagPage() {
     await loadData();
   };
 
-  /**
-   * 删除任务
-   */
+  /** 删除任务 */
   const handleDeleteTask = async () => {
     if (!editingTaskId) return;
     const taskToDelete = tasks.find(t => t.id === editingTaskId);
@@ -740,8 +710,8 @@ export default function FlagPage() {
     if (taskToDelete.postId) {
       try {
         await contactService.deletePost(taskToDelete.postId);
-      } catch (error) {
-        console.error('删除关联帖子失败:', error);
+      } catch {
+        // 静默失败
       }
     }
     
@@ -760,9 +730,7 @@ export default function FlagPage() {
     closeDrawer();
   };
 
-  /**
-   * 关闭抽屉并重置状态
-   */
+  /** 关闭抽屉并重置状态 */
   const closeDrawer = () => {
     setNewTask({ 
       title: '', 
@@ -782,9 +750,7 @@ export default function FlagPage() {
     setOpenDrawer(false);
   };
 
-  /**
-   * 开始编辑任务
-   */
+  /** 开始编辑任务 */
   const startEditTask = (task: (typeof tasks)[0]) => {
     setEditingTaskId(task.id);
     setNewTask({ 
@@ -803,9 +769,7 @@ export default function FlagPage() {
     setOpenDrawer(true);
   };
 
-  /**
-   * 切换今日打卡状态
-   */
+  /** 切换今日打卡状态 */
   const togglePunchToday = async () => {
     // 防止重复打卡
     if (isPunchedToday) {
@@ -828,13 +792,11 @@ export default function FlagPage() {
       }
       const totalPoints = basePoints + bonusPoints;
       toast.success(`打卡成功！获得 ${totalPoints} 积分 🎉${bonusPoints > 0 ? ` (连续${newStreak}天奖励+${bonusPoints})` : ''}`);
-    } catch (error) {
-      console.error('打卡失败:', error);
+    } catch {
       toast.error('打卡失败，请重试');
     }
   };
 
-  // ========== 渲染 ==========
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
       <div className="max-w-2xl mx-auto w-full">

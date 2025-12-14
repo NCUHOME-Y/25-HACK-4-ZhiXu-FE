@@ -22,18 +22,13 @@ export default function StartPage() {
       const startTime = Date.now();
       
       try {
-        // 检查本地是否有token
         const token = authService.getToken();
-        console.log('🔍 检查本地token:', token ? '存在' : '不存在');
         
         if (token) {
           // 有token，尝试验证并自动登录
           try {
             const user = await authService.getCurrentUser();
             if (user) {
-              console.log('✅ Token有效，自动登录成功:', user.name);
-              
-              // 确保至少显示3秒开屏页面
               const elapsed = Date.now() - startTime;
               const remainingTime = Math.max(0, 3000 - elapsed);
               
@@ -43,7 +38,6 @@ export default function StartPage() {
               return;
             }
           } catch {
-            console.log('❌ Token验证失败，清除token');
             authService.logout();
           }
         }

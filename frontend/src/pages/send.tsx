@@ -10,11 +10,7 @@ import authService from '../services/auth.service';
 import { useUser } from '../lib/stores/userContext';
 import { API_BASE, makeWsUrl } from '../services/apiClient';
 
-/**
- * 格式化消息时间显示
- * @param date 消息日期
- * @returns 格式化后的时间字符串
- */
+/** 格式化消息时间显示 */
 const formatMessageTime = (date: Date): string => {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

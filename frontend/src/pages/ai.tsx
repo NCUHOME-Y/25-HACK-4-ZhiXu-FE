@@ -27,7 +27,6 @@ const getCurrentUserId = (): string => {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.user_id?.toString() || payload.sub?.toString() || 'default';
   } catch (error) {
-    console.warn('无法解析用户 ID，使用默认值:', error);
     return 'default';
   }
 };
@@ -50,7 +49,6 @@ const getStorageKeys = () => {
 export default function AIPage() {
   const navigate = useNavigate();
 
-  // ========== 本地状态 ==========
   const [background, setBackground] = useState('');
   const [goal, setGoal] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
@@ -145,20 +143,14 @@ export default function AIPage() {
     }
   }, []);
 
-  // ========== 计算属性 ==========
-  /**
-   * 难度配置选项
-   */
+  /** 难度配置选项 */
   const difficulties: { value: Difficulty; label: string; color: string }[] = [
     { value: 'easy', label: '轻松难度', color: 'bg-green-100 text-green-700 hover:bg-green-200' },
     { value: 'medium', label: '适度难度', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
     { value: 'hard', label: '挑战难度', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
   ];
 
-  // ========== 事件处理器 ==========
-  /**
-   * 生成学习计划
-   */
+  /** 生成学习计划 */
   const handleGenerate = async () => {
     if (!goal.trim()) {
       toast.error('请输入学习目标');
@@ -192,17 +184,14 @@ export default function AIPage() {
       localStorage.setItem(STORAGE_KEYS.GENERATED_PLANS, JSON.stringify(newPlans));
       
       toast.success('学习计划生成成功！');
-    } catch (error) {
-      console.error('生成学习计划失败:', error);
+    } catch {
       toast.error('生成失败，请重试');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  /**
-   * 添加单个Flag到任务列表
-   */
+  /** 添加单个Flag到任务列表 */
   const handleAddSingleFlag = async (plan: StudyPlan, flagIndex: number) => {
     const flag = plan.flags[flagIndex];
     const flagKey = `${plan.goal}_${flag.title}`;
@@ -245,9 +234,7 @@ export default function AIPage() {
     }
   };
 
-  /**
-   * 将生成的Flag批量添加到任务列表
-   */
+  /** 将生成的Flag批量添加到任务列表 */
   const handleAddToFlags = async (plan: StudyPlan) => {
     if (!plan.flags || plan.flags.length === 0) {
       toast.error('没有可添加的Flag');

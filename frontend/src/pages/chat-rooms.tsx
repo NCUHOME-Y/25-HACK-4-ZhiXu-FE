@@ -50,8 +50,7 @@ export default function ChatRoomsPage() {
       });
       setRooms(sortedRooms);
       setError(null);
-    } catch (err) {
-      console.error('加载聊天室列表失败:', err);
+    } catch {
       setError('无法加载聊天室列表');
     } finally {
       setLoading(false);
@@ -68,8 +67,7 @@ export default function ChatRoomsPage() {
       setNewRoomName('');
       setIsDrawerOpen(false);
       await loadRooms();
-    } catch (err) {
-      console.error('创建聊天室失败:', err);
+    } catch {
       alert('创建失败，请重试');
     } finally {
       setIsCreating(false);

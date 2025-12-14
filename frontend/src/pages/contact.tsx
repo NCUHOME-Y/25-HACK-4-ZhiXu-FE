@@ -72,7 +72,6 @@ export default function ContactPage() {
   const navigate = useNavigate();
   const { user: currentUserCtx } = useUser();
 
-  // ========== 本地状态 ==========
   const [displayedPosts, setDisplayedPosts] = useState<User[]>([]);
   const [searchUserResults, setSearchUserResults] = useState<SearchUserResult[]>([]); // 用户搜索结果
   const [newComment, setNewComment] = useState<Record<string, string>>({});
@@ -148,17 +147,13 @@ export default function ContactPage() {
         }
         setLoading(false);
       })
-      .catch(err => {
-        console.error('分页加载失败:', err);
+      .catch(() => {
         setLoading(false);
         setHasMore(false);
       });
   }, [loading, hasMore, page]);
 
-  // ========== 副作用 ==========
-  /**
-   * 获取当前用户信息
-   */
+  /** 获取当前用户信息 */
   useEffect(() => {
     if (currentUserCtx) {
       setCurrentUserId(currentUserCtx.id);
@@ -166,9 +161,7 @@ export default function ContactPage() {
     }
   }, [currentUserCtx]);
 
-  /**
-   * 初始加载和搜索触发
-   */
+  /** 初始加载和搜索触发 */
   useEffect(() => {
     setDisplayedPosts([]);
     setPage(1);
@@ -212,15 +205,14 @@ export default function ContactPage() {
             setHasMore(response.hasMore);
             contactService.getUserLikedPosts()
               .then(ids => setLikedPosts(new Set(ids.map(id => String(id)))))
-              .catch(e => console.warn('无法获取已点赞帖子', e));
+              .catch(() => {});
           } else {
             setDisplayedPosts([]);
             setHasMore(false);
           }
           setLoading(false);
         })
-        .catch(err => {
-          console.error('加载帖子失败:', err);
+        .catch(() => {
           setError('无法连接到服务器');
           setLoading(false);
           setHasMore(false);
@@ -228,9 +220,7 @@ export default function ContactPage() {
     }
   }, [activeSearchQuery, checkUnreadMessages]);
 
-  /**
-   * 滚动监听(触发分页加载)
-   */
+  /** 滚动监听(触发分页加载) */
   useEffect(() => {
     const currentObserver = observerRef.current;
     
@@ -254,9 +244,7 @@ export default function ContactPage() {
     };
   }, [hasMore, loading, loadMorePosts]);
 
-  /**
-   * 点赞处理（后端自动切换点赞/取消状态）
-   */
+  /** 点赞处理（后端自动切换点赞/取消状态）*/
   const handleLike = (postId: string, liked: string[]) => {
     const isLiked = liked.includes('liked');
     
@@ -307,9 +295,7 @@ export default function ContactPage() {
       });
   };
 
-  /**
-   * 评论处理
-   */
+  /** 评论处理 */
   const handleAddComment = (postId: string) => {
     const comment = newComment[postId]?.trim();
     if (!comment) return;
@@ -343,9 +329,7 @@ export default function ContactPage() {
       });
   };
 
-  /**
-   * 删除帖子
-   */
+  /** 删除帖子 */
   const handleDeletePost = async (postId: string) => {
     try {
       await contactService.deletePost(postId);
@@ -362,9 +346,7 @@ export default function ContactPage() {
     }
   };
 
-  /**
-   * 发布新帖子
-   */
+  /** 发布新帖子 */
   const handleCreatePost = async () => {
     const content = newPostContent.trim();
     if (!content) return;

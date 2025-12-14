@@ -9,12 +9,7 @@ import authService from '../services/auth.service';
 import { useUser } from '../lib/stores/userContext';
 import { api, makeWsUrl } from '../services/apiClient';
 
-/**
- * 格式化聊天消息时间
- * - 今天：显示时间（如 14:30）
- * - 昨天：显示"昨天 14:30"
- * - 更早：显示月/日 时间（如 11/20 14:30）
- */
+/** 格式化聊天消息时间 */
 function formatChatTime(dateString: string | Date): string {
   const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
   const now = new Date();

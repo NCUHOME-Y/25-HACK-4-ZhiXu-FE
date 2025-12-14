@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Trophy, Flame } from 'lucide-react';
+import { ArrowLeft, Trophy, Flame, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Avatar, AvatarImage, AvatarFallback, Button, Tabs, TabsList, TabsTrigger } from "../components";
 
@@ -25,14 +25,12 @@ interface RankUser {
 export default function RankPage() {
   const navigate = useNavigate();
 
-  // ========== 本地状态 ==========
   const [activeTab, setActiveTab] = useState<'days' | 'flags' | 'points'>('days');
   const [rankUsers, setRankUsers] = useState<RankUser[]>([]);
   const [currentUser, setCurrentUser] = useState<RankUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ========== 副作用 ==========
   useEffect(() => {
     const loadRankData = async () => {
       setLoading(true);
@@ -44,8 +42,7 @@ export default function RankPage() {
         ]);
         setRankUsers(rankData || []);
         setCurrentUser(userData);
-      } catch (error) {
-        console.error('加载封神榜数据失败:', error);
+      } catch {
         setError('加载封神榜数据失败，请稍后重试');
         setRankUsers([]);
         setCurrentUser(null);
@@ -60,8 +57,7 @@ export default function RankPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // 页面变为可见时，重新加载封神榜数据
-        rankService.getRankList(activeTab).then(setRankUsers).catch(console.error);
+        rankService.getRankList(activeTab).then(setRankUsers).catch(() => {});
         rankService.getCurrentUserRank(activeTab).then(setCurrentUser).catch(console.error);
       }
     };
@@ -70,10 +66,7 @@ export default function RankPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [activeTab]);
 
-  // ========== 工具函数 ==========
-  /**
-   * 获取排名徽章图标
-   */
+  /** 获取排名徽章图标 */
   const getMedalIcon = (rank: number) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
@@ -84,18 +77,14 @@ export default function RankPage() {
     return rank;
   };
 
-  /**
-   * 获取显示的数值
-   */
+  /** 获取显示的数值 */
   const getDisplayValue = (user: RankUser) => {
     if (activeTab === 'days') return user.totalDays;
     if (activeTab === 'flags') return user.completedFlags;
     return user.totalPoints;
   };
 
-  /**
-   * 获取单位
-   */
+  /** 获取单位 */
   const getUnit = () => {
     if (activeTab === 'days') return '天';
     if (activeTab === 'flags') return '个';
@@ -172,7 +161,7 @@ export default function RankPage() {
               value="points" 
               className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-purple-600 data-[state=active]:font-medium"
             >
-              <span className="text-base">✨</span>
+              <Sparkles className="h-4 w-4" />
               积分总数
             </TabsTrigger>
           </TabsList>
