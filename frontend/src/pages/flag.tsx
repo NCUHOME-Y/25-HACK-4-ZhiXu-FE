@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Plus, CheckSquare, Clock,CalendarDays, Check, Bell, BellOff } from 'lucide-react';
+import { Pencil, Plus, CheckSquare, Clock, CalendarDays, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -192,7 +192,8 @@ export default function FlagPage() {
     points: 0,
     startDate: '',
     endDate: '',
-    reminderTime: '12:00'
+    reminderTime: '12:00',
+    enableNotification: false
   });
   const [showError, setShowError] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
@@ -669,7 +670,8 @@ export default function FlagPage() {
         isPublic: newTask.isPublic,
         startDate: newTask.startDate,
         endDate: newTask.endDate,
-        reminderTime: newTask.reminderTime
+        reminderTime: newTask.reminderTime,
+        enableNotification: newTask.enableNotification
       });
       // 编辑后立即刷新数据
       await loadData();
@@ -734,7 +736,8 @@ export default function FlagPage() {
         points: newTask.points,
         startDate: newTask.startDate,
         endDate: newTask.endDate,
-        reminderTime: newTask.reminderTime
+        reminderTime: newTask.reminderTime,
+        enableNotification: newTask.enableNotification
       });
     }
     closeDrawer();
@@ -775,37 +778,6 @@ export default function FlagPage() {
   };
 
   /**
-   * 切换flag提醒状态（最多3个）
-   */
-  const handleToggleFlagNotification = async (flagId: string, currentState: boolean) => {
-    const newState = !currentState;
-    
-    // 如果要启用提醒，检查是否已达3个上限
-    if (newState && enabledNotificationCount >= 3) {
-      toast.error('最多只能同时为3个flag启用提醒');
-      return;
-    }
-
-    try {
-      const { toggleFlagNotification } = await import('../services/flag.service');
-      await toggleFlagNotification(flagId, newState);
-      
-      // 更新本地状态
-      updateTaskInStore(flagId, { enableNotification: newState });
-      toast.success(newState ? 'flag提醒已启用' : 'flag提醒未开启');
-    } catch (error: unknown) {
-      console.error('切换flag提醒失败:', error);
-      if (error && typeof error === 'object' && 'response' in error && 
-          error.response && typeof error.response === 'object' && 'data' in error.response &&
-          error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data) {
-        toast.error((error.response.data as { error: string }).error);
-      } else {
-        toast.error('操作失败，请重试');
-      }
-    }
-  };
-
-  /**
    * 关闭抽屉并重置状态
    */
   const closeDrawer = () => {
@@ -819,7 +791,8 @@ export default function FlagPage() {
       points: 0,
       startDate: '',
       endDate: '',
-      reminderTime: '12:00'
+      reminderTime: '12:00',
+      enableNotification: false
     });
     setEditingTaskId(null);
     setShowError(false);
@@ -841,7 +814,8 @@ export default function FlagPage() {
       points: task.points || 0,
       startDate: task.startDate || '',
       endDate: task.endDate || '',
-      reminderTime: task.reminderTime || '12:00'
+      reminderTime: task.reminderTime || '12:00',
+      enableNotification: task.enableNotification || false
     });
     setOpenDrawer(true);
   };
@@ -1160,6 +1134,11 @@ export default function FlagPage() {
                                 {FLAG_LABELS[t.label].name}
                               </span>
                             )}
+                            {t.enableNotification && (
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-700 flex-shrink-0">
+                                已提醒
+                              </span>
+                            )}
                             {t.isPublic ? (
                               <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 flex-shrink-0">
                                 已分享
@@ -1173,19 +1152,6 @@ export default function FlagPage() {
                         </div>
                         {/* 同一行竖直居中按钮组 */}
                         <div className="flex items-center gap-2 self-stretch" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className={`h-8 w-8 rounded-lg ${
-                              t.enableNotification
-                                ? 'border-green-200 text-green-600 bg-green-50 hover:bg-green-100'
-                                : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                            }`}
-                            onClick={() => handleToggleFlagNotification(t.id, t.enableNotification || false)}
-                            title={t.enableNotification ? '关闭提醒' : '开启提醒'}
-                          >
-                            {t.enableNotification ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-                          </Button>
                           <Button 
                             size="icon" 
                             variant="outline" 
@@ -1273,6 +1239,17 @@ export default function FlagPage() {
                               : 'bg-gray-100 text-gray-600'
                           }`}>
                             {t.isPublic ? '已分享' : '未分享'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">消息提醒</span>
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                            t.enableNotification
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {t.enableNotification ? `已开启 (${t.reminderTime || '12:00'})` : '未开启'}
                           </span>
                         </div>
                         
@@ -1421,20 +1398,12 @@ export default function FlagPage() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">消息提醒</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleFlagNotification(t.id, t.enableNotification || false);
-                            }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded transition-colors ${
-                              t.enableNotification
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                          >
-                            {t.enableNotification ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
-                            {t.enableNotification ? '已启用' : '未开启'}
-                          </button>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded ${
+                            t.enableNotification
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-gray-100 text-gray-600'}`}>
+                            {t.enableNotification ? `已启用 (${t.reminderTime || '12:00'})` : '未开启'}
+                          </span>
                         </div>
                         {t.createdAt && (
                           <div className="flex items-center justify-between">
@@ -1592,40 +1561,40 @@ export default function FlagPage() {
 
       {/* Drawer：新建/编辑flag */}
       <Drawer open={openDrawer} onOpenChange={(isOpen) => !isOpen && closeDrawer()}>
-        <DrawerContent className="bg-white backdrop-blur-sm border-t border-white/20 rounded-t-2xl shadow-2xl">
+        <DrawerContent className="bg-white backdrop-blur-sm border-t border-white/20 rounded-t-2xl shadow-2xl max-h-[90vh]">
           <DrawerHeader className="border-b border-gray-100/50 pb-4">
             <DrawerTitle className="text-lg font-semibold text-gray-900">{editingTaskId ? '编辑flag' : '新建flag'}</DrawerTitle>
           </DrawerHeader>
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(90vh-200px)]">
             <div>
-              <Label htmlFor="flag-title">Flag概述</Label>
+              <Label htmlFor="flag-title" className="text-sm sm:text-base">Flag概述</Label>
               <Input
                 id="flag-title"
                 placeholder="flag概述"
                 value={newTask.title}
                 onChange={(e) => setNewTask((s) => ({ ...s, title: e.target.value }))}
-                className="mt-1"
+                className="mt-1 text-base"
               />
             </div>
             
             <div>
-              <Label htmlFor="flag-detail">Flag详情（可选）</Label>
+              <Label htmlFor="flag-detail" className="text-sm sm:text-base">Flag详情（可选）</Label>
               <Textarea
                 id="flag-detail"
                 placeholder="flag详情（可选）"
                 value={newTask.detail}
                 onChange={(e) => setNewTask((s) => ({ ...s, detail: e.target.value }))}
-                className="mt-1"
+                className="mt-1 text-base"
               />
             </div>
             
             <div>
-              <Label htmlFor="flag-label">类型标签</Label>
+              <Label htmlFor="flag-label" className="text-sm sm:text-base">类型标签</Label>
               <Select
                 value={String(newTask.label)}
                 onValueChange={(value: string) => setNewTask((s) => ({ ...s, label: Number(value) as FlagLabel }))}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 text-base">
                   <SelectValue placeholder="选择类型标签" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1639,12 +1608,12 @@ export default function FlagPage() {
             </div>
 
             <div>
-              <Label htmlFor="flag-priority">优先级</Label>
+              <Label htmlFor="flag-priority" className="text-sm sm:text-base">优先级</Label>
               <Select
                 value={String(newTask.priority)}
                 onValueChange={(value: string) => setNewTask((s) => ({ ...s, priority: Number(value) as FlagPriority }))}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 text-base">
                   <SelectValue placeholder="选择优先级" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1658,8 +1627,8 @@ export default function FlagPage() {
             </div>
 
             <div>
-              <Label htmlFor="flag-date">选择日期（可选，不选就是每天）</Label>
-              <div className="mt-1">
+              <Label htmlFor="flag-date" className="text-sm sm:text-base">选择日期（可选，不选就是每天）</Label>
+              <div className="mt-1 overflow-x-auto">
                 <Calendar23 
                   value={{
                     from: newTask.startDate ? new Date(newTask.startDate) : undefined,
@@ -1686,7 +1655,7 @@ export default function FlagPage() {
             </div>
             
             <div>
-              <Label htmlFor="flag-total">每日完成次数</Label>
+              <Label htmlFor="flag-total" className="text-sm sm:text-base">每日完成次数</Label>
               <Input
                 id="flag-total"
                 type="number"
@@ -1696,12 +1665,56 @@ export default function FlagPage() {
                   const val = e.target.value;
                   setNewTask((s) => ({ ...s, total: val === '' ? 0 : Number(val) }));
                 }}
-                className="mt-1 [appearance:auto] [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
+                className="mt-1 text-base [appearance:auto] [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
               />
             </div>
 
             <div>
-              <Label htmlFor="flag-reminder-time">提醒时间（启用提醒时生效）</Label>
+              <Label htmlFor="flag-enable-notification" className="text-sm sm:text-base">消息提醒</Label>
+              <div className="flex items-center gap-2 sm:gap-3 mt-1">
+                <span className="relative inline-block h-4 w-4 mr-1">
+                  <input
+                    id="flag-enable-notification"
+                    type="checkbox"
+                    checked={newTask.enableNotification || false}
+                    onChange={(e) => {
+                      const willEnable = e.target.checked;
+                      // 如果要启用提醒，检查是否已达5个上限
+                      if (willEnable && enabledNotificationCount >= 5 && !editingTaskId) {
+                        toast.error('最多只能同时为5个flag启用提醒');
+                        return;
+                      }
+                      // 如果是编辑状态且当前flag已启用，则不计入上限检查
+                      if (willEnable && enabledNotificationCount >= 5 && editingTaskId) {
+                        const currentTask = tasks.find(t => t.id === editingTaskId);
+                        if (!currentTask?.enableNotification) {
+                          toast.error('最多只能同时为5个flag启用提醒');
+                          return;
+                        }
+                      }
+                      setNewTask((s) => ({ ...s, enableNotification: willEnable }));
+                    }}
+                    className="peer h-4 w-4 rounded border border-gray-300 appearance-none focus:ring-0 focus:outline-none bg-white checked:bg-green-600 checked:border-green-600"
+                  />
+                  <span
+                    className="pointer-events-none absolute left-0 top-0 h-4 w-4 flex items-center justify-center"
+                  >
+                    {newTask.enableNotification ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="0" width="16" height="16" rx="4" fill="#16a34a" />
+                        <path d="M4 8.5L7 11.5L12 5.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : null}
+                  </span>
+                </span>
+                <Label htmlFor="flag-enable-notification" className="cursor-pointer">
+                  启用消息提醒（最多5个）
+                </Label>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="flag-reminder-time" className="text-sm sm:text-base">提醒时间{!newTask.enableNotification && <span className="text-xs text-muted-foreground ml-1">（需先启用提醒）</span>}</Label>
               <div className="flex gap-2 mt-1">
                 <Select
                   value={newTask.reminderTime?.split(':')[0] || '12'}
@@ -1713,7 +1726,7 @@ export default function FlagPage() {
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="小时" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-70 overflow-y-auto">
                     {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -1730,8 +1743,8 @@ export default function FlagPage() {
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="分钟" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {['00', '15', '30', '45'].map(m => (
+                  <SelectContent className="max-h-70 overflow-y-auto">
+                    {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1743,7 +1756,7 @@ export default function FlagPage() {
             </div>
 
             {/* 发布到社交页面 + 寻太傅 + 删除按钮分布一行两端 */}
-            <div className="flex items-center justify-between pt-2 w-full">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 pt-2 w-full">
               <div className="flex items-center gap-2">
                 <span className="relative inline-block h-4 w-4 mr-1">
                   <input

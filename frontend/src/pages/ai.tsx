@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Target, Loader2, User, BookOpen, Flag } from 'lucide-react';
-import { CalendarDays, Timer } from 'lucide-react';
+import { Sparkles, Target, Loader2, User, BookOpen, Flag, CalendarDays, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,

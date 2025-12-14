@@ -16,6 +16,7 @@ export interface CreateTaskPayload {
   total?: number;
   dateRange?: unknown;
   reminderTime?: string;
+  enableNotification?: boolean;
 }
 
 // ==================== 打卡相关 ====================
@@ -55,11 +56,14 @@ export async function fetchTasks(): Promise<Task[]> {
   
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
+    const backendFlag = flag as BackendFlag;
     const mapped = {
       ...flag,
-      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
-      isPublic: (flag as BackendFlag).is_public ?? flag.isPublic ?? false  // 确保从后端正确读取 is_public
+      startDate: backendFlag.start_time && backendFlag.start_time !== '0001-01-01T00:00:00Z' ? backendFlag.start_time : '',
+      endDate: backendFlag.end_time && backendFlag.end_time !== '0001-01-01T00:00:00Z' ? backendFlag.end_time : '',
+      isPublic: backendFlag.is_public ?? flag.isPublic ?? false,  // 确保从后端正确读取 is_public
+      enableNotification: (backendFlag as any).enable_notification ?? flag.enableNotification ?? false,  // 映射 enable_notification
+      reminderTime: (backendFlag as any).reminder_time ?? flag.reminderTime ?? '12:00'  // 映射 reminder_time
     };
     
     // 如果有 isPublic 为 true 的，打印出来
@@ -68,7 +72,7 @@ export async function fetchTasks(): Promise<Task[]> {
         id: mapped.id,
         title: mapped.title,
         isPublic: mapped.isPublic,
-        raw_is_public: (flag as BackendFlag).is_public
+        raw_is_public: backendFlag.is_public
       });
     }
     
@@ -143,6 +147,7 @@ export async function createTask(payload: CreateTaskPayload & {
     start_time: startTimeISO,
     end_time: endTimeISO,
     reminder_time: payload.reminderTime || '12:00',
+    enable_notification: payload.enableNotification || false,
   };
   
   console.log('📤 创建Flag请求:', backendPayload);
@@ -171,6 +176,7 @@ export async function updateTask(id: string, taskData: {
   startDate?: string;
   endDate?: string;
   reminderTime?: string;
+  enableNotification?: boolean;
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
   
@@ -190,7 +196,8 @@ export async function updateTask(id: string, taskData: {
     is_public: taskData.isPublic,
     start_date: taskData.startDate || '',
     end_date: taskData.endDate || '',
-    reminder_time: taskData.reminderTime || '12:00'
+    reminder_time: taskData.reminderTime || '12:00',
+    enable_notification: taskData.enableNotification || false
   };
   
   console.log('📤 完整更新数据:', updatePayload);

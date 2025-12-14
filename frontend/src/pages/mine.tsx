@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut } from 'lucide-react';
-import { Heart, CheckCircle, Award } from 'lucide-react';
+import { ChevronRight, UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut, Heart, CheckCircle, Award } from 'lucide-react';
 import { 
   BottomNav, 
   Card, 
@@ -777,9 +776,9 @@ export default function MinePage() {
                         
                         {/* Flag提醒列表 */}
                         <div className="space-y-2 pt-2 border-t border-gray-200/50">
-                          <Label className="text-sm font-medium">开启提醒的Flag（最多3个）</Label>
+                          <Label className="text-sm font-medium">开启提醒的Flag（最多5个）</Label>
                           {tasks.filter(t => t.enableNotification && !t.completed).length === 0 ? (
-                            <p className="text-xs text-muted-foreground">暂无开启提醒的Flag，去圈表页面开启吧~</p>
+                            <p className="text-xs text-muted-foreground">暂无开启提醒的Flag，去圭表页面开启吧~</p>
                           ) : (
                             <div className="space-y-2">
                               {tasks.filter(t => t.enableNotification && !t.completed).map(task => (
