@@ -7,6 +7,7 @@ import {
   Card,
   Button,
   Drawer,
+  Tutorial,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
@@ -811,8 +812,6 @@ export default function FlagPage() {
             components={{
               DayButton: ({ children, modifiers, day, ...props }) => {
                 const dateObj = day.date;
-                const now = new Date();
-                const isCurrentMonth = dateObj.getMonth() === now.getMonth() && dateObj.getFullYear() === now.getFullYear();
                 const dateStr = formatDateYMD(dateObj);
                 const today = new Date();
                 const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -840,8 +839,8 @@ export default function FlagPage() {
                   return true;
                 });
 
-                // 非本月日期完全隐藏
-                if (!isCurrentMonth) {
+                // 非当前显示月份的日期完全隐藏（使用modifiers.outside来判断）
+                if (modifiers.outside) {
                   return (
                     <CalendarDayButton
                       day={day}
@@ -1742,6 +1741,9 @@ export default function FlagPage() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {/* 新手教程 */}
+      <Tutorial />
 
       <BottomNav />
     </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut, Heart, CheckCircle, Award } from 'lucide-react';
+import { UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut, Heart, CheckCircle, Award } from 'lucide-react';
 import { 
   BottomNav, 
   Card, 
@@ -38,7 +38,7 @@ import { useUser } from '../lib/stores/userContext';
 import { getUserAchievements } from '../services/mine.service';
 import { toast } from 'sonner';
 import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
-import { BirdMascot } from '../components/feature';
+import { BirdMascot, Tutorial, startTutorial, shouldAutoStartTutorial } from '../components';
 import { api } from '../services/apiClient';
 import contactService from '../services/contact.service';
 import { fetchPunchDates } from '../services/flag.service';
@@ -248,6 +248,17 @@ export default function MinePage() {
   useEffect(() => {
     loadAchievementsData();
   }, [loadAchievementsData]);
+  
+  // 首次登录检测：自动启动新手教程
+  useEffect(() => {
+    if (shouldAutoStartTutorial()) {
+      // 延迟500ms启动，让页面先完成渲染
+      const timer = setTimeout(() => {
+        startTutorial();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
   
   // 监听页面可见性，实时更新数据
   useEffect(() => {
@@ -819,7 +830,6 @@ export default function MinePage() {
                 <h3 className="font-semibold">个人信息</h3>
                 <p className="text-xs text-muted-foreground">编辑头像、昵称、个人简介</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
           </Card>
         </section>
@@ -838,7 +848,6 @@ export default function MinePage() {
                 <h3 className="font-semibold">用户反馈</h3>
                 <p className="text-xs text-muted-foreground">向我们提出建议或报告问题</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
           </Card>
         </section>
@@ -857,7 +866,6 @@ export default function MinePage() {
                 <h3 className="font-semibold">修改密码</h3>
                 <p className="text-xs text-muted-foreground">定期修改密码保护账户安全</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
           </Card>
         </section>
@@ -867,12 +875,12 @@ export default function MinePage() {
           <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer transition-all duration-200">
             <Popover open={aboutPopoverOpen} onOpenChange={setAboutPopoverOpen}>
               <PopoverTrigger asChild>
-                <button className="flex items-center gap-3 w-full text-left hover:bg-slate-50 rounded-lg p-2 transition-all duration-200">
-                  <div className="p-2 rounded-lg bg-green-50">
-                    <Info className="h-5 w-5 text-green-600" />
+                <button className="flex items-center gap-3 w-full text-left transition-all duration-200">
+                  <div className="p-3 rounded-xl bg-green-50">
+                    <Info className="h-6 w-6 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium">关于我们</h3>
+                    <h3 className="font-semibold">关于我们</h3>
                     <p className="text-xs text-muted-foreground">版本信息与协议</p>
                   </div>
                 </button>
@@ -881,7 +889,7 @@ export default function MinePage() {
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-medium mb-2">版本信息</h4>
-                    <p className="text-xs text-muted-foreground">知序 v1.0.0</p>
+                    <p className="text-xs text-muted-foreground">知序 v1.2.0</p>
                   </div>
                   <Separator />
                   <div className="space-y-2">
@@ -905,34 +913,50 @@ export default function MinePage() {
                           <h4 className="font-medium">制作团队</h4>
                           <div className="space-y-2 text-sm">
                             <div>
-                              <p className="font-medium text-slate-900">前端开发</p>
-                              <p className="text-slate-600">React + TypeScript</p>
+                              <p className="font-medium text-slate-900">研发</p>
+                              <p className="text-slate-600">林方魁、吕宇轩、喻鸿杰</p>
                             </div>
                             <div>
-                              <p className="font-medium text-slate-900">后端开发</p>
-                              <p className="text-slate-600">Go + Gin</p>
+                              <p className="font-medium text-slate-900">运营</p>
+                              <p className="text-slate-600">赖心怡、温小蒙</p>
                             </div>
                             <div>
-                              <p className="font-medium text-slate-900">UI/UX设计</p>
-                              <p className="text-slate-600">Tailwind CSS + shadcn/ui</p>
+                              <p className="font-medium text-slate-900">设计</p>
+                              <p className="text-slate-600">张渝旋</p>
                             </div>
                             <div>
-                              <p className="font-medium text-slate-900">项目管理</p>
-                              <p className="text-slate-600">敏捷开发</p>
+                              <p className="font-medium text-slate-900">产品</p>
+                              <p className="text-slate-600">张清泽</p>
                             </div>
                           </div>
                         </div>
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <Separator />
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">联系我们</h4>
-                    <p className="text-xs text-muted-foreground">support@zhixu.com</p>
-                  </div>
                 </div>
               </PopoverContent>
             </Popover>
+          </Card>
+        </section>
+
+        {/* 新手教程 */}
+        <section className="px-4">
+          <Card 
+            className="p-4 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer active:scale-[0.99]"
+            onClick={() => {
+              startTutorial();
+              navigate('/flag');
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-blue-100">
+                <Info className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">新手教程</h3>
+                <p className="text-xs text-gray-600">学习如何使用知序的核心功能</p>
+              </div>
+            </div>
           </Card>
         </section>
 
@@ -1141,6 +1165,9 @@ export default function MinePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 新手教程 - 自动管理显示 */}
+      <Tutorial />
 
       <BottomNav />
     </div>

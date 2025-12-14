@@ -45,3 +45,6 @@ export { default as BirdMascot } from "./feature/BirdMascot"
 // 导出功能日历组件(统一从 index 导入)
 export { default as Calendar21 } from "./feature/calendar-21"
 export { default as Calendar23 } from "./feature/calendar-23"
+
+// 导出教程组件
+export { Tutorial, startTutorial, shouldAutoStartTutorial, markTutorialCompleted } from "./feature/Tutorial"

@@ -10,7 +10,8 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent
+  TabsContent,
+  Tutorial
 } from '../components';
 import { getStudyTimeTrend } from '../services/data.service';
 import { authService } from '../services';
@@ -510,6 +511,10 @@ export default function DataPage() {
         </section>
 
       </div>
+      
+      {/* 新手教程 */}
+      <Tutorial />
+      
       <BottomNav />
     </div>
   );

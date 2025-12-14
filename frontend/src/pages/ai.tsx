@@ -6,6 +6,7 @@ import {
   BottomNav,
   Card,
   Button,
+  Tutorial,
   Input,
   Badge,
   Skeleton,
@@ -640,6 +641,10 @@ export default function AIPage() {
             )}
           </section>
       </div>
+      
+      {/* 新手教程 */}
+      <Tutorial />
+      
       <BottomNav />
     </div>
   );

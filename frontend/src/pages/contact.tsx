@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, SearchIcon, Heart, MessageSquare, Send, Trophy, Inbox, Plus, Trash2 } from 'lucide-react';
-import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea, Tabs, TabsList, TabsTrigger, TabsContent } from "../components";
+import { BottomNav, Card, Avatar, AvatarImage, AvatarFallback, Popover, PopoverTrigger, PopoverContent, Button, ToggleGroup, ToggleGroupItem, Input, Skeleton, Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose, Textarea, Tabs, TabsList, TabsTrigger, TabsContent, Tutorial } from "../components";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1036,6 +1036,9 @@ export default function ContactPage() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+      
+      {/* 新手教程 */}
+      <Tutorial />
       
       <BottomNav />
     </div>
