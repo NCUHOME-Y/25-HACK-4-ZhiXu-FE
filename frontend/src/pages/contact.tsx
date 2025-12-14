@@ -504,7 +504,6 @@ export default function ContactPage() {
                                 </Avatar>
                                 <div className="flex-1">
                                   <h4 className="font-bold text-slate-900 text-lg">{user.name}</h4>
-                                  <p className="text-sm text-slate-500">点击查看详情</p>
                                 </div>
                               </div>
                               <UserStatsBlock userId={String(user.userId)} />
@@ -696,7 +695,6 @@ export default function ContactPage() {
                                 </Avatar>
                                 <div className="flex-1">
                                   <h4 className="font-bold text-slate-900 text-lg">{u.name}</h4>
-                                  <p className="text-sm text-slate-500">用户统计</p>
                                 </div>
                               </div>
                               <UserStatsBlock userId={String(u.id)} />
@@ -787,7 +785,6 @@ export default function ContactPage() {
                           </Avatar>
                         <div className="flex-1">
                           <h4 className="font-bold text-slate-900 text-lg">{user.name}</h4>
-                          <p className="text-sm text-slate-500">点击查看详情</p>
                         </div>
                       </div>
                       

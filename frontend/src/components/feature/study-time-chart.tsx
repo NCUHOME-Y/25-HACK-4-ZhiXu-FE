@@ -155,7 +155,7 @@ export function StudyTimeChart({
             <span>{getPeriodDescription()}累计 {formatTime(totalMinutes)}</span>
           </div>
           <div className="text-muted-foreground leading-none">
-            平均每天 {formatTime(Math.round(totalMinutes / Math.max(data.length, 1)))}
+            {period === 'year' ? '平均每月' : '平均每天'} {formatTime(Math.round(totalMinutes / Math.max(data.length, 1)))}
           </div>
         </CardFooter>
       )}
