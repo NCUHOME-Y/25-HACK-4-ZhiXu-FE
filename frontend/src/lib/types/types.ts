@@ -50,6 +50,7 @@ export interface Task {
   completedAt?: string // 完成时间戳（用于排序已完成列表）
   lastTickTime?: number // 上次打卡时间戳（用于冷却检查）
   enableNotification?: boolean // 是否启用该flag的消息提醒（最多3个）
+  reminderTime?: string // 该flag的提醒时间 (HH:MM 格式)
 }
 
 // 打卡相关类型

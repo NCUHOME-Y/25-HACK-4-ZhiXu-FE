@@ -774,6 +774,36 @@ export default function MinePage() {
                             </Button>
                           </div>
                         )}
+                        
+                        {/* Flag提醒列表 */}
+                        <div className="space-y-2 pt-2 border-t border-gray-200/50">
+                          <Label className="text-sm font-medium">开启提醒的Flag（最多3个）</Label>
+                          {tasks.filter(t => t.enableNotification && !t.completed).length === 0 ? (
+                            <p className="text-xs text-muted-foreground">暂无开启提醒的Flag，去圈表页面开启吧~</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {tasks.filter(t => t.enableNotification && !t.completed).map(task => (
+                                <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{task.title}</p>
+                                    <p className="text-xs text-muted-foreground">提醒时间：{task.reminderTime || '12:00'}</p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      // 跳转到flag页面进行修改
+                                      navigate('/flag');
+                                    }}
+                                    className="text-xs px-2 h-7"
+                                  >
+                                    修改
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -191,7 +191,8 @@ export default function FlagPage() {
     isPublic: false,
     points: 0,
     startDate: '',
-    endDate: ''
+    endDate: '',
+    reminderTime: '12:00'
   });
   const [showError, setShowError] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
@@ -292,7 +293,7 @@ export default function FlagPage() {
       if (todayTime > end.getTime()) return false; // 已过结束日期
     }
 
-    return true; // 在有效范围内或无限期
+    return true; // 在有效范围内或每天
   }, []);
 
   // ========== 计算属性 ========== 
@@ -667,7 +668,8 @@ export default function FlagPage() {
         total: newTask.total || 1,
         isPublic: newTask.isPublic,
         startDate: newTask.startDate,
-        endDate: newTask.endDate
+        endDate: newTask.endDate,
+        reminderTime: newTask.reminderTime
       });
       // 编辑后立即刷新数据
       await loadData();
@@ -731,7 +733,8 @@ export default function FlagPage() {
         priority: newTask.priority,
         points: newTask.points,
         startDate: newTask.startDate,
-        endDate: newTask.endDate
+        endDate: newTask.endDate,
+        reminderTime: newTask.reminderTime
       });
     }
     closeDrawer();
@@ -789,7 +792,7 @@ export default function FlagPage() {
       
       // 更新本地状态
       updateTaskInStore(flagId, { enableNotification: newState });
-      toast.success(newState ? 'flag提醒已启用' : 'flag提醒已关闭');
+      toast.success(newState ? 'flag提醒已启用' : 'flag提醒未开启');
     } catch (error: unknown) {
       console.error('切换flag提醒失败:', error);
       if (error && typeof error === 'object' && 'response' in error && 
@@ -815,7 +818,8 @@ export default function FlagPage() {
       isPublic: false,
       points: 0,
       startDate: '',
-      endDate: ''
+      endDate: '',
+      reminderTime: '12:00'
     });
     setEditingTaskId(null);
     setShowError(false);
@@ -836,7 +840,8 @@ export default function FlagPage() {
       isPublic: task.isPublic || false,
       points: task.points || 0,
       startDate: task.startDate || '',
-      endDate: task.endDate || ''
+      endDate: task.endDate || '',
+      reminderTime: task.reminderTime || '12:00'
     });
     setOpenDrawer(true);
   };
@@ -1168,6 +1173,19 @@ export default function FlagPage() {
                         </div>
                         {/* 同一行竖直居中按钮组 */}
                         <div className="flex items-center gap-2 self-stretch" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className={`h-8 w-8 rounded-lg ${
+                              t.enableNotification
+                                ? 'border-green-200 text-green-600 bg-green-50 hover:bg-green-100'
+                                : 'border-gray-200 text-gray-400 hover:bg-gray-50'
+                            }`}
+                            onClick={() => handleToggleFlagNotification(t.id, t.enableNotification || false)}
+                            title={t.enableNotification ? '关闭提醒' : '开启提醒'}
+                          >
+                            {t.enableNotification ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                          </Button>
                           <Button 
                             size="icon" 
                             variant="outline" 
@@ -1258,24 +1276,6 @@ export default function FlagPage() {
                           </span>
                         </div>
                         
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">消息提醒</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleFlagNotification(t.id, t.enableNotification || false);
-                            }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded transition-colors ${
-                              t.enableNotification
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                          >
-                            {t.enableNotification ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
-                            {t.enableNotification ? '已启用' : '已关闭'}
-                          </button>
-                        </div>
-                        
                         {t.createdAt && (
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">创建时间</span>
@@ -1351,6 +1351,25 @@ export default function FlagPage() {
                             {getFlagDateStatus(t)}
                           </div>
                         </div>
+                        {/* 预设flag的编辑按钮 */}
+                        <div className="flex items-center gap-2 self-stretch" onClick={(e) => e.stopPropagation()}>
+                          <Button 
+                            size="icon" 
+                            variant="outline" 
+                            className="h-8 w-8 rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50" 
+                            onClick={() => startEditTask(t)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                            disabled
+                            title="未到起始日期"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   </PopoverTrigger>
@@ -1414,7 +1433,7 @@ export default function FlagPage() {
                             }`}
                           >
                             {t.enableNotification ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
-                            {t.enableNotification ? '已启用' : '已关闭'}
+                            {t.enableNotification ? '已启用' : '未开启'}
                           </button>
                         </div>
                         {t.createdAt && (
@@ -1639,7 +1658,7 @@ export default function FlagPage() {
             </div>
 
             <div>
-              <Label htmlFor="flag-date">选择日期（可选，不选就是无限期）</Label>
+              <Label htmlFor="flag-date">选择日期（可选，不选就是每天）</Label>
               <div className="mt-1">
                 <Calendar23 
                   value={{
@@ -1679,6 +1698,48 @@ export default function FlagPage() {
                 }}
                 className="mt-1 [appearance:auto] [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="flag-reminder-time">提醒时间（启用提醒时生效）</Label>
+              <div className="flex gap-2 mt-1">
+                <Select
+                  value={newTask.reminderTime?.split(':')[0] || '12'}
+                  onValueChange={(hour) => {
+                    const minute = newTask.reminderTime?.split(':')[1] || '00';
+                    setNewTask((s) => ({ ...s, reminderTime: `${hour}:${minute}` }));
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="小时" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="flex items-center text-lg">:</span>
+                <Select
+                  value={newTask.reminderTime?.split(':')[1] || '00'}
+                  onValueChange={(minute) => {
+                    const hour = newTask.reminderTime?.split(':')[0] || '12';
+                    setNewTask((s) => ({ ...s, reminderTime: `${hour}:${minute}` }));
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="分钟" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['00', '15', '30', '45'].map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                当前提醒时间：{newTask.reminderTime || '12:00'}
+              </p>
             </div>
 
             {/* 发布到社交页面 + 寻太傅 + 删除按钮分布一行两端 */}

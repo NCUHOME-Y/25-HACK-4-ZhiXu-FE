@@ -191,7 +191,7 @@ export const adaptPostToUser = (post: {
   userId: String(post.user_id || '0'),  // 添加用户ID映射
   name: post.userName || post.user_name || '用户',
   avatar: _getAvatarUrl(post.userAvatar || post.user_avatar || ''),
-  message: (post.content && post.content.trim()) ? post.content.replace(/\r?\n|\r/g, ' ') : ' ',
+  message: (post.content && post.content.trim()) ? post.content : ' ',
   likes: post.likes || post.like || 0,
   comments: (post.comments || []).map(c => ({
     id: String(c.id || '0'),

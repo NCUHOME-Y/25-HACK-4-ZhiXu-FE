@@ -15,6 +15,7 @@ export interface CreateTaskPayload {
   detail?: string;
   total?: number;
   dateRange?: unknown;
+  reminderTime?: string;
 }
 
 // ==================== 打卡相关 ====================
@@ -141,6 +142,7 @@ export async function createTask(payload: CreateTaskPayload & {
     is_recurring: payload.isRecurring || false,
     start_time: startTimeISO,
     end_time: endTimeISO,
+    reminder_time: payload.reminderTime || '12:00',
   };
   
   console.log('📤 创建Flag请求:', backendPayload);
@@ -168,6 +170,7 @@ export async function updateTask(id: string, taskData: {
   isPublic: boolean;
   startDate?: string;
   endDate?: string;
+  reminderTime?: string;
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
   
@@ -186,7 +189,8 @@ export async function updateTask(id: string, taskData: {
     total: taskData.total || 1,
     is_public: taskData.isPublic,
     start_date: taskData.startDate || '',
-    end_date: taskData.endDate || ''
+    end_date: taskData.endDate || '',
+    reminder_time: taskData.reminderTime || '12:00'
   };
   
   console.log('📤 完整更新数据:', updatePayload);
