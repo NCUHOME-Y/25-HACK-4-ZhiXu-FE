@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Target, Loader2, User, BookOpen, Flag, CalendarDays, Timer } from 'lucide-react';
+import { Sparkles, Target, Loader2, User, Flag, CalendarDays, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   BottomNav,
@@ -26,7 +26,7 @@ const getCurrentUserId = (): string => {
     // 尝试从 JWT token 中解析用户 ID
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.user_id?.toString() || payload.sub?.toString() || 'default';
-  } catch (error) {
+  } catch {
     return 'default';
   }
 };
@@ -44,7 +44,7 @@ const getStorageKeys = () => {
 
 /**
  * AI助手页面(太傅)
- * 根据用户的学习背景和目标,使用AI生成个性化学习计划
+ * 根据用户的个人背景和目标,使用AI生成个性化计划
  */
 export default function AIPage() {
   const navigate = useNavigate();
@@ -76,8 +76,8 @@ export default function AIPage() {
       ...(timeKey === 'early' ? [
         '早起的鸟儿有虫吃！',
         '新的一天，新的开始！',
-        '清晨最适合学习啦~',
-        '太傅：晨读效果加倍哦！',
+        '清晨最适合规划一天的事情~',
+        '太傅：晨光正好，行动起来吧！',
       ] : []),
       ...(timeKey === 'morning' ? [
         '上午头脑最清醒，冲刺吧！',
@@ -110,7 +110,7 @@ export default function AIPage() {
       '遇到困难别怕，太傅在！',
       '目标明确，行动自会有力量！',
       '每一步都算数，加油！',
-      '学习路上不孤单~',
+      '行动路上不孤单~',
       '太傅：相信自己！',
     ];
     
@@ -150,10 +150,10 @@ export default function AIPage() {
     { value: 'hard', label: '挑战难度', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
   ];
 
-  /** 生成学习计划 */
+  /** 生成计划 */
   const handleGenerate = async () => {
     if (!goal.trim()) {
-      toast.error('请输入学习目标');
+      toast.error('请输入你的目标');
       return;
     }
     if (!selectedDifficulty) {
@@ -172,7 +172,7 @@ export default function AIPage() {
       localStorage.setItem(STORAGE_KEYS.LAST_GOAL, goal);
       setLastGoal(goal);
 
-      // 调用AI服务生成学习计划
+      // 调用AI服务生成计划
       const plan = await generateStudyPlan(goal, background, selectedDifficulty);
       
       // 确保 goal 字段使用用户输入的目标（而不是 AI 返回的 flag）
@@ -183,7 +183,7 @@ export default function AIPage() {
       setGeneratedPlans(newPlans);
       localStorage.setItem(STORAGE_KEYS.GENERATED_PLANS, JSON.stringify(newPlans));
       
-      toast.success('学习计划生成成功！');
+      toast.success('计划生成成功！');
     } catch {
       toast.error('生成失败，请重试');
     } finally {
@@ -331,7 +331,7 @@ export default function AIPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">太傅</h1>
-                <p className="text-sm text-slate-600">输入学习目标，AI为你定制专属计划</p>
+                <p className="text-sm text-slate-600">输入你的目标，AI为你定制专属计划</p>
               </div>
             </div>
           </div>
@@ -347,10 +347,10 @@ export default function AIPage() {
               <div className="space-y-3">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <User className="h-4 w-4 text-blue-600" />
-                  个人学习背景
+                  个人背景
                 </label>
                 <Textarea
-                  placeholder="输入您的学习背景，例如：大三学生、有编程基础..."
+                  placeholder="输入您的背景，例如：大三学生、上班族、宝妈..."
                   value={background}
                   onChange={(e) => setBackground(e.target.value)}
                   className="bg-white min-h-[80px] resize-none rounded-xl"
@@ -359,13 +359,13 @@ export default function AIPage() {
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-gray-600 pl-1 flex items-center gap-1">
                     <User className="h-3.5 w-3.5 text-blue-600" />
-                    上次个人学习背景
+                    上次个人背景
                   </div>
                   <div className="text-xs text-muted-foreground pl-1">
                     {lastBackground ? (
                       <span>{lastBackground}</span>
                     ) : (
-                      <span className="text-gray-400">还没有个人学习背景</span>
+                      <span className="text-gray-400">还没有个人背景</span>
                     )}
                   </div>
                 </div>
@@ -373,14 +373,14 @@ export default function AIPage() {
 
               <Separator className="my-3" />
 
-              {/* 学习目标输入 */}
+              {/* 目标输入 */}
               <div className="space-y-3">
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-blue-600" />
-                  学习目标
+                  <Target className="h-4 w-4 text-blue-600" />
+                  目标设定
                 </label>
                 <Input
-                  placeholder="输入您的学习目标..."
+                  placeholder="输入你的目标，可以是学习、运动、生活习惯等..."
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   className="bg-white rounded-xl"
@@ -389,13 +389,13 @@ export default function AIPage() {
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-gray-600 pl-1 flex items-center gap-1">
                     <Target className="h-3.5 w-3.5 text-blue-600" />
-                    上次学习目标
+                    上次目标
                   </div>
                   <div className="text-xs text-muted-foreground pl-1">
                     {lastGoal ? (
                       <span>{lastGoal}</span>
                     ) : (
-                      <span className="text-gray-400">还没有学习目标哦</span>
+                      <span className="text-gray-400">还没有设定过目标哦</span>
                     )}
                   </div>
                 </div>
@@ -460,12 +460,12 @@ export default function AIPage() {
           </section>
         )}
 
-        {/* 已生成学习计划 */}
+        {/* 已生成计划 */}
         <section className="px-4 relative">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Target className="h-5 w-5 text-blue-500 z-10" />
-              已生成学习计划
+              已生成计划
                       {/* 鸟装饰与气泡 - 放在标题旁边 */}
         <BirdMascot position="ai" messages={messages} />
             </h2>
@@ -474,13 +474,13 @@ export default function AIPage() {
             <Card className="p-8 text-center rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
               <div className="flex flex-col items-center gap-3">
                 <Target className="h-12 w-12 text-gray-300" />
-                <p className="text-muted-foreground">暂无学习计划</p>
+                <p className="text-muted-foreground">暂无计划</p>
                 <p className="text-xs text-gray-400">输入目标并生成计划后将在此显示</p>
               </div>
             </Card>
           ) : (
               <div className="flex flex-col gap-4">
-                {/* 只显示最近的五个学习计划 */}
+                {/* 只显示最近的五个计划 */}
                 {generatedPlans.slice(0, 5).map((plan, planIndex) => {
                   return (
                   <Card key={planIndex} className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
@@ -505,7 +505,7 @@ export default function AIPage() {
                           <AccordionItem value={`phase-${planIndex}`}> 
                             <AccordionTrigger>
                               <div className="flex items-center gap-1">
-                                <BookOpen className="h-4 w-4 text-purple-400" />
+                                <Target className="h-4 w-4 text-purple-400" />
                                 <span>具体计划 {plan.phases.length > 3 && `(显示前3个，共${plan.phases.length}个)`}</span>
                               </div>
                             </AccordionTrigger>

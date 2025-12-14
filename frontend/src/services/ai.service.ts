@@ -168,6 +168,8 @@ export async function generateStudyPlan(
       flag: trimmedGoal,
       background: trimmedBackground || undefined,
       difficulty: difficultyMap[difficulty],
+    }, {
+      timeout: 90000, // AI生成需要更长时间，设置90秒超时
     });
 
     if (!response.success) {

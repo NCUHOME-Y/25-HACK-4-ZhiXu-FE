@@ -92,11 +92,11 @@ export function StudyTimeChart({
   const getPeriodDescription = () => {
     switch (period) {
       case 'week':
-        return '最近7天';
+        return '近7天';
       case 'month':
-        return '当前月份';
+        return '本月';
       case 'year':
-        return '最近6个月';
+        return '近6月';
     }
   };
 

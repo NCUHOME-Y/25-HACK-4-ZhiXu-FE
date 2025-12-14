@@ -111,7 +111,7 @@ export default function ContactPage() {
     else phase = 'night';
     const base: string[] = [];
     if (phase === 'early') base.push('清晨的翰林院已经苏醒');
-    if (phase === 'morning') base.push('上午好，分享你的学习感悟吧');
+    if (phase === 'morning') base.push('上午好，分享你的感悟吧');
     if (phase === 'afternoon') base.push('下午茶时间，聊聊进步与心得');
     if (phase === 'evening') base.push('傍晚了，整理今日收获');
     if (phase === 'night') base.push('夜深了，注意休息与总结');
@@ -386,7 +386,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-slate-900">翰林</h1>
-                  <p className="text-sm text-slate-600">分享学习心得，交流生活感悟</p>
+                  <p className="text-sm text-slate-600">分享心得，交流感悟</p>
                 </div>
               </div>
             </div>
@@ -1015,7 +1015,7 @@ export default function ContactPage() {
           
           <div className="px-4 py-4">
             <Textarea
-              placeholder="写下你想说的话...可以分享学习心得、生活感悟、或是提出问题,快来试试吧！"
+              placeholder="写下你想说的话...可以分享心得、生活感悟、或是提出问题,快来试试吧！"
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
               className="min-h-[200px] resize-none text-base"

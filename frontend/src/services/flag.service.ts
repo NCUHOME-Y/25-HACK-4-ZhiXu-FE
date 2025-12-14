@@ -42,14 +42,14 @@ export async function fetchTasks(): Promise<Task[]> {
   
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
-    const backendFlag = flag as BackendFlag;
+    const backendFlag = flag as BackendFlag & { enable_notification?: boolean; reminder_time?: string };
     const mapped = {
       ...flag,
       startDate: backendFlag.start_time && backendFlag.start_time !== '0001-01-01T00:00:00Z' ? backendFlag.start_time : '',
       endDate: backendFlag.end_time && backendFlag.end_time !== '0001-01-01T00:00:00Z' ? backendFlag.end_time : '',
       isPublic: backendFlag.is_public ?? flag.isPublic ?? false,  // 确保从后端正确读取 is_public
-      enableNotification: (backendFlag as any).enable_notification ?? flag.enableNotification ?? false,  // 映射 enable_notification
-      reminderTime: (backendFlag as any).reminder_time ?? flag.reminderTime ?? '12:00'  // 映射 reminder_time
+      enableNotification: backendFlag.enable_notification ?? flag.enableNotification ?? false,  // 映射 enable_notification
+      reminderTime: backendFlag.reminder_time ?? flag.reminderTime ?? '12:00'  // 映射 reminder_time
     };
     
     return mapped;

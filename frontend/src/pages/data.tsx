@@ -49,13 +49,13 @@ export default function DataPage() {
     const timeMessages = [
       ...(timeKey === 'early' ? [
         '清晨看璇历，开启高效一天！',
-        '璇历统计显示，早起学习效果更好~',
+        '璋历统计显示，早起是好习惯~',
         '晨间数据分析，头脑清醒！',
         '早起的鸟儿，璇历更新得最早！',
       ] : []),
       ...(timeKey === 'morning' ? [
         '上午数据分析黄金时段！',
-        '看看你的学习曲线在上涨吗？',
+        '看看你的进步曲线在上涨吗？',
         '连续打卡数据，让人开心！',
         '积分系统在默默记录你的努力！',
       ] : []),
@@ -63,13 +63,13 @@ export default function DataPage() {
         '下午看看Flag完成情况吧！',
         '数据告诉你，进步看得见！',
         '坚持的痕迹，都在璇历里！',
-        '学习时长稳步增长，真棒！',
+        '自律的成果稳步增长，真棒！',
       ] : []),
       ...(timeKey === 'evening' ? [
         '晚上总结璇历，明天更精彩~',
         '数据证明，你一直在进步！',
         '看看今日积分，收获满满！',
-        '学习记录是最好的见证！',
+        '坚持记录是最好的见证！',
       ] : []),
       ...(timeKey === 'night' ? [
         '夜深了，璇历还在为你工作~',
@@ -81,13 +81,13 @@ export default function DataPage() {
     
     const generalMessages = [
       '数据是最好的老师！',
-      '你的学习轨迹清晰可见！',
+      '你的自律轨迹清晰可见！',
       '数据分析，让进步看得见！',
       '每一次Flag完成，都是数据上的亮点！',
-      '学习数据在为你加油打气~',
+      '统计数据在为你加油打气~',
       '相信数据，更相信你自己！',
       '积分系统见证你的每一次坚持！',
-      '数据统计，让学习更有成就感！',
+      '数据统计，让自律更有成就感！',
     ];
     
     return [...timeMessages, ...generalMessages];
@@ -168,18 +168,21 @@ export default function DataPage() {
   /** 刷新用户数据 */
   const refreshUserData = async () => {
     try {
-      const [userData, todayData, todayPointsResp] = await Promise.all([
-        api.get<{ month_learn_time: number; count: number }>('/api/getUser').catch(() => ({ month_learn_time: 0, count: 0 })),
+      const [todayData, todayPointsResp, currentMonthData] = await Promise.all([
         api.get<{ today_learn_time: number }>('/api/getTodayLearnTime').catch(() => ({ today_learn_time: 0 })),
-        api.get<{ today_points: number }>('/api/getTodayPoints').catch(() => ({ today_points: 0 }))
+        api.get<{ today_points: number }>('/api/getTodayPoints').catch(() => ({ today_points: 0 })),
+        api.get<{ learn_times: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learn_times: [] }))
       ]);
 
       setTodayPoints(todayPointsResp?.today_points || 0);
 
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
       const todayTime = todayData.today_learn_time || 0; // 今日学习时长（秒）
-      const monthTime = userData.month_learn_time || 0; // 本月累计学习时长（秒）
+      
+      // 计算本月累计学习时长：将本月所有记录的duration求和
+      const monthTime = (currentMonthData?.learn_times || []).reduce((sum, record) => sum + (record.duration || 0), 0);
       setMonthLearnTime(monthTime);
+      
       useTaskStore.setState({
         dailyElapsed: todayTime
       });
@@ -313,7 +316,7 @@ export default function DataPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">璇历</h1>
-                <p className="text-sm text-slate-600">查看学习数据和统计信息</p>
+                <p className="text-sm text-slate-600">查看数据和统计信息</p>
               </div>
             </div>
           </div>
@@ -331,8 +334,8 @@ export default function DataPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50 hover:shadow-md transition-all duration-200">
                 <Calendar className="h-6 w-6 text-blue-600 mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{calculatedMonthlyStats.punchedDays}</div>
-                <div className="text-xs text-blue-700 mt-1">累计打卡</div>
+                <div className="text-2xl font-bold text-blue-600">{calculatedMonthlyStats.monthlyPunches}</div>
+                <div className="text-xs text-blue-700 mt-1">本月打卡</div>
               </div>
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200/50 hover:shadow-md transition-all duration-200">
                 <Calendar className="h-6 w-6 text-red-600 mb-2" />
@@ -346,7 +349,7 @@ export default function DataPage() {
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200/50 text-center text-sm text-gray-600 bg-gray-50/50 rounded-lg p-3">
-              本月累计学习 {(() => {
+              本月共 {calculatedMonthlyStats.monthlyPunches} 天打卡，累计学习 {(() => {
                 const hours = Math.floor(calculatedMonthlyStats.totalStudyTime / 3600);
                 const mins = Math.floor((calculatedMonthlyStats.totalStudyTime % 3600) / 60);
                 return `${hours}小时${mins}分钟`;

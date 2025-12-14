@@ -51,7 +51,7 @@ import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedT
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
-import { addUserPoints, tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
+import { tickTask, createTask, updateTask, togglePunch } from '../services/flag.service';
 import { api } from '../services/apiClient';
 
 
@@ -431,12 +431,8 @@ export default function FlagPage() {
     }
   };
 
-  /** 任务记次（打卡/完成）- 每日积分上限和冷却机制为前端临时检查 */
+  /** 任务记次（打卡/完成）- 冷却机制为前端临时检查 */
   const handleTickTask = async (taskId: string) => {
-      // 检查每日积分上限（前端临时检查）
-      const todayDateStr = formatDateYMD(new Date());
-      const dailyPointsKey = `flag_daily_points_${todayDateStr}`;
-      const dailyPoints = parseInt(localStorage.getItem(dailyPointsKey) || '0');
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
@@ -504,37 +500,23 @@ export default function FlagPage() {
       // 接入后端
       await tickTask(taskId);
       
-      // ✨ 防刷机制已重构为一分钟内完成3个flag触发10分钟冷却，旧逻辑已移除
-      
-      // 如果任务完成，计算并添加积分
-      if (willComplete && task.points) {
-        // 判断是否超过每日积分上限
-        if (dailyPoints >= 150) {
-          toast.success('今日通过flag已获得150积分，后续完成不再累计积分');
-        } else {
-          // 本次积分
-          const addPoints = Math.min(task.points, 150 - dailyPoints);
-          try {
-            await addUserPoints(taskId, addPoints);
-            // 更新本地积分累计
-            localStorage.setItem(dailyPointsKey, String(dailyPoints + addPoints));
-            
-            // 🔧 优化：刷新用户数据（积分和今日学习时长）
-            try {
-              await Promise.all([
-                api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
-                api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
-              ]);
-            } catch {
-              // 静默失败
-            }
-            toast.success(`恭喜完成！获得 ${addPoints} 积分 🎉`);
-          } catch {
-            toast.warning('任务已完成，但积分添加失败');
-          }
+      // ✅ 后端已在flag完成时自动添加积分，前端不再重复添加
+      // 🔧 刷新用户数据以获取最新积分和学习时长
+      if (willComplete) {
+        try {
+          await Promise.all([
+            api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
+            api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+          ]);
+        } catch {
+          // 静默失败
         }
-      } else if (willComplete) {
-        toast.success('🎉 Flag已完成！');
+        
+        if (task.points && task.points > 0) {
+          toast.success(`🎉 Flag已完成！获得 ${task.points} 积分`);
+        } else {
+          toast.success('🎉 Flag已完成！');
+        }
       } else {
         toast.success('✅ 打卡成功！');
       }
@@ -781,17 +763,8 @@ export default function FlagPage() {
       togglePunchTodayInStore();
       await togglePunch(formatDateYMD(new Date()));
       
-      // 计算打卡积分：基础分20 + 连续奖励（满4天+5，满10天+10）
-      const newStreak = streak + 1;
-      const basePoints = 20;
-      let bonusPoints = 0;
-      if (newStreak >= 10) {
-        bonusPoints = 10;
-      } else if (newStreak >= 4) {
-        bonusPoints = 5;
-      }
-      const totalPoints = basePoints + bonusPoints;
-      toast.success(`打卡成功！获得 ${totalPoints} 积分 🎉${bonusPoints > 0 ? ` (连续${newStreak}天奖励+${bonusPoints})` : ''}`);
+      // ✅ 后端已在打卡时自动添加积分（基础20分+连续奖励）
+      toast.success('打卡成功！');
     } catch {
       toast.error('打卡失败，请重试');
     }
@@ -817,7 +790,7 @@ export default function FlagPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">圭表</h1>
-              <p className="text-sm text-slate-600">管理您的学习目标和任务</p>
+              <p className="text-sm text-slate-600">管理您的目标和任务</p>
             </div>
           </div>
         </div>

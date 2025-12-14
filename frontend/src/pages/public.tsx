@@ -76,6 +76,8 @@ export default function PublicPage() {
         }
         const response = await api.get<{ messages: HistoryMessage[] }>(`/api/chat/history/${roomId}?limit=30`);
         
+        console.log('📜 加载聊天历史:', { roomId, count: response.messages?.length || 0 });
+        
         if (response.messages && response.messages.length > 0) {
           const historyMessages: ChatMessage[] = response.messages.map((msg: HistoryMessage) => ({
             id: `${msg.id || msg.from}-${msg.created_at}`,
@@ -90,7 +92,8 @@ export default function PublicPage() {
         } else {
           setMessages([]);
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ 加载聊天历史失败:', error);
         setMessages([]);
       }
     };
