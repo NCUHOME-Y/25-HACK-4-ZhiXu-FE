@@ -15,10 +15,8 @@ export function handleApiError(error: AxiosError): void {
     // 如果在登录/注册页面或数据页面，不跳转，让页面自己处理错误
     const currentPath = window.location.pathname;
     if (currentPath === '/auth' || currentPath === '/' || currentPath === '/data') {
-      console.log('[错误处理] 在认证/数据页面,网络错误不跳转');
       return;
     }
-    console.warn('[错误处理] 网络错误，但不跳转错误页面，静默处理');
     return;
   }
 
@@ -28,51 +26,34 @@ export function handleApiError(error: AxiosError): void {
   if (status === 401) {
     // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;
-    console.log('[错误处理] 收到401错误, 当前路径:', currentPath);
     if (currentPath === '/auth' || currentPath === '/') {
-      console.log('[错误处理] 在认证页面,401错误不跳转,显示错误提示');
-      console.error('认证失败:', error.response.data);
       return;
     }
     // 只有在已登录状态下的401才清除token并跳转
-    console.log('[错误处理] 不在认证页面,清除token并跳转到登录页');
     localStorage.removeItem('auth_token');
     window.location.href = '/auth';
   } else if (status === 404) {
     // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;
-    console.log('[错误处理] 收到404错误, 当前路径:', currentPath);
     if (currentPath === '/auth' || currentPath === '/' || currentPath === '/data') {
-      console.log('[错误处理] 在认证/数据页面,404错误不跳转,显示错误提示');
-      console.error('资源未找到:', error.response.data);
       return;
     }
     // 404错误也不跳转，让调用方处理
-    console.log('[错误处理] 404错误,不跳转，让调用方处理');
-    console.error('资源未找到:', error.response.data);
     return;
   } else if (status === 400) {
     // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;
-    console.log('[错误处理] 收到400错误, 当前路径:', currentPath);
     if (currentPath === '/auth' || currentPath === '/' || currentPath === '/data') {
-      console.log('[错误处理] 在认证/数据页面,400错误不跳转,显示错误提示');
-      console.error('请求错误:', error.response.data);
       return;
     }
     // 不在认证页面的400错误也不跳转,让调用方处理
-    console.log('[错误处理] 400错误,不跳转');
     return;
   } else if (status >= 500) {
     // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;
-    console.log('[错误处理] 收到500+错误, 当前路径:', currentPath);
     if (currentPath === '/auth' || currentPath === '/' || currentPath === '/data') {
-      console.log('[错误处理] 在认证/数据页面,500错误不跳转,显示错误提示');
-      console.error('服务器错误:', error.response.data);
       return;
     }
-    console.warn('[错误处理] 服务器错误，但不跳转错误页面，静默处理');
     return;
   }
 }

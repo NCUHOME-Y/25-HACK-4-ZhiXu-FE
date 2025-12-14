@@ -1,21 +1,13 @@
-// import apiClient from './apiClient';
 import type {
   MonthlyStats,
   FlagStats,
   FlagLabel,
   StudyTimeTrend,
-  // ApiResponse,
 } from '../lib/types/types';
 
-/**
- * 数据统计服务
- * 提供打卡、Flag、学习时长等统计数据的API接口
- */
+/** 数据统计服务 */
 
-/**
- * 获取本月统计数据(打卡天数、缺卡天数、累计学习时长)
- * P1修复：调用后端获取月度统计
- */
+/** 获取本月统计数据 */
 export async function getMonthlyStats(): Promise<MonthlyStats> {
   const { api } = await import('./apiClient');
   try {
@@ -38,10 +30,7 @@ export async function getMonthlyStats(): Promise<MonthlyStats> {
   }
 }
 
-/**
- * 获取本月Flag统计（已完成、未完成数量）
- * P1修复：调用后端获取Flag统计
- */
+/** 获取本月 Flag 统计 */
 export async function getFlagStats(): Promise<FlagStats> {
   const { api } = await import('./apiClient');
   try {
@@ -86,7 +75,7 @@ export async function getFlagStats(): Promise<FlagStats> {
 }
 
 
-// P1修复:获取标签系统(Flag标签分类统计)
+/** 获取标签系统 - Flag 标签分类统计 */
 export async function getFlagLabels(): Promise<Array<{ label: number; count: number; name: string }>> {
   const { api } = await import('./apiClient');
   try {

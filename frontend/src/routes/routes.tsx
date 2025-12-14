@@ -14,7 +14,7 @@ import ReceivePage from '../pages/receive';
 import ChatRoomsPage from '../pages/chat-rooms';
 import { ProtectedRoute } from './ProtectedRoute';
 
-// 应用路由配置
+/** 应用路由配置 */
 export const routes: RouteObject[] = [
   {
     path: '/',

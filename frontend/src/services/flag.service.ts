@@ -1,5 +1,4 @@
-// Flag 页面相关后端 API 占位实现
-// 保持全部函数轻量并带有 TODO，后续直接补真实请求即可。
+/** Flag 相关服务 */
 
 import type { Task, StudyRecord } from "../lib/types/types";
 
@@ -19,11 +18,7 @@ export interface CreateTaskPayload {
   enableNotification?: boolean;
 }
 
-// ==================== 打卡相关 ====================
-/**
- * 获取已打卡日期列表
- * P1修复：调用后端获取打卡记录
- */
+/** 获取已打卡日期列表 */
 export async function fetchPunchDates(): Promise<string[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ date: string }[]>('/api/getDakaRecords');
@@ -33,26 +28,17 @@ export async function fetchPunchDates(): Promise<string[]> {
   return response.map(record => record.date);
 }
 
-/**
- * 切换今日打卡状态
- * P1修复：调用后端更新打卡
- */
+/** 切换今日打卡状态 */
 export async function togglePunch(date: string): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.put('/api/updateDaka', { date });
   return true;
 }
 
-// ==================== 任务相关 ====================
-/**
- * 获取任务列表
- * 后端已统一返回前端格式，无需转换
- */
+/** 获取任务列表 */
 export async function fetchTasks(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
-  
-  console.log('📥 从后端获取到的原始 flags 数据（前5个）:', response.flags?.slice(0, 5));
   
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
@@ -66,25 +52,12 @@ export async function fetchTasks(): Promise<Task[]> {
       reminderTime: (backendFlag as any).reminder_time ?? flag.reminderTime ?? '12:00'  // 映射 reminder_time
     };
     
-    // 如果有 isPublic 为 true 的，打印出来
-    if (mapped.isPublic) {
-      console.log('✅ 发现公开的 flag:', {
-        id: mapped.id,
-        title: mapped.title,
-        isPublic: mapped.isPublic,
-        raw_is_public: backendFlag.is_public
-      });
-    }
-    
     return mapped;
   });
   return flags;
 }
 
-/**
- * 创建任务
- * P1修复：调用后端创建Flag（已统一字段名）
- */
+/** 创建任务 */
 export async function createTask(payload: CreateTaskPayload & {
   label?: number | string;
   priority?: number;
@@ -150,11 +123,8 @@ export async function createTask(payload: CreateTaskPayload & {
     enable_notification: payload.enableNotification || false,
   };
   
-  console.log('📤 创建Flag请求:', backendPayload);
-  
   try {
     const response = await api.post<{ flag: Task }>('/api/addFlag', backendPayload);
-    console.log('✅ 创建Flag成功:', response.flag);
     return response.flag;
   } catch (error) {
     console.error('❌ 创建Flag失败:', error);
@@ -162,10 +132,7 @@ export async function createTask(payload: CreateTaskPayload & {
   }
 }
 
-/**
- * 更新任务
- * P1修复：调用后端更新Flag完整信息
- */
+/** 更新任务 */
 export async function updateTask(id: string, taskData: {
   title: string;
   detail: string;
@@ -179,12 +146,6 @@ export async function updateTask(id: string, taskData: {
   enableNotification?: boolean;
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
-  
-  console.log('📤 更新Flag请求:', {
-    id: parseInt(id),
-    title: taskData.title,
-    is_public: taskData.isPublic
-  });
   
   const updatePayload = { 
     id: parseInt(id),
@@ -200,23 +161,18 @@ export async function updateTask(id: string, taskData: {
     enable_notification: taskData.enableNotification || false
   };
   
-  console.log('📤 完整更新数据:', updatePayload);
   await api.put('/api/updateFlag', updatePayload);
   
-  console.log('✅ 更新Flag成功，isPublic:', taskData.isPublic);
   return true;
 }
 
-/**
- * 删除任务
- */
+/** 删除任务 */
 export async function deleteTask(id: string): Promise<boolean> {
   const { api } = await import('./apiClient');
   try {
     await api.delete('/api/deleteFlag', {
       data: { id: parseInt(id) }
     });
-    console.log('✅ 删除Flag成功:', id);
     return true;
   } catch (error) {
     console.error('❌ 删除Flag失败:', error);
@@ -224,16 +180,11 @@ export async function deleteTask(id: string): Promise<boolean> {
   }
 }
 
-/**
- * 任务记一次（增加计数）
- * P1修复：调用后端完成Flag（已统一字段名）
- */
+/** 任务记一次 - 增加计数 */
 export async function tickTask(id: string): Promise<boolean> {
   const { api } = await import('./apiClient');
-  console.log('👍 请求打卡Flag:', { id: parseInt(id) });
   try {
     await api.put('/api/doneFlag', { id: parseInt(id) });
-    console.log('✅ Flag打卡成功');
     return true;
   } catch (error: unknown) {
     console.error('❌ Flag打卡失败:', {
@@ -246,11 +197,7 @@ export async function tickTask(id: string): Promise<boolean> {
   }
 }
 
-// ==================== 学习计时相关 ====================
-/**
- * 开始学习计时
- * P1修复：调用后端添加学习时长
- */
+/** 开始学习计时 */
 export async function startStudySession(): Promise<StudyRecord> {
   return {
     id: String(Date.now()),
@@ -260,10 +207,7 @@ export async function startStudySession(): Promise<StudyRecord> {
   };
 }
 
-/**
- * 停止学习计时
- * P1修复：调用后端记录学习时长
- */
+/** 停止学习计时 */
 export async function stopStudySession(_sessionId: string, duration: number): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.post('/api/addLearnTime', { duration });
@@ -281,8 +225,6 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
     useTaskStore.setState({
       dailyElapsed: todayTime, // 直接使用，不要转换
     });
-    
-    console.log('✅ 学习时长已同步(秒):', todayTime);
   } catch (error) {
     console.error('刷新用户数据失败:', error);
   }
@@ -290,11 +232,7 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
   return true;
 }
 
-// ==================== 积分相关 ====================
-/**
- * 添加用户积分
- * P1修复：调用后端添加积分API
- */
+/** 添加用户积分 */
 export async function addUserPoints(taskId: string, points: number): Promise<{ success: boolean; totalPoints: number }> {
   const { api } = await import('./apiClient');
   // 在外部声明以便 catch 中也能访问（用于日志）
@@ -304,13 +242,10 @@ export async function addUserPoints(taskId: string, points: number): Promise<{ s
   }
 
   try {
-    console.log('💰 请求添加积分:', { points: pointsValue, type: typeof pointsValue });
-
     const response = await api.put<{ message: string; count: number }>('/api/addPoints', {
       points: pointsValue
     });
 
-    console.log('✅ 添加积分成功:', { message: response.message, newCount: response.count });
     return { success: true, totalPoints: response.count || 0 };
   } catch (error: unknown) {
     // 详细的错误日志和提示
@@ -342,10 +277,7 @@ export async function addUserPoints(taskId: string, points: number): Promise<{ s
   }
 }
 
-/**
- * 获取用户总积分
- * P1修复：调用后端API
- */
+/** 获取用户总积分 */
 export async function getUserPoints(): Promise<number> {
   try {
     const { api } = await import('./apiClient');
@@ -357,28 +289,28 @@ export async function getUserPoints(): Promise<number> {
   }
 }
 
-// P1修复：切换Flag隐藏/公开状态（分享到社交页面）
+/** 切换 Flag 隐藏/公开状态 */
 export async function toggleFlagVisibility(flagId: string, _isHidden: boolean): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.put('/api/updateFlagHide', { id: parseInt(flagId) });
   return true;
 }
 
-// P1修复：获取所有可见的Flag（社交页面显示）
+/** 获取所有可见的 Flag */
 export async function getVisibleFlags(): Promise<BackendFlag[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/getflag');
   return response.flags || [];
 }
 
-// P1修复：Flag点赞
+/** Flag 点赞 */
 export async function likeFlag(flagId: string, likeChange: number): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.post('/api/likeFlag', { flag_id: flagId, like: likeChange });
   return true;
 }
 
-// P1修复：获取Flag点赞数
+/** 获取 Flag 点赞数 */
 export async function getFlagLikes(flagId: string): Promise<number> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ like: number }>('/api/getflaglike', {
@@ -387,14 +319,14 @@ export async function getFlagLikes(flagId: string): Promise<number> {
   return response.like || 0;
 }
 
-// P1修复：发表Flag评论
+/** 发表 Flag 评论 */
 export async function commentOnFlag(flagId: string, content: string): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.post('/api/flagcomment', { flag_id: flagId, content });
   return true;
 }
 
-// P1修复：删除Flag评论
+/** 删除 Flag 评论 */
 export async function deleteFlagComment(commentId: string): Promise<boolean> {
   const { api } = await import('./apiClient');
   await api.delete('/api/flagdeletecomment', {
@@ -403,7 +335,7 @@ export async function deleteFlagComment(commentId: string): Promise<boolean> {
   return true;
 }
 
-// 新增：获取有日期的flag（用于日历高亮）
+/** 获取有日期的 flag - 用于日历高亮 */
 export async function fetchFlagsWithDates(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/with-dates');
@@ -416,7 +348,7 @@ export async function fetchFlagsWithDates(): Promise<Task[]> {
   return flags;
 }
 
-// 新增：获取预设flag（未到起始日期）
+/** 获取预设 flag - 未到起始日期 */
 export async function fetchPresetFlags(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/preset');
@@ -429,7 +361,7 @@ export async function fetchPresetFlags(): Promise<Task[]> {
   return flags;
 }
 
-// 新增：获取过期flag
+/** 获取过期 flag */
 export async function fetchExpiredFlags(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/expired');
@@ -442,7 +374,7 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
   return flags;
 }
 
-// 切换flag提醒状态（最多3个）
+/** 切换 flag 提醒状态 - 最多 5 个 */
 export async function toggleFlagNotification(flagId: string, enableNotification: boolean): Promise<{ success: boolean; enable_notification: boolean }> {
   const { api } = await import('./apiClient');
   const response = await api.post<{ success: boolean; enable_notification: boolean }>('/api/toggleFlagNotification', {

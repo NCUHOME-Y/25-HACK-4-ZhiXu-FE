@@ -2,10 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useState, useLayoutEffect } from 'react';
 import { authService } from '../services/auth.service';
 
-/**
- * 路由保护组件
- * 需要登录才能访问的页面
- */
+/** 路由保护组件 - 需要登录才能访问 */
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [shouldRedirect, setShouldRedirect] = useState(false);
@@ -16,7 +13,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
     const hasToken = authService.isAuthenticated();
     if (!hasToken) {
-      console.log('[ProtectedRoute] 没有token，阻止渲染并重定向');
       setShouldRedirect(true);
       setIsAuthenticated(false);
       setIsChecking(false);

@@ -1,4 +1,4 @@
-// 日期格式化
+/** 格式化日期 */
 export const formatDate = (date: Date | string, format = 'YYYY-MM-DD HH:mm:ss'): string => {
   const d = typeof date === 'string' ? new Date(date) : date;
   
@@ -18,7 +18,7 @@ export const formatDate = (date: Date | string, format = 'YYYY-MM-DD HH:mm:ss'):
     .replace('ss', seconds);
 };
 
-// 格式化日期为 YYYY-MM-DD
+/** 格式化日期为 YYYY-MM-DD */
 export const formatDateYMD = (date: Date): string => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -26,7 +26,7 @@ export const formatDateYMD = (date: Date): string => {
   return `${y}-${m}-${d}`;
 };
 
-// 计算连续打卡天数
+/** 计算连续打卡天数 */
 export const calculateStreak = (punchedDates: string[]): number => {
   let n = 0;
   const cursor = new Date();
@@ -40,7 +40,7 @@ export const calculateStreak = (punchedDates: string[]): number => {
   return n;
 };
 
-// 计算本月已打卡天数
+/** 计算本月已打卡天数 */
 export const calculateMonthlyPunches = (punchedDates: string[]): number => {
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -52,26 +52,26 @@ export const calculateMonthlyPunches = (punchedDates: string[]): number => {
   }).length;
 };
 
-// 格式化学习计时（秒转 MM:SS）
+/** 格式化学习计时（秒转 MM:SS） */
 export const formatElapsedTime = (seconds: number): { minutes: string; seconds: string } => {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
   const s = (seconds % 60).toString().padStart(2, "0");
   return { minutes: m, seconds: s };
 };
 
-// 验证邮箱格式
+/** 验证邮箱格式 */
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// 验证手机号格式（中国大陆）
+/** 验证手机号格式（中国大陆） */
 export const isValidPhone = (phone: string): boolean => {
   const phoneRegex = /^1[3-9]\d{9}$/;
   return phoneRegex.test(phone);
 };
 
-// 防抖函数
+/** 防抖函数 */
 export const debounce = <T extends (...args: never[]) => unknown>(
   func: T,
   delay: number
@@ -84,7 +84,7 @@ export const debounce = <T extends (...args: never[]) => unknown>(
   };
 };
 
-// 节流函数
+/** 节流函数 */
 export const throttle = <T extends (...args: never[]) => unknown>(
   func: T,
   limit: number
@@ -100,22 +100,22 @@ export const throttle = <T extends (...args: never[]) => unknown>(
   };
 };
 
-// 深拷贝对象
+/** 深拷贝对象 */
 export const deepClone = <T>(obj: T): T => {
   return JSON.parse(JSON.stringify(obj));
 };
 
-// 生成随机 ID
+/** 生成随机 ID */
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 };
 
-// 安全的数字范围限制
+/** 数字范围限制 */
 export const clamp = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max);
 };
 
-// 格式化文件大小
+/** 格式化文件大小 */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -124,12 +124,12 @@ export const formatFileSize = (bytes: number): string => {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 };
 
-// 延迟执行（Promise 版本）
+/** 延迟执行（Promise 版本） */
 export const sleep = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-// 格式化时间为相对时间（如：1分钟前、2小时前等）
+/** 格式化相对时间（如：1分钟前、2小时前） */
 export const formatTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
   const now = new Date();
@@ -155,13 +155,12 @@ export const formatTimeAgo = (dateString: string): string => {
   }
 };
 
-// ========== 社交相关工具函数 ==========
 import { getAssetUrl as _getAssetUrl, getAvatarUrl as _getAvatarUrl } from './asset-helpers';
 
 // 重新导出asset-helpers的函数和常量供外部使用
 export { getAssetUrl, getAvatarUrl, AVATAR_FILES } from './asset-helpers';
 
-// 将后端 Post 类型转换为前端 ContactUser 类型
+/** 将后端 Post 类型转换为前端 ContactUser 类型 */
 export const adaptPostToUser = (post: {
   id: number | string;
   user_id?: number;
@@ -207,15 +206,12 @@ export const adaptPostToUser = (post: {
   createdAt: post.createdAt || post.created_at || new Date().toISOString()
 });
 
-// 聊天页面自动滚动到底部
+/** 聊天页面自动滚动到底部 */
 export const scrollToBottom = (ref: React.RefObject<HTMLDivElement | null>) => {
   ref.current?.scrollIntoView({ behavior: 'smooth' });
 };
 
-// ========== 积分计算工具函数 ==========
-/**
- * 根据任务属性计算积分
- */
+/** 根据任务属性计算积分 */
 export const calculateTaskPoints = (params: {
   total: number;
   priority: 1 | 2 | 3 | 4;

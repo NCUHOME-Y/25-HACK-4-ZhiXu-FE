@@ -1,13 +1,16 @@
-// 环境变量
+/**
+ * 环境变量配置
+ */
 export const ENV = {
-  // 支持两种变量：优先使用 VITE_API_BASE_URL（包含 /api 路径），
-  // 否则使用 VITE_API_BASE 并追加 `/api`，最后回退到本地默认值。
+  // API 基础 URL
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.VITE_API_BASE ? `${import.meta.env.VITE_API_BASE}/api` : "http://localhost:8080/api"),
   APP_NAME: import.meta.env.VITE_APP_NAME || "App",
   DEBUG: import.meta.env.VITE_DEBUG === "true",
 } as const;
 
-// API 端点
+/**
+ * API 端点配置
+ */
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${ENV.API_BASE_URL}/auth/login`,
@@ -38,14 +41,18 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-// 本地存储键
+/**
+ * 本地存储键名
+ */
 export const STORAGE_KEYS = {
   AUTH_TOKEN: "authToken",
   USER_INFO: "userInfo",
   THEME: "theme",
 } as const;
 
-// 路由常量
+/**
+ * 路由常量
+ */
 export const ROUTES = {
   HOME: "/",
   AUTH: "/auth",
@@ -57,7 +64,9 @@ import { AlertCircle, ServerCrash, ShieldAlert, Wifi } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { FlagLabel, FlagPriority } from "../types/types";
 
-// Flag 标签配置
+/**
+ * Flag 标签配置
+ */
 export const FLAG_LABELS: Record<FlagLabel, { name: string; color: string }> = {
   1: { name: '学习提升', color: '#2563eb' }, // 蓝色
   2: { name: '健康运动', color: '#10b981' }, // 绿色
@@ -66,7 +75,9 @@ export const FLAG_LABELS: Record<FlagLabel, { name: string; color: string }> = {
   5: { name: '生活习惯', color: '#ef4444' }, // 红色
 } as const;
 
-// Flag 优先级配置 (数字越小优先级越高)
+/**
+ * Flag 优先级配置（数字越小优先级越高）
+ */
 export const FLAG_PRIORITIES: Record<FlagPriority, string> = {
   4: '不急',
   3: '一般',

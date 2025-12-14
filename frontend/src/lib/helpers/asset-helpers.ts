@@ -32,7 +32,7 @@ import avatar30 from '../../assets/head/微信图片_20251117235917_71_227.jpg';
 import avatar31 from '../../assets/head/微信图片_20251118000147_72_227.jpg';
 import avatar32 from '../../assets/head/微信图片_20251118000148_74_227.jpg';
 
-// 前端本地头像数组（共32个头像，索引0-31对应头像1-32）
+/** 前端本地头像数组，索引 0-31 对应头像 1-32 */
 export const AVATAR_FILES = [
   avatar1,
   avatar2,

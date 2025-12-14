@@ -13,6 +13,7 @@ import {
   TabsContent
 } from '../components';
 import { getStudyTimeTrend } from '../services/data.service';
+import { authService } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
 import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
@@ -117,14 +118,14 @@ export default function DataPage() {
 
 
 
-  // P1修复：从后端加载用户数据
+  /**
+   * 加载用户数据
+   */
   useEffect(() => {
     const loadAllData = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          console.log('未登录，跳过加载数据');
-          setLoading(false);
+        if (!authService.isAuthenticated()) {
+
           return;
         }
         
@@ -142,9 +143,6 @@ export default function DataPage() {
             fetchTasks().catch(err => { console.warn('获取任务失败:', err); return []; }),
             fetchPunchDates().catch(err => { console.warn('获取打卡数据失败:', err); return []; })
           ]);
-          
-          console.log('数据页加载到的任务:', tasksData);
-          console.log('数据页加载到的打卡:', punchData);
           
           // 更新store
           useTaskStore.setState({ 
@@ -171,7 +169,9 @@ export default function DataPage() {
     loadAllData();
   }, []);
 
-  // 🔧 新增：刷新用户数据函数
+  /**
+   * 刷新用户数据
+   */
   const refreshUserData = async () => {
     try {
       const [userData, todayData, todayPointsResp] = await Promise.all([
@@ -212,10 +212,9 @@ export default function DataPage() {
     }
   };
 
-  // 🔧 已移除：不再监听任务变化自动刷新，避免频繁请求
-  // 如需刷新数据，在特定操作后手动调用 refreshUserData()
-
-  // 加载学习趋势数据
+  /**
+   * 加载学习趋势数据
+   */
   useEffect(() => {
     const loadStudyData = async () => {
       try {

@@ -1,50 +1,35 @@
-/**
- * API 辅助函数
- * 减少 service 层的重复代码
- */
+/** API 辅助函数 - 减少 service 层的重复代码 */
 
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-/**
- * 创建统一的 API 调用包装器
- */
+/** 创建统一的 API 调用包装器 */
 export function createApiWrapper(client: AxiosInstance) {
   return {
-    /**
-     * GET 请求并返回 data
-     */
+    /** GET 请求并返回 data */
     async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
       const response = await client.get<T>(url, config);
       return response.data;
     },
 
-    /**
-     * POST 请求并返回 data
-     */
+    /** POST 请求并返回 data */
     async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
       const response = await client.post<T>(url, data, config);
       return response.data;
     },
 
-    /**
-     * PUT 请求并返回 data
-     */
+    /** PUT 请求并返回 data */
     async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
       const response = await client.put<T>(url, data, config);
       return response.data;
     },
 
-    /**
-     * DELETE 请求并返回 data
-     */
+    /** DELETE 请求并返回 data */
     async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
       const response = await client.delete<T>(url, config);
       return response.data;
     },
 
-    /**
-     * PATCH 请求并返回 data
-     */
+    /** PATCH 请求并返回 data */
     async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
       const response = await client.patch<T>(url, data, config);
       return response.data;
@@ -52,9 +37,7 @@ export function createApiWrapper(client: AxiosInstance) {
   };
 }
 
-/**
- * 错误处理包装器
- */
+/** 错误处理包装器 */
 export async function withErrorHandling<T>(
   fn: () => Promise<T>,
   errorMessage = '操作失败'

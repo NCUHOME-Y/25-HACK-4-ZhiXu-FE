@@ -1,28 +1,18 @@
 import { api } from './apiClient';
 import type { User } from '../lib/types/types';
 
-/**
- * 个人中心服务
- * 处理用户个人信息、设置等相关功能（与 /user 相关的 API）
- */
+/** 个人中心服务 */
 
-/**
- * 获取用户个人信息
- */
+/** 获取用户个人信息 */
 export const getUserProfile = () =>
   api.get<User>('/user/profile');
 
-/**
- * 更新用户个人信息
- * 注意：后端没有统一的profile更新接口，需要分别调用
- */
+/** 更新用户个人信息 */
 export const updateUserProfile = async (data: Partial<User> & { originalNickname?: string }) => {
   // 更新用户名(只在用户名实际改变时调用,避免重复错误导致无法只改头像)
   if (data.nickname && data.nickname !== data.originalNickname) {
     try {
-      console.log('[updateUserProfile] 更新用户名:', { old: data.originalNickname, new: data.nickname });
       await api.put('/api/updateUsername', { new_name: data.nickname });
-      console.log('[updateUserProfile] 用户名更新成功');
       // 同步本地缓存的用户名，供聊天/评论等实时读取
       const userStr = localStorage.getItem('user');
       if (userStr) {
@@ -90,14 +80,12 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
     }
   }
   
-  // TODO: bio字段后端暂不支持
+  // bio字段后端暂不支持
   
   return data as User;
 };
 
-/**
- * 修改密码
- */
+/** 修改密码 */
 export const changePassword = (oldPassword: string, newPassword: string) =>
   api.post('/user/change-password', {
     oldPassword,

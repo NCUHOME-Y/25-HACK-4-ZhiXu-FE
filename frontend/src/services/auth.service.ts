@@ -19,7 +19,7 @@ class AuthService {
     return true;
   }
 
-  // P1修复：调用后端获取用户信息
+  /** 获取当前用户信息 */
   async getCurrentUser(): Promise<User | null> {
     if (!this.isAuthenticated()) {
       return null;
@@ -41,7 +41,7 @@ class AuthService {
     }
   }
 
-  // P1修复：调用后端登录API
+  /** 用户登录 */
   async login(credentials: { email: string; password: string }): Promise<{ user: User; token: string }> {
     const response = await api.post<{ token: string; user_id: number; name: string; email: string }>(
       '/api/login',
@@ -56,7 +56,7 @@ class AuthService {
     return { user, token: response.token };
   }
 
-  // P1修复：调用后端注册API
+  /** 用户注册 */
   async register(data: { username: string; email: string; password: string; code?: string }): Promise<{ user: User; token: string }> {
     const response = await api.post<{ token: string; user: { id: number; username: string; phone: string } }>(
       '/api/register',
@@ -79,7 +79,7 @@ class AuthService {
     return localStorage.getItem('auth_token');
   }
 
-  // P1修复：发送邮箱验证码
+  /** 发送邮箱验证码 */
   async sendEmailCode(email: string): Promise<{ success: boolean; message: string; waitSeconds?: number }> {
     try {
       await api.post('/api/sendEmailCode', { email });
@@ -105,7 +105,7 @@ class AuthService {
     }
   }
 
-  // P1修复：忘记密码（通过邮箱验证码重置）
+  /** 忘记密码 - 通过邮箱验证码重置 */
   async resetPassword(email: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
       await api.post('/api/forgetcode', { email, code, new_password: newPassword });
@@ -122,7 +122,7 @@ class AuthService {
     }
   }
 
-  // 验证码登录（验证邮箱验证码后自动登录）
+  /** 验证码登录 */
   async loginWithOTP(email: string, code: string): Promise<{ user: User; token: string }> {
     const response = await api.post<{ token: string; user_id: number; name: string; email: string }>(
       '/api/loginWithOTP',
@@ -139,7 +139,7 @@ class AuthService {
     return { user, token: response.token };
   }
 
-  // 验证邮箱（注册后验证邮箱验证码并自动登录）
+  /** 验证邮箱 */
   async verifyEmail(email: string, code: string): Promise<{ user: User; token: string }> {
     const response = await api.post<{ 
       success: boolean; 
@@ -159,7 +159,7 @@ class AuthService {
     return { user, token: response.token };
   }
 
-  // 完成注册（验证验证码后创建用户）
+  /** 完成注册 */
   async completeRegistration(data: { name: string; email: string; password: string; code: string }): Promise<{ user: User; token: string }> {
     const response = await api.post<{ 
       token: string; 

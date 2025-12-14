@@ -70,9 +70,8 @@ export default function FlagPage() {
   const loadData = useCallback(async () => {
     try {
       // 检查是否登录
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.log('未登录，跳过加载数据');
+      const { authService } = await import('../services/auth.service');
+      if (!authService.isAuthenticated()) {
         return;
       }
       // 加载任务列表和其他数据
@@ -84,11 +83,6 @@ export default function FlagPage() {
         fetchPresetFlags(),
         fetchExpiredFlags()
       ]);
-      console.log('加载到的任务数据:', tasksData);
-      console.log('加载到的打卡数据:', punchData);
-      console.log('加载到的有日期flag:', flagsWithDatesData);
-      console.log('加载到的预设flag:', presetFlagsData);
-      console.log('加载到的过期flag:', expiredFlagsData);
       
       // 自动清理过期且未完成的Flag
       const today = new Date();
@@ -102,7 +96,6 @@ export default function FlagPage() {
         return endDate.getTime() < todayTime; // 结束日期已过
       });
       if (expiredFlagsToDelete.length > 0) {
-        console.log('🗑️ 检测到过期未完成的Flag:', expiredFlagsToDelete.map(f => f.title));
         // 批量删除过期Flag
         await Promise.all(expiredFlagsToDelete.map(flag => deleteTask(flag.id)));
         // 重新加载任务列表
@@ -111,7 +104,6 @@ export default function FlagPage() {
           tasks: updatedTasks,
           punchedDates: punchData
         });
-        console.log('✅ 已自动清理', expiredFlagsToDelete.length, '个过期Flag');
       } else {
         // 更新store
         useTaskStore.setState({ 
@@ -164,7 +156,6 @@ export default function FlagPage() {
   // 监听帖子删除事件，同步更新flag状态
   useEffect(() => {
     const handlePostDeleted = () => {
-      console.log('📢 检测到帖子删除，重新加载flag数据');
       loadData();
     };
     
@@ -177,7 +168,6 @@ export default function FlagPage() {
   const sessionElapsed = useTaskStore((s) => s.sessionElapsed);
   const startStudy = useTaskStore((s) => s.startStudy);
   const stopStudy = useTaskStore((s) => s.stopStudy);
-  // const increaseDailyElapsed = useTaskStore((s) => s.increaseDailyElapsed); // 暂未使用
 
   // 本地 UI 状态
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -463,22 +453,24 @@ export default function FlagPage() {
 
   // ========== 事件处理器 ========== 
   /**
-   * 任务记次
+   * 任务记次（打卡/完成）
+   * 注：每日积分上限和冷却机制为前端临时检查，后端应进行权威验证
    */
   const handleTickTask = async (taskId: string) => {
-      // ⚠️ TODO: 每日积分上限应该由后端统计，防止用户清除缓存绕过
+      // 检查每日积分上限（前端临时检查）
       const todayDateStr = formatDateYMD(new Date());
       const dailyPointsKey = `flag_daily_points_${todayDateStr}`;
       const dailyPoints = parseInt(localStorage.getItem(dailyPointsKey) || '0');
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    // 检查全局冷却
+    
+    // 检查全局冷却（前端临时检查）
     if (globalCooldown > 0) {
       toast.warning(`冷却中，还需等待 ${Math.ceil(globalCooldown / 60)} 分钟 ⏱️`);
       return;
     }
-    // ⚠️ TODO: 冷却机制应该由后端统一管理，防止用户清除缓存绕过
-    // 只有真正完成 flag 时才计入完成时间
+    
+    // 记录完成时间用于冷却计算
     const now = Date.now();
     const completeTimesKey = 'flag_complete_times';
     let completeTimes: number[] = [];
@@ -524,12 +516,6 @@ export default function FlagPage() {
       }
     }
     
-    // TODO: 完整的每日限制检查需要后端返回todayCount字段
-    // if (task.dailyLimit && task.todayCount && task.todayCount >= task.dailyLimit) {
-    //   toast.warning(`今日打卡已达上限 (${task.dailyLimit}次)`);
-    //   return;
-    // }
-    
     // 防止重复点击
     const button = document.activeElement as HTMLButtonElement;
     if (button) button.disabled = true;
@@ -553,19 +539,16 @@ export default function FlagPage() {
           // 本次积分
           const addPoints = Math.min(task.points, 150 - dailyPoints);
           try {
-            const result = await addUserPoints(taskId, addPoints);
-            console.log('✅ 积分添加结果:', result);
+            await addUserPoints(taskId, addPoints);
             // 更新本地积分累计
             localStorage.setItem(dailyPointsKey, String(dailyPoints + addPoints));
             
             // 🔧 优化：刷新用户数据（积分和今日学习时长）
             try {
-              const [userData, todayData] = await Promise.all([
+              await Promise.all([
                 api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
                 api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
               ]);
-              console.log('✅ 用户数据已刷新，最新积分:', userData.count);
-              console.log('✅ 今日学习时长已刷新:', todayData.today_learn_time);
             } catch (refreshError) {
               console.warn('⚠️ 刷新用户数据失败:', refreshError);
             }

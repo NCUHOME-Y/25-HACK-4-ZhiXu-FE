@@ -22,7 +22,9 @@ import { POSTS_PER_PAGE } from '../lib/constants/constants';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import { BirdMascot } from '../components/feature';
 
-// 用户统计弹窗内部动态组件：实时获取指定用户的打卡天数、完成flag数、总积分
+/**
+ * 用户统计数据组件：显示打卡天数、完成flag、总积分
+ */
 const UserStatsBlock: React.FC<{ userId: string }> = ({ userId }) => {
   const [stats, setStats] = useState<{ daka_days: number; completed_flags: number; total_points: number } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -88,8 +90,10 @@ export default function ContactPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  // 统一管理 userId，避免重复获取
+  const userId = useMemo(() => localStorage.getItem('currentUserId') || '', []);
+  
   const [hasUnreadMessages, setHasUnreadMessages] = useState(() => {
-    const userId = localStorage.getItem('currentUserId');
     const commentsUnread = localStorage.getItem(`commentsRead_${userId}`) !== 'true';
     const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
     return commentsUnread || privateUnread;
@@ -119,7 +123,6 @@ export default function ContactPage() {
   // 未读消息检查（简化为本地存储标志）
   const checkUnreadMessages = useCallback(() => {
     try {
-      const userId = localStorage.getItem('currentUserId');
       if (!userId) return;
       const commentsRead = localStorage.getItem(`commentsRead_${userId}`) === 'true';
       const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
@@ -127,7 +130,7 @@ export default function ContactPage() {
     } catch (e) {
       console.error('检查未读消息失败:', e);
     }
-  }, []);
+  }, [userId]);
 
   // 分页加载更多帖子
   const loadMorePosts = useCallback(() => {
@@ -461,7 +464,6 @@ export default function ContactPage() {
               className="p-4 text-center cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-teal-50 border-green-200 relative rounded-2xl"
               onClick={() => {
                 setHasUnreadMessages(false);
-                const userId = localStorage.getItem('currentUserId');
                 localStorage.setItem(`commentsRead_${userId}`, 'true');
                 navigate('/receive');
               }}

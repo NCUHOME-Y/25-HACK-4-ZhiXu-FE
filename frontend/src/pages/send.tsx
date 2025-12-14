@@ -72,11 +72,9 @@ export default function SendPage() {
   // 验证是否有用户信息
   useEffect(() => {
     if (!user.id) {
-      console.error('❌ 没有用户信息,返回上一页');
+      console.error('没有用户信息,返回上一页');
       alert('未选择聊天对象,请从消息列表选择用户');
       navigate('/receive');
-    } else {
-      console.log('✅ 用户信息正常:', user);
     }
   }, [user, navigate]);
 
@@ -204,10 +202,7 @@ export default function SendPage() {
     };
 
     ws.onclose = () => {
-      console.log('私聊WebSocket连接已关闭');
-    };
-
-    return () => {
+        // WebSocket 连接关闭
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
@@ -216,10 +211,9 @@ export default function SendPage() {
 
   const handleSendMessage = () => {
     if (!message.trim() || !wsRef.current || !user.id) {
-      console.log('无法发送：', { message: message.trim(), ws: !!wsRef.current, userId: user.id });
       return;
     }
-    
+
     const messageData = {
       content: message.trim(),
       to: parseInt(user.id),

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// 本地存储 Hook
+/** 本地存储 Hook */
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
@@ -25,7 +25,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   return [storedValue, setValue] as const;
 }
 
-// 异步数据加载 Hook
+/** 异步数据加载 Hook */
 export function useAsync<T>(asyncFunction: () => Promise<T>, immediate = true) {
   const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [data, setData] = useState<T | null>(null);
@@ -55,7 +55,7 @@ export function useAsync<T>(asyncFunction: () => Promise<T>, immediate = true) {
   return { execute, status, data, error };
 }
 
-// 学习计时管理 Hook
+/** 学习计时管理 Hook */
 export function useStudyTimer(studying: boolean, onTick: () => void) {
   useEffect(() => {
     if (!studying) return;
@@ -64,7 +64,7 @@ export function useStudyTimer(studying: boolean, onTick: () => void) {
   }, [studying, onTick]);
 }
 
-// 防抖 Hook
+/** 防抖 Hook */
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -81,7 +81,7 @@ export function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// 窗口尺寸监听 Hook
+/** 窗口尺寸监听 Hook */
 export function useWindowSize() {
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,

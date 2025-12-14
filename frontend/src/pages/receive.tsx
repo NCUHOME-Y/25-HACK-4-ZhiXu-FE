@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, MessageCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Button, Card } from "../components";
@@ -113,7 +113,6 @@ export default function ReceivePage() {
       const userId = localStorage.getItem('currentUserId');
       localStorage.setItem(`privateUnread_${userId}`, String(totalPrivateUnread));
 
-      console.log('✅ 转换后的会话列表:', conversationList);
       setConversations(conversationList);
       setError(null);
     } catch (error: unknown) {

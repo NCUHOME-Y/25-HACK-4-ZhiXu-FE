@@ -1,6 +1,10 @@
-// 必要的全局类型定义（精简版）
+/**
+ * 全局类型定义
+ */
 
-// 用户相关
+/**
+ * 用户信息
+ */
 export interface User { 
   id: string; 
   name: string; 
@@ -10,22 +14,32 @@ export interface User {
   avatar?: string;
 }
 
-// 认证相关
+/**
+ * 认证相关类型
+ */
 export interface LoginCredentials { phone: string; password: string }
 export interface RegisterData { name: string; phone: string; password: string }
 export interface OTPVerifyData { phone: string; code: string }
 export interface AuthResponse { token: string; user: User }
 
-// 通用 API 响应（保持轻量）
+/**
+ * 通用 API 响应类型
+ */
 export interface ApiResponse<T = unknown> { success: boolean; data?: T; message?: string; error?: string }
 
-// Flag优先级类型
-export type FlagPriority = 4 | 3 | 2 | 1; // 4:不急 3:一般 2:较急 1:急切
+/**
+ * Flag 优先级：4=不急, 3=一般, 2=较急, 1=急切
+ */
+export type FlagPriority = 4 | 3 | 2 | 1;
 
-// Flag标签类型
+/**
+ * Flag 标签：1=学习提升, 2=健康运动, 3=工作效率, 4=兴趣爱好, 5=生活习惯
+ */
 export type FlagLabel = 1 | 2 | 3 | 4 | 5;
 
-// 任务类型（全局使用）
+/**
+ * 任务/Flag 数据结构
+ */
 export interface Task {
   id: string
   title: string // 对应后端 flag

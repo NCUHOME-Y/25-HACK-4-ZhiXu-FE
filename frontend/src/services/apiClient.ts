@@ -2,18 +2,11 @@
 import { handleApiError } from './error.service';
 import { createApiWrapper } from '../lib/helpers/api-helpers';
 
-/**
- * API 客户端配置
- * 包含请求拦截器和响应拦截器
- */
-// 后端地址通过 Vite 环境变量 `VITE_API_BASE_URL` 注入
-// 开发环境：undefined 使用相对路径，通过 Vite 代理转发
-// 生产环境：使用 .env.production 中的完整 URL  
+/** API 客户端配置 */
+// 后端地址通过 Vite 环境变量 VITE_API_BASE_URL 注入
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || undefined;
 
-/**
- * 将 http(s) 地址转换为 ws(s) 地址并拼接路径
- */
+/** 将 http(s) 地址转换为 ws(s) 地址并拼接路径 */
 export function makeWsUrl(path: string) {
   let origin = API_BASE;
   
@@ -21,7 +14,6 @@ export function makeWsUrl(path: string) {
   if (!origin || origin === '' || !origin.startsWith('http')) {
     if (typeof window !== 'undefined') {
       origin = window.location.origin;
-      console.log('📍 使用当前页面origin作为WebSocket地址:', origin);
     } else {
       origin = 'http://localhost:8080';
     }
@@ -36,15 +28,7 @@ export function makeWsUrl(path: string) {
   // 确保 path 以 '/' 开头
   const p = path.startsWith('/') ? path : `/${path}`;
   
-  const finalUrl = `${wsOrigin}${p}`;
-  console.log('🔗 WebSocket URL构建完成:', {
-    原始API_BASE: API_BASE,
-    使用的origin: origin,
-    WebSocket协议: wsOrigin,
-    完整URL: finalUrl
-  });
-  
-  return finalUrl;
+  return `${wsOrigin}${p}`;
 }
 
 const apiClient = axios.create({
@@ -53,7 +37,7 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// 请求拦截器 - 添加认证 token
+/** 请求拦截器 - 添加认证 token */
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token');
@@ -67,18 +51,17 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器 - 使用error.service处理错误
+/** 响应拦截器 - 处理错误 */
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 401错误:token无效或过期,立即清除并跳转
+    /** 401错误 - token无效或过期 */
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
       const isAuthPage = currentPath === '/auth' || currentPath === '/' || currentPath === '/start';
       
       // 如果不在认证页面,清除token并跳转
       if (!isAuthPage) {
-        console.log('[apiClient] 401错误,清除token并跳转到登录页');
         localStorage.removeItem('auth_token');
         // 使用 replace 避免历史记录堆积
         if (typeof window !== 'undefined') {
@@ -93,7 +76,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-// 创建 API 包装器以简化 service 层代码
+/** 创建 API 包装器以简化 service 层代码 */
 export const api = createApiWrapper(apiClient);
 
 export default apiClient;

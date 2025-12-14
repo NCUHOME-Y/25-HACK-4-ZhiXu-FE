@@ -78,10 +78,10 @@ export default function MinePage() {
   // 退出登录状态
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
-  // 保存状态 - 防止重复提交
+  // 保存状态
   const [isSaving, setIsSaving] = useState(false);
 
-  // 关于我们状态
+  // 弹窗状态
   const [aboutPopoverOpen, setAboutPopoverOpen] = useState(false);
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
 
@@ -91,22 +91,20 @@ export default function MinePage() {
   const [tempNotificationMinute, setTempNotificationMinute] = useState('00');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // ========== 计算属性 ========== 
-  /** 已完成flag数量 */
+  // 计算属性
   const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
   
-  /** 积分数据 - 从后端API获取 */
+  // 用户数据
   const [points, setPoints] = useState(0);
   const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
-  
-  // P1修复：从后端加载用户统计数据
-  // 点赞总数
   const [totalLikes, setTotalLikes] = useState(0);
+  
+  /**
+   * 加载用户统计数据
+   */
   const loadUserStats = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.log('未登录，跳过加载数据');
+      if (!authService.isAuthenticated()) {
         return;
       }
       // 获取用户基本信息
@@ -123,7 +121,6 @@ export default function MinePage() {
           min_remind: number;
         }
       }>('/api/getUser');
-      console.log('我的页面-用户数据:', userData);
       const user = userData.user;
       setPoints(user.count || 0);
       // 使用后端head_show生成头像URL（后端提供/api/avatar/:id接口）
@@ -172,8 +169,7 @@ export default function MinePage() {
   // 加载任务数据
   const loadTasks = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
+      if (!authService.isAuthenticated()) {
         console.log('未登录，跳过加载任务数据');
         return;
       }
@@ -214,8 +210,7 @@ export default function MinePage() {
   // P1修复：加载用户成就系统（支持实时刷新）
   const loadAchievementsData = useCallback(async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
+      if (!authService.isAuthenticated()) {
         console.log('未登录，使用默认徽章');
         // 设置默认未解锁徽章
         setBadges(allBadges.map((badge, index) => ({
@@ -228,11 +223,9 @@ export default function MinePage() {
       }
       
       const data = await getUserAchievements();
-      console.log('✅ 成就数据加载成功:', data);
       
       // 如果后端返回空数组或无数据，使用默认未解锁徽章
       if (!data.achievements || data.achievements.length === 0) {
-        console.log('后端返回空数据，使用默认徽章');
         setBadges(allBadges.map((badge, index) => ({
           id: index,
           name: badge.name,

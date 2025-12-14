@@ -1,8 +1,13 @@
-// 全局状态管理（Zustand）
+/**
+ * 全局状态管理 (Zustand)
+ * 管理用户认证和任务状态
+ */
 import { create } from "zustand";
 import type { User, Task } from "../types/types";
 
-// Auth Store：保存当前用户与 token
+/**
+ * 认证状态管理
+ */
 interface AuthState {
 	user: User | null;
 	token: string | null;
@@ -16,7 +21,10 @@ export const useAuthStore = create<AuthState>((set: (partial: Partial<AuthState>
 	clear: () => set({ user: null, token: null }),
 }));
 
-// Task Store：任务与打卡、学习计时（可渐进扩展）
+/**
+ * 任务状态管理
+ * 包含任务、打卡、学习计时功能
+ */
 interface TaskState {
 	tasks: Task[];
 	punchedDates: string[]; // YYYY-MM-DD
@@ -61,7 +69,6 @@ const getNext4AM = () => {
 const autoStopStudy = () => {
 	const startTimeStr = localStorage.getItem(STUDY_START_TIME_KEY);
 	if (startTimeStr) {
-		console.log('🌙 凌晨4点自动停止学习计时（不计入时长）');
 		localStorage.removeItem(STUDY_START_TIME_KEY);
 		localStorage.removeItem(STUDY_DAILY_ELAPSED_KEY);
 		
@@ -97,8 +104,6 @@ const getInitialStudyState = () => {
 		const savedDailyElapsed = parseInt(dailyElapsedStr);
 		const now = Date.now();
 		const elapsedSinceStart = Math.floor((now - startTime) / 1000);
-		
-		console.log('✅ 学习计时状态已恢复');
 		
 		return {
 			studying: true,
@@ -167,7 +172,6 @@ export const useTaskStore = create<TaskState>(
 		}, 1000);
 		
 		set({ studying: true, sessionElapsed: 0 });
-		console.log('▶️ 开始学习计时');
 	},
 	stopStudy: async () => {
 		// 清除localStorage
@@ -186,18 +190,15 @@ export const useTaskStore = create<TaskState>(
 			dailyElapsed: get().dailyElapsed + session
 		});
 		
-		// 🔧 新增：将学习时长写入后端
+		// 将学习时长保存到后端
 		if (session > 0) {
 			try {
 				const { stopStudySession } = await import('../../services/flag.service');
 				await stopStudySession('', session);
-				console.log('✅ 学习时长已保存到后端(秒):', session);
 			} catch (error) {
-				console.error('❌ 保存学习时长失败:', error);
+				console.error('保存学习时长失败:', error);
 			}
 		}
-		
-		console.log('⏹️ 停止学习计时，已保存时长:', session);
 	},
 	increaseDailyElapsed: () => set({ 
 		dailyElapsed: get().dailyElapsed + 1,
