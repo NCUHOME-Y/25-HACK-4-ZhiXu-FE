@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut, Heart, CheckCircle, Award } from 'lucide-react';
+import { UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut, Heart, CheckCircle, Award, BookOpen } from 'lucide-react'; // 移除未使用的 ChevronRight
 import { 
   BottomNav, 
   Card, 
@@ -45,6 +45,12 @@ import { fetchPunchDates } from '../services/flag.service';
 import { switchAvatar, updateNotificationEnabled, updateNotificationTime, changePassword } from '../services/set.service';
 import { authService } from '../services/auth.service';
 
+// PWA BeforeInstallPromptEvent 类型定义
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 /**
  * 我的页面
  * 展示用户信息、成就、数据统计等
@@ -82,6 +88,9 @@ export default function MinePage() {
   // 弹窗状态
   const [aboutPopoverOpen, setAboutPopoverOpen] = useState(false);
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
+
+  // PWA 安装状态
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // 消息提醒状态
   const [notificationEnabled, setNotificationEnabled] = useState(true);
@@ -248,6 +257,36 @@ export default function MinePage() {
   useEffect(() => {
     loadAchievementsData();
   }, [loadAchievementsData]);
+  
+  // PWA 安装事件监听
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      const installEvent = e as BeforeInstallPromptEvent;
+      // 阻止默认的安装提示
+      installEvent.preventDefault();
+      // 保存事件，以便稍后触发
+      setDeferredPrompt(installEvent);
+    };
+
+    const handleAppInstalled = () => {
+      // 安装成功后隐藏按钮
+      setDeferredPrompt(null);
+      toast.success('知序已成功安装到您的设备！');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // 检查是否已经安装
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      // setShowInstallButton(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
   
   // 首次登录检测：自动启动功能简介
   useEffect(() => {
@@ -564,6 +603,54 @@ export default function MinePage() {
     }
   };
 
+  /** 安装 PWA 应用 */
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      try {
+        // 自动显示安装提示
+        await deferredPrompt.prompt();
+        
+        // 等待用户响应
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          toast.success('正在安装知序应用...');
+        }
+        
+        // 清除 prompt，因为它只能使用一次
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error('安装失败:', error);
+        toast.error('安装失败，请稍后重试');
+      }
+    } else {
+      // 检测浏览器类型并给出具体指引
+      const userAgent = navigator.userAgent.toLowerCase();
+      let installGuide = '';
+      
+      if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+        // Chrome 浏览器
+        installGuide = '点击地址栏右侧的 ⊕ 图标，或点击右上角 ⋮ → 安装知序';
+      } else if (userAgent.includes('edg')) {
+        // Edge 浏览器
+        installGuide = '点击地址栏右侧的 ⊕ 图标，或点击右上角 ⋯ → 应用 → 将此站点作为应用安装';
+      } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+        // Safari 浏览器
+        installGuide = '点击底部分享按钮 → 添加到主屏幕';
+      } else if (userAgent.includes('firefox')) {
+        // Firefox 浏览器
+        installGuide = '点击地址栏的 ⊕ 图标，或点击右上角 ≡ → 安装';
+      } else {
+        // 其他浏览器
+        installGuide = '请使用浏览器菜单中的"安装应用"或"添加到主屏幕"功能';
+      }
+      
+      toast.info(installGuide, {
+        duration: 5000,
+      });
+    }
+  };
+
   // ========== 渲染 ========== 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -870,6 +957,47 @@ export default function MinePage() {
           </Card>
         </section>
 
+        {/* 功能简介 */}
+        <section className="px-4">
+          <Card 
+            className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98]"
+            onClick={() => {
+              startTutorial();
+              navigate('/flag');
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-green-50">
+                <BookOpen className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">功能简介</h3>
+                <p className="text-xs text-muted-foreground">查看完整的功能介绍</p>
+              </div>
+            </div>
+          </Card>
+        </section>
+
+        {/* 安装应用 */}
+        <section className="px-4">
+          <Card 
+            className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98]"
+            onClick={handleInstallPWA}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-blue-50">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">安装知序应用</h3>
+                <p className="text-xs text-muted-foreground">添加到主屏幕，快速启动</p>
+              </div>
+            </div>
+          </Card>
+        </section>
+
         {/* 关于我们 */}
         <section className="px-4">
           <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer transition-all duration-200">
@@ -936,27 +1064,6 @@ export default function MinePage() {
                 </div>
               </PopoverContent>
             </Popover>
-          </Card>
-        </section>
-
-        {/* 功能简介 */}
-        <section className="px-4">
-          <Card 
-            className="p-4 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer active:scale-[0.99]"
-            onClick={() => {
-              startTutorial();
-              navigate('/flag');
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-blue-100">
-                <Info className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">功能简介</h3>
-                <p className="text-xs text-gray-600">学习如何使用知序的核心功能</p>
-              </div>
-            </div>
           </Card>
         </section>
 
