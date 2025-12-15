@@ -210,6 +210,14 @@ export async function startStudySession(): Promise<StudyRecord> {
 /** 停止学习计时 */
 export async function stopStudySession(_sessionId: string, duration: number): Promise<boolean> {
   const { api } = await import('./apiClient');
+  
+  // 🐛 调试日志：记录传递的学习时长
+  console.log('📊 [停止学习] 准备保存学习时长:', {
+    duration_seconds: duration,
+    duration_minutes: Math.floor(duration / 60),
+    timestamp: new Date().toISOString()
+  });
+  
   await api.post('/api/addLearnTime', { duration });
   
   // 🔧 新增：刷新用户数据

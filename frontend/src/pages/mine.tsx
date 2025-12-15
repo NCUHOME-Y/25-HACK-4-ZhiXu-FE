@@ -630,16 +630,16 @@ export default function MinePage() {
       
       if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
         // Chrome 浏览器
-        installGuide = '点击地址栏右侧的 ⊕ 图标，或点击右上角 ⋮ → 安装知序';
+        installGuide = '点击地址栏右侧的 ⊕ 图标或点击右上角 ⋮ 或浏览器菜单→ 安装知序或添加到主页';
       } else if (userAgent.includes('edg')) {
         // Edge 浏览器
-        installGuide = '点击地址栏右侧的 ⊕ 图标，或点击右上角 ⋯ → 应用 → 将此站点作为应用安装';
+        installGuide = '点击地址栏右侧的 ⊕ 图标或点击右上角 ⋯ 或浏览器菜单 → 应用 → 将此站点作为应用安装或添加到主页';
       } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
         // Safari 浏览器
-        installGuide = '点击底部分享按钮 → 添加到主屏幕';
+        installGuide = '点击底部分享按钮或浏览器菜单→ 添加到主屏幕或安装应用';
       } else if (userAgent.includes('firefox')) {
         // Firefox 浏览器
-        installGuide = '点击地址栏的 ⊕ 图标，或点击右上角 ≡ → 安装';
+        installGuide = '点击地址栏的 ⊕ 图标或点击右上角 ≡ 或浏览器菜单→ 安装或添加到主页';
       } else {
         // 其他浏览器
         installGuide = '请使用浏览器菜单中的"安装应用"或"添加到主屏幕"功能';

@@ -65,14 +65,29 @@ const getNext4AM = () => {
 	return next4AM.getTime() - now.getTime();
 };
 
-// 自动停止学习（凌晨4点，不计入时长）
-const autoStopStudy = () => {
+// 自动停止学习（凌晨4点，保存当前时长后停止）
+const autoStopStudy = async () => {
 	const startTimeStr = localStorage.getItem(STUDY_START_TIME_KEY);
 	if (startTimeStr) {
+		// 🔧 修复：保存当前学习时长后再停止
+		const currentState = useTaskStore.getState();
+		const session = currentState.sessionElapsed;
+		
+		// 如果有学习时长，先保存到后端
+		if (session > 0) {
+			try {
+				const { stopStudySession } = await import('../../services/flag.service');
+				await stopStudySession('', session);
+				console.log('⏰ [凌晨4点] 自动保存学习时长:', session, '秒');
+			} catch (error) {
+				console.error('⏰ [凌晨4点] 保存学习时长失败:', error);
+			}
+		}
+		
+		// 清除 localStorage 和计时器
 		localStorage.removeItem(STUDY_START_TIME_KEY);
 		localStorage.removeItem(STUDY_DAILY_ELAPSED_KEY);
 		
-		// 清除计时器
 		if (globalTimerId !== null) {
 			window.clearInterval(globalTimerId);
 			globalTimerId = null;
@@ -80,6 +95,8 @@ const autoStopStudy = () => {
 		
 		// 设置状态为停止
 		useTaskStore.setState({ studying: false, sessionElapsed: 0 });
+		
+		console.log('⏰ [凌晨4点] 自动停止学习计时');
 		
 		// 设置下一个自动停止
 		autoStopTimeoutId = window.setTimeout(autoStopStudy, getNext4AM());
@@ -185,6 +202,14 @@ export const useTaskStore = create<TaskState>(
 		}
 		
 		const session = get().sessionElapsed;
+		
+		// 🐛 调试日志：记录学习时长
+		console.log('⏱️ [学习计时] 停止学习:', {
+			sessionElapsed: session,
+			dailyElapsed: get().dailyElapsed,
+			willSave: session > 0
+		});
+		
 		set({ 
 			studying: false,
 			dailyElapsed: get().dailyElapsed + session
@@ -198,6 +223,8 @@ export const useTaskStore = create<TaskState>(
 			} catch (error) {
 				console.error('保存学习时长失败:', error);
 			}
+		} else {
+			console.warn('⚠️ [学习计时] session时长为0，跳过保存');
 		}
 	},
 	increaseDailyElapsed: () => set({ 
