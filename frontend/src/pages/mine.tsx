@@ -249,7 +249,7 @@ export default function MinePage() {
     loadAchievementsData();
   }, [loadAchievementsData]);
   
-  // 首次登录检测：自动启动新手教程
+  // 首次登录检测：自动启动功能简介
   useEffect(() => {
     if (shouldAutoStartTutorial()) {
       // 延迟500ms启动，让页面先完成渲染
@@ -939,7 +939,7 @@ export default function MinePage() {
           </Card>
         </section>
 
-        {/* 新手教程 */}
+        {/* 功能简介 */}
         <section className="px-4">
           <Card 
             className="p-4 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer active:scale-[0.99]"
@@ -953,7 +953,7 @@ export default function MinePage() {
                 <Info className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">新手教程</h3>
+                <h3 className="font-semibold text-gray-900">功能简介</h3>
                 <p className="text-xs text-gray-600">学习如何使用知序的核心功能</p>
               </div>
             </div>
@@ -1166,7 +1166,7 @@ export default function MinePage() {
         </DialogContent>
       </Dialog>
 
-      {/* 新手教程 - 自动管理显示 */}
+      {/* 功能简介 - 自动管理显示 */}
       <Tutorial />
 
       <BottomNav />

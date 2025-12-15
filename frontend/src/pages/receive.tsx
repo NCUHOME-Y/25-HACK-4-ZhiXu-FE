@@ -72,6 +72,11 @@ export default function ReceivePage() {
     const id = currentUserCtx?.id;
     if (!id) return;
     localStorage.setItem('currentUserId', id); // 向旧逻辑兼容存储
+    
+    // 标记已读（进入页面即清除红点）
+    localStorage.setItem(`commentsRead_${id}`, 'true');
+    localStorage.setItem(`privateUnread_${id}`, '0');
+    
     Promise.all([
       loadPrivateConversations(id),
       loadComments(id)

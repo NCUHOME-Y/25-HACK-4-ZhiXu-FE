@@ -512,7 +512,7 @@ export default function DataPage() {
 
       </div>
       
-      {/* 新手教程 */}
+      {/* 功能简介 */}
       <Tutorial />
       
       <BottomNav />

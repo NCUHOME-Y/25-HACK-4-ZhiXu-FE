@@ -1742,7 +1742,7 @@ export default function FlagPage() {
         </DrawerContent>
       </Drawer>
 
-      {/* 新手教程 */}
+      {/* 功能简介 */}
       <Tutorial />
 
       <BottomNav />

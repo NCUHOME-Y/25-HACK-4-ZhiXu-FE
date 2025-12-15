@@ -51,6 +51,9 @@ export default function PublicPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const MAX_RECONNECT_ATTEMPTS = 5;
   
   const roomId = searchParams.get('room_id') || 'room-1';
   const roomName = (location.state as { roomName?: string })?.roomName || '学习交流室';
@@ -115,55 +118,77 @@ export default function PublicPage() {
       return;
     }
 
-    const wsUrl = makeWsUrl(`/ws/chat?room_id=${roomId}&token=${token}`);
-    
-    let ws: WebSocket;
-    try {
-      ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-    } catch {
-      alert('无法建立聊天连接，请检查网络设置');
-      return;
-    }
+    let ws: WebSocket | null = null;
+    let isIntentionallyClosed = false;
 
-    ws.onopen = () => {
-      // WebSocket连接成功
-    };
-
-    ws.onmessage = (event) => {
+    const connect = () => {
+      if (isIntentionallyClosed) return;
+      
+      const wsUrl = makeWsUrl(`/ws/chat?room_id=${roomId}&token=${token}`);
+      
       try {
-        const data = JSON.parse(event.data);
-        
-        // 跳过自己发送的消息（因为已经在本地显示了）
-        if (String(data.from) === currentUserId) {
-          return;
-        }
-        
-        const newMessage: ChatMessage = {
-          id: `${data.from}-${Date.now()}`,
-          userId: String(data.from),
-          userName: data.user_name || `用户${data.from}`,
-          avatar: data.user_avatar || '',
-          message: data.content,
-          time: formatChatTime(data.created_at || new Date()),
-          isMe: false,
+        ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('✅ 群聊WebSocket连接成功');
+          reconnectAttemptsRef.current = 0;
         };
-        setMessages((prev) => [...prev, newMessage]);
-      } catch {
-        // 忽略无法解析的消息
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (String(data.from) === currentUserId) {
+              return;
+            }
+            
+            const newMessage: ChatMessage = {
+              id: `${data.from}-${Date.now()}`,
+              userId: String(data.from),
+              userName: data.user_name || `用户${data.from}`,
+              avatar: data.user_avatar || '',
+              message: data.content,
+              time: formatChatTime(data.created_at || new Date()),
+              isMe: false,
+            };
+            setMessages((prev) => [...prev, newMessage]);
+          } catch (err) {
+            console.error('消息解析失败:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('群聊WebSocket错误:', error);
+        };
+
+        ws.onclose = (event) => {
+          console.log('群聊WebSocket连接关闭:', event.code, event.reason);
+          wsRef.current = null;
+          
+          if (!isIntentionallyClosed && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttemptsRef.current++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
+            console.log(`尝试重连 (${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})，延迟 ${delay}ms`);
+            reconnectTimeoutRef.current = setTimeout(connect, delay);
+          }
+        };
+      } catch (error) {
+        console.error('创建WebSocket失败:', error);
+        if (reconnectAttemptsRef.current === 0) {
+          alert('无法建立聊天连接，请检查网络设置');
+        }
       }
     };
 
-    ws.onerror = () => {
-      // WebSocket连接错误
-    };
-
-    ws.onclose = () => {
-      // WebSocket连接已关闭
-    };
+    connect();
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      isIntentionallyClosed = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
         ws.close(1000, '页面离开');
       }
     };
@@ -175,12 +200,12 @@ export default function PublicPage() {
     }
     
     if (!wsRef.current) {
-      alert('聊天连接未建立，请刷新页面重试');
+      alert('聊天连接未建立，请稍候重试');
       return;
     }
     
     if (wsRef.current.readyState !== WebSocket.OPEN) {
-      alert('聊天连接已断开，请刷新页面重新连接');
+      alert('聊天连接已断开，正在重新连接...');
       return;
     }
     
@@ -189,21 +214,25 @@ export default function PublicPage() {
       to: 0,
     };
     
-    // 立即在本地显示自己的消息
-    const newMessage: ChatMessage = {
-      id: `local-${Date.now()}`,
-      userId: currentUserId,
-      userName: currentUserCtx?.name || '我',
-      avatar: currentUserCtx?.avatar || '',
-      message: message.trim(),
-      time: formatChatTime(new Date()),
-      isMe: true,
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    
-    // 发送到服务器
-    wsRef.current.send(JSON.stringify(messageData));
-    setMessage('');
+    try {
+      wsRef.current.send(JSON.stringify(messageData));
+      
+      const newMessage: ChatMessage = {
+        id: `local-${Date.now()}`,
+        userId: currentUserId,
+        userName: currentUserCtx?.name || '我',
+        avatar: currentUserCtx?.avatar || '',
+        message: message.trim(),
+        time: formatChatTime(new Date()),
+        isMe: true,
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      
+      setMessage('');
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      alert('发送失败，请重试');
+    }
   };
 
   return (

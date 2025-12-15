@@ -25,7 +25,7 @@ const tutorialSteps: TutorialStep[] = [
     section: '简介',
     title: '欢迎来到知序',
     subtitle: '你的自律成长伙伴',
-    description: '知序（Unimate）是一个帮助你养成好习惯、实现长期目标的自律社区。我们相信，持续的小进步能带来巨大的改变。',
+    description: '知序是一个帮助你养成好习惯、实现长期目标的自律社区。我们相信，持续的小进步能带来巨大的改变。',
     keyPoints: [
       { label: 'Flag 目标', content: '创建目标、每日打卡、追踪进度' },
       { label: 'AI 助手', content: '智能规划、个性化建议' },
@@ -210,9 +210,9 @@ const tutorialSteps: TutorialStep[] = [
       { label: '封神榜', content: '查看打卡、完成Flag、积分三个维度的排行榜，激励自己冲击榜单' },
       { label: '谈玄斋', content: '进入公共聊天室，实时畅聊交流，结识志同道合的朋友' },
       { label: '雁书札', content: '收到陌生人的私信评论，结识新的朋友' },
-      { label: '快速访问', content: '点击顶部对应图标即可快速跳转到相应功能页面' }
+      { label: '一言好伙伴', content: '翰林院论里有个名叫一言的伙伴会每天分享一句激励的话' }
     ],
-    tips: ['封神榜会激励你更加努力，争取上榜', '谈玄斋是结识新朋友的好地方'],
+    tips: ['封神榜会激励你更加努力，争取上榜', '谈玄斋是结识新朋友的好地方', '雁书札里收到的新消息有邮件提醒哦'],
     position: 'bottom-right'
   },
   {
@@ -235,11 +235,11 @@ const tutorialSteps: TutorialStep[] = [
     section: '素札',
     title: '我的 - 账号设置',
     subtitle: '管理你的账号与偏好',
-    description: '在账号设置中，你可以管理密码、消息提醒、查看关于信息，还能随时重新观看新手教程。',
+    description: '在账号设置中，你可以管理密码、消息提醒、查看关于信息，还能随时重新观看功能简介。',
     keyPoints: [
       { label: '用户反馈', content: '有什么问题尽管点击这里来反馈哦' },
       { label: '修改密码', content: '定期更换密码，保护账号安全' },
-      { label: '新手教程', content: '点击"新手教程"卡片随时回顾功能介绍' },
+      { label: '功能简介', content: '点击"功能简介"卡片随时回顾功能介绍' },
       { label: '关于我们', content: '可以查看版本信息和制作团队' }
     ],
     tips: ['多多反馈，帮助我们不断改进', '如果忘记某个功能怎么用，可以重看教程'],

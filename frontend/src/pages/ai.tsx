@@ -642,7 +642,7 @@ export default function AIPage() {
           </section>
       </div>
       
-      {/* 新手教程 */}
+      {/* 功能简介 */}
       <Tutorial />
       
       <BottomNav />

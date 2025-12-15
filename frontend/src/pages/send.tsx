@@ -64,6 +64,9 @@ export default function SendPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const MAX_RECONNECT_ATTEMPTS = 5;
 
   // 验证是否有用户信息
   useEffect(() => {
@@ -160,53 +163,94 @@ export default function SendPage() {
       return;
     }
 
-    // 使用统一的 API_BASE / makeWsUrl 来生成 WS 地址
-    const wsUrl = makeWsUrl(`/ws/chat?token=${token}`);
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let ws: WebSocket | null = null;
+    let isIntentionallyClosed = false;
 
-    ws.onopen = () => {
-      console.log('✅ 私聊WebSocket连接已建立', { targetUserId: user.id });
-    };
-
-    ws.onmessage = (event) => {
+    const connect = () => {
+      if (isIntentionallyClosed) return;
+      
+      const wsUrl = makeWsUrl(`/ws/chat?token=${token}`);
+      
       try {
-        const data = JSON.parse(event.data);
-        console.log('📨 收到私聊消息:', data);
-        
-        // 只接收来自目标用户的消息（自己的消息已经在发送时显示）
-        if (String(data.from) === user.id && String(data.to) === currentUserId) {
-          const newMessage: PrivateMessage = {
-            id: `${data.from}-${Date.now()}`,
-            message: data.content,
-            time: formatMessageTime(new Date(data.created_at)),
-            isMe: false,
-            avatar: data.user_avatar || user.avatar,
-            userName: data.user_name || user.name,
-          };
-          setMessages((prev) => [...prev, newMessage]);
-        } else if (String(data.from) === currentUserId) {
-          console.log('⏭️ 跳过自己的私聊消息');
-        }
+        ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('✅ 私聊WebSocket连接已建立', { targetUserId: user.id });
+          reconnectAttemptsRef.current = 0;
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('📨 收到私聊消息:', data);
+            
+            if (String(data.from) === user.id && String(data.to) === currentUserId) {
+              const newMessage: PrivateMessage = {
+                id: `${data.from}-${Date.now()}`,
+                message: data.content,
+                time: formatMessageTime(new Date(data.created_at)),
+                isMe: false,
+                avatar: data.user_avatar || user.avatar,
+                userName: data.user_name || user.name,
+              };
+              setMessages((prev) => [...prev, newMessage]);
+            } else if (String(data.from) === currentUserId) {
+              console.log('⏭️ 跳过自己的私聊消息');
+            }
+          } catch (error) {
+            console.error('解析私聊消息失败:', error);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('私聊WebSocket错误:', error);
+        };
+
+        ws.onclose = (event) => {
+          console.log('私聊WebSocket连接关闭:', event.code, event.reason);
+          wsRef.current = null;
+          
+          if (!isIntentionallyClosed && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttemptsRef.current++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
+            console.log(`尝试重连 (${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})，延迟 ${delay}ms`);
+            reconnectTimeoutRef.current = setTimeout(connect, delay);
+          }
+        };
       } catch (error) {
-        console.error('解析私聊消息失败:', error);
+        console.error('创建WebSocket失败:', error);
+        if (reconnectAttemptsRef.current === 0) {
+          alert('无法建立私聊连接，请检查网络设置');
+        }
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('私聊WebSocket错误:', error);
-    };
+    connect();
 
-    ws.onclose = () => {
-        // WebSocket 连接关闭
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
+    return () => {
+      isIntentionallyClosed = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        ws.close(1000, '页面离开');
       }
     };
   }, [currentUserId, user.id, user.avatar, user.name, navigate]);
 
   const handleSendMessage = () => {
-    if (!message.trim() || !wsRef.current || !user.id) {
+    if (!message.trim() || !user.id) {
+      return;
+    }
+
+    if (!wsRef.current) {
+      alert('聊天连接未建立，请稍候重试');
+      return;
+    }
+
+    if (wsRef.current.readyState !== WebSocket.OPEN) {
+      alert('聊天连接已断开，正在重新连接...');
       return;
     }
 
@@ -217,10 +261,10 @@ export default function SendPage() {
     
     console.log('私聊WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
     
-    if (wsRef.current.readyState === WebSocket.OPEN) {
-      // 获取当前用户头像
+    try {
+      wsRef.current.send(JSON.stringify(messageData));
+      
       const currentUserAvatar = currentUserCtx?.avatar || '';
-      // 立即在本地显示
       const newMessage: PrivateMessage = {
         id: `${currentUserId}-${Date.now()}`,
         message: message.trim(),
@@ -231,13 +275,11 @@ export default function SendPage() {
       };
       setMessages((prev) => [...prev, newMessage]);
       
-      // 发送到服务器
-      wsRef.current.send(JSON.stringify(messageData));
       console.log('✅ 私聊消息已发送并显示:', messageData);
       setMessage('');
-    } else {
-      console.error('私聊WebSocket未连接，状态:', wsRef.current.readyState);
-      alert('连接已断开，请刷新页面重试');
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      alert('发送失败，请重试');
     }
   };
 

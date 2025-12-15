@@ -89,16 +89,13 @@ export default function ContactPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
-  // 统一管理 userId，避免重复获取
-  const userId = useMemo(() => localStorage.getItem('currentUserId') || '', []);
   
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(() => {
-    const commentsUnread = localStorage.getItem(`commentsRead_${userId}`) !== 'true';
-    const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
-    return commentsUnread || privateUnread;
-  });
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
+
+  // 动态获取 userId
+  const userId = useMemo(() => currentUserCtx?.id || '', [currentUserCtx?.id]);
 
   // 鸟消息 - 简化为纯字符串数组（修复被污染的 JSX）
   const messages = useMemo(() => {
@@ -119,17 +116,46 @@ export default function ContactPage() {
     return base;
   }, []);
 
-  // 未读消息检查（简化为本地存储标志）
-  const checkUnreadMessages = useCallback(() => {
+  // 未读消息检查（从后端API获取最新状态）
+  const checkUnreadMessages = useCallback(async () => {
     try {
       if (!userId) return;
+      
+      // 检查评论未读状态（本地标记）
       const commentsRead = localStorage.getItem(`commentsRead_${userId}`) === 'true';
+      
+      // 从后端获取私聊未读数
+      try {
+        const response = await api.get<{ conversations: { unread_count?: number }[] }>('/api/private-chat/conversations');
+        if (response?.conversations) {
+          const totalPrivateUnread = response.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+          localStorage.setItem(`privateUnread_${userId}`, String(totalPrivateUnread));
+          setHasUnreadMessages(!commentsRead || totalPrivateUnread > 0);
+          return;
+        }
+      } catch (apiError) {
+        console.error('获取私聊未读数失败:', apiError);
+      }
+      
+      // API调用失败时，使用本地缓存的值
       const privateUnread = Number(localStorage.getItem(`privateUnread_${userId}`) || '0') > 0;
       setHasUnreadMessages(!commentsRead || privateUnread);
     } catch (e) {
       console.error('检查未读消息失败:', e);
     }
   }, [userId]);
+
+  // 页面可见性变化时重新检查未读消息
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && userId) {
+        checkUnreadMessages();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [userId, checkUnreadMessages]);
 
   // 分页加载更多帖子
   const loadMorePosts = useCallback(() => {
@@ -158,8 +184,10 @@ export default function ContactPage() {
     if (currentUserCtx) {
       setCurrentUserId(currentUserCtx.id);
       setCurrentUser(currentUserCtx);
+      // 用户信息加载后立即检查未读消息
+      checkUnreadMessages();
     }
-  }, [currentUserCtx]);
+  }, [currentUserCtx, checkUnreadMessages]);
 
   /** 初始加载和搜索触发 */
   useEffect(() => {
@@ -447,6 +475,7 @@ export default function ContactPage() {
               onClick={() => {
                 setHasUnreadMessages(false);
                 localStorage.setItem(`commentsRead_${userId}`, 'true');
+                localStorage.setItem(`privateUnread_${userId}`, '0');
                 navigate('/receive');
               }}
             >
@@ -1037,7 +1066,7 @@ export default function ContactPage() {
         </DrawerContent>
       </Drawer>
       
-      {/* 新手教程 */}
+      {/* 功能简介 */}
       <Tutorial />
       
       <BottomNav />
