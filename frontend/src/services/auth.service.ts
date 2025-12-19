@@ -83,7 +83,7 @@ class AuthService {
   async sendEmailCode(email: string): Promise<{ success: boolean; message: string; waitSeconds?: number }> {
     try {
       await api.post('/api/sendEmailCode', { email });
-      return { success: true, message: '验证码已发送' };
+      return { success: true, message: '验证码已发送，请查收邮箱（可能在垃圾箱）' };
     } catch (error) {
       console.error('发送验证码失败:', error);
       // 获取后端返回的具体错误信息

@@ -535,7 +535,7 @@ export default function MinePage() {
     try {
       await updateNotificationTime(tempNotificationHour, tempNotificationMinute);
       setHasUnsavedChanges(false);
-      toast.success('提醒时间设置已保存');
+      toast.success('提醒时间设置已保存（邮件可能在垃圾箱）');
     } catch (error) {
       console.error('保存提醒时间失败:', error);
       toast.error('保存失败，请重试');
@@ -799,7 +799,7 @@ export default function MinePage() {
                     </div>
                     <div className="flex-1 text-left">
                       <h3 className="font-semibold">消息提醒</h3>
-                      <p className="text-xs text-muted-foreground">管理学习提醒和系统通知</p>
+                      <p className="text-xs text-muted-foreground">管理学习提醒和系统通知（邮件可能在垃圾箱）</p>
                     </div>
                   </div>
                 </AccordionTrigger>

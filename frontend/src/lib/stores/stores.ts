@@ -56,12 +56,17 @@ const fmt = (d: Date) => {
 const STUDY_START_TIME_KEY = 'study_start_time';
 const STUDY_DAILY_ELAPSED_KEY = 'study_daily_elapsed';
 
-// 获取下一天凌晨4点的毫秒数
+// 获取下一个凌晨4点的毫秒数（如果当前未到4点，则是今天4点；否则是明天4点）
 const getNext4AM = () => {
 	const now = new Date();
 	const next4AM = new Date(now);
-	next4AM.setDate(now.getDate() + 1);
 	next4AM.setHours(4, 0, 0, 0);
+	
+	// 如果今天4点已经过了，设置为明天4点
+	if (next4AM.getTime() <= now.getTime()) {
+		next4AM.setDate(now.getDate() + 1);
+	}
+	
 	return next4AM.getTime() - now.getTime();
 };
 
@@ -108,7 +113,10 @@ const initAutoStop = () => {
 	if (autoStopTimeoutId !== null) {
 		window.clearTimeout(autoStopTimeoutId);
 	}
-	autoStopTimeoutId = window.setTimeout(autoStopStudy, getNext4AM());
+	const delay = getNext4AM();
+	const next4AMDate = new Date(Date.now() + delay);
+	console.log('⏰ [自动停止] 已设置凌晨4点自动停止计时，下次执行时间:', next4AMDate.toLocaleString('zh-CN'));
+	autoStopTimeoutId = window.setTimeout(autoStopStudy, delay);
 };
 
 // 恢复学习计时（页面刷新后）

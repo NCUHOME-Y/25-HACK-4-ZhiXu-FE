@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect} from 'react';
 import { ArrowLeft, MessageCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Button, Card } from "../components";
@@ -211,7 +211,7 @@ export default function ReceivePage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-gray-900">收到的消息</h1>
-            <p className="text-xs text-gray-500">查看私聊和评论通知</p>
+            <p className="text-xs text-gray-500">查看私聊和评论通知（提醒邮件可能在垃圾箱）</p>
           </div>
         </div>
       </nav>
