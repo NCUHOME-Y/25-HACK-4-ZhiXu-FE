@@ -55,7 +55,9 @@ export function StudyTimeChart({
         const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
         label = weekdays[date.getDay()];
       } else if (period === 'month') {
-        const shouldShowLabel = index % 3 === 0 || index === data.length - 1;
+        // 基于日期本身显示标签：每3天显示一次（1、4、7、10、13、16、19、22、25、28、31日）
+        // 或者是第一天和最后一天
+        const shouldShowLabel = day % 3 === 1 || index === 0 || index === data.length - 1;
         label = shouldShowLabel ? `${day}日` : '';
       } else if (period === 'year') {
         label = `${month}月`;
