@@ -207,8 +207,8 @@ const contactService = {
     }
     
     const content = task.detail
-      ? `flag:${task.title} 详情：${task.detail}\n${labelNames[task.label || 1]}类  ${dateRange}`
-      : `flag:${task.title}\n${labelNames[task.label || 1]}类  ${dateRange}`;
+      ? `我的Flag:${task.title}\n详细:${task.detail}\n类型:${labelNames[task.label || 1]}  ${dateRange}`
+      : `我的Flag:${task.title}\n类型:${labelNames[task.label || 1]}  ${dateRange}`;
     return api.post<Post>('/api/postUserPost', {
       title: task.title,
       content,
