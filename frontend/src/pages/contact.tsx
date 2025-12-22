@@ -248,6 +248,39 @@ export default function ContactPage() {
     }
   }, [activeSearchQuery, checkUnreadMessages]);
 
+  /** 监听用户头像更新，重新加载帖子数据 */
+  useEffect(() => {
+    const handleUserUpdated = () => {
+      // 重新加载帖子数据以更新头像
+      setDisplayedPosts([]);
+      setPage(1);
+      setHasMore(true);
+      setLoading(true);
+      contactService.getPosts(1, POSTS_PER_PAGE)
+        .then(response => {
+          if (response && Array.isArray(response.data)) {
+            setDisplayedPosts(response.data.map(adaptPostToUser));
+            setPage(2);
+            setHasMore(response.hasMore);
+            contactService.getUserLikedPosts()
+              .then(ids => setLikedPosts(new Set(ids.map(id => String(id)))))
+              .catch(() => {});
+          } else {
+            setDisplayedPosts([]);
+            setHasMore(false);
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+          setHasMore(false);
+        });
+    };
+
+    window.addEventListener('userUpdated', handleUserUpdated);
+    return () => window.removeEventListener('userUpdated', handleUserUpdated);
+  }, []);
+
   /** 滚动监听(触发分页加载) */
   useEffect(() => {
     const currentObserver = observerRef.current;
