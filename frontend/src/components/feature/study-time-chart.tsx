@@ -119,7 +119,10 @@ export function StudyTimeChart({
               tickLine={false}
               tickMargin={8}
               axisLine={false}
-              fontSize={10}
+              fontSize={9}
+              interval={0}
+              textAnchor="end"
+              height={50}
             />
             <YAxis
               tickLine={false}
