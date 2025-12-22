@@ -491,13 +491,15 @@ export default function MinePage() {
       try {
         // 同步到后端头像索引
         await switchAvatar(avatarId);
-        setAvatar(selectedAvatar);
-        setProfile(prev => ({ ...prev, avatar: selectedAvatar }));
+        // 使用API路径统一头像表示
+        const avatarPath = `/api/avatar/${avatarId}`;
+        setAvatar(avatarPath);
+        setProfile(prev => ({ ...prev, avatar: avatarPath }));
         setAvatarPopoverOpen(false);
-        // 移除 loadUserStats 调用，减少不必要的网络请求
-        // await loadUserStats();
         // 更新全局上下文（内部会分发 userUpdated）
-        updateUserContextProfile({ avatar: selectedAvatar });
+        updateUserContextProfile({ avatar: avatarPath });
+        // 重新加载用户数据以确保一致性
+        await loadUserStats();
         toast.success('头像更改成功');
       } catch (error) {
         console.error('切换头像失败:', error);
