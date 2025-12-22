@@ -55,9 +55,9 @@ export function StudyTimeChart({
         const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
         label = weekdays[date.getDay()];
       } else if (period === 'month') {
-        // 基于日期本身显示标签：每3天显示一次（1、4、7、10、13、16、19、22、25、28、31日）
-        // 或者是第一天和最后一天
-        const shouldShowLabel = day % 3 === 1 || index === 0 || index === data.length - 1;
+        // 根据数据长度动态调整标签密度，避免重叠
+        const interval = data.length > 15 ? 5 : 3; // 数据点多时每5天显示一次，否则每3天
+        const shouldShowLabel = day % interval === 1 || index === 0 || index === data.length - 1;
         label = shouldShowLabel ? `${day}日` : '';
       } else if (period === 'year') {
         label = `${month}月`;
@@ -119,10 +119,10 @@ export function StudyTimeChart({
               tickLine={false}
               tickMargin={8}
               axisLine={false}
-              fontSize={9}
+              fontSize={10}
               interval={0}
               textAnchor="end"
-              height={50}
+              height={60}
             />
             <YAxis
               tickLine={false}
