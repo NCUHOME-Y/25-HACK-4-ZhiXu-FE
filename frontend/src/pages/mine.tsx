@@ -166,6 +166,11 @@ export default function MinePage() {
       } catch (err) {
         console.warn('获取打卡数据失败:', err);
       }
+      
+      // 检查是否需要自动启动教程（仅新用户，积分0）
+      if (points === 0 && shouldAutoStartTutorial()) {
+        setTimeout(() => startTutorial(), 500);
+      }
     } catch (error) {
       console.error('加载用户统计失败:', error);
     }
@@ -286,17 +291,6 @@ export default function MinePage() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
-  
-  // 首次登录检测：自动启动功能简介
-  useEffect(() => {
-    if (shouldAutoStartTutorial()) {
-      // 延迟500ms启动，让页面先完成渲染
-      const timer = setTimeout(() => {
-        startTutorial();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
   }, []);
   
   // 监听页面可见性，实时更新数据

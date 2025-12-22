@@ -120,28 +120,74 @@ export default function AIPage() {
 
   // 加载历史记录
   useEffect(() => {
-    const STORAGE_KEYS = getStorageKeys();
-    const savedBackground = localStorage.getItem(STORAGE_KEYS.BACKGROUND);
-    const savedLastGoal = localStorage.getItem(STORAGE_KEYS.LAST_GOAL);
-    const savedPlans = localStorage.getItem(STORAGE_KEYS.GENERATED_PLANS);
-    const savedAddedFlags = localStorage.getItem(STORAGE_KEYS.ADDED_FLAGS);
-    
-    if (savedBackground) setLastBackground(savedBackground);
-    if (savedLastGoal) setLastGoal(savedLastGoal);
-    if (savedPlans) {
+    // 定义AI历史记录类型
+    type AIHistory = {
+      id?: number;
+      user_id?: string;
+      background?: string;
+      goal?: string;
+      difficulty?: string;
+      generated_plan?: StudyPlan;
+      created_at?: string;
+    };
+
+    const loadAIHistory = async () => {
       try {
-        setGeneratedPlans(JSON.parse(savedPlans));
-      } catch (e) {
-        console.error('Failed to parse saved plans:', e);
+        const { api } = await import('../services/apiClient');
+        const response = await api.get<{ ai_histories: AIHistory[] }>('/api/ai/get-history');
+
+        if (response.ai_histories && response.ai_histories.length > 0) {
+          // 取最新的历史记录
+          const latestHistory = response.ai_histories[0];
+          setLastBackground(latestHistory.background || '');
+          setLastGoal(latestHistory.goal || '');
+
+          // 转换生成的计划格式
+          if (latestHistory.generated_plan && typeof latestHistory.generated_plan === 'object') {
+            const plans = [latestHistory.generated_plan];
+            setGeneratedPlans(plans);
+          }
+        }
+
+        // 仍然从localStorage加载已添加的flag（因为这个是客户端状态）
+        const STORAGE_KEYS = getStorageKeys();
+        const savedAddedFlags = localStorage.getItem(STORAGE_KEYS.ADDED_FLAGS);
+        if (savedAddedFlags) {
+          try {
+            setAddedFlags(new Set(JSON.parse(savedAddedFlags)));
+          } catch (e) {
+            console.error('Failed to parse added flags:', e);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load AI history:', error);
+        // 如果API失败，回退到localStorage
+        const STORAGE_KEYS = getStorageKeys();
+        const savedBackground = localStorage.getItem(STORAGE_KEYS.BACKGROUND);
+        const savedLastGoal = localStorage.getItem(STORAGE_KEYS.LAST_GOAL);
+        const savedPlans = localStorage.getItem(STORAGE_KEYS.GENERATED_PLANS);
+        const savedAddedFlags = localStorage.getItem(STORAGE_KEYS.ADDED_FLAGS);
+
+        if (savedBackground) setLastBackground(savedBackground);
+        if (savedLastGoal) setLastGoal(savedLastGoal);
+        if (savedPlans) {
+          try {
+            setGeneratedPlans(JSON.parse(savedPlans));
+          } catch (e) {
+            console.error('Failed to parse saved plans:', e);
+          }
+        }
+        if (savedAddedFlags) {
+          try {
+            setAddedFlags(new Set(JSON.parse(savedAddedFlags)));
+          } catch (e) {
+            console.error('Failed to parse added flags:', e);
+          }
+        }
       }
-    }
-    if (savedAddedFlags) {
-      try {
-        setAddedFlags(new Set(JSON.parse(savedAddedFlags)));
-      } catch (e) {
-        console.error('Failed to parse added flags:', e);
-      }
-    }
+    };
+
+    loadAIHistory();
   }, []);
 
   /** 难度配置选项 */
@@ -164,25 +210,41 @@ export default function AIPage() {
 
     setIsGenerating(true);
     try {
-      // 保存背景和目标
-      const STORAGE_KEYS = getStorageKeys();
+      // 保存背景和目标到服务器
       if (background.trim()) {
-        localStorage.setItem(STORAGE_KEYS.BACKGROUND, background);
         setLastBackground(background);
       }
-      localStorage.setItem(STORAGE_KEYS.LAST_GOAL, goal);
       setLastGoal(goal);
 
       // 调用AI服务生成计划
       const plan = await generateStudyPlan(goal, background, selectedDifficulty);
-      
+
       // 确保 goal 字段使用用户输入的目标（而不是 AI 返回的 flag）
       plan.goal = goal;
-      
+
       // 添加到计划列表，最多保留3个
       const newPlans = [plan, ...generatedPlans].slice(0, 3);
       setGeneratedPlans(newPlans);
-      localStorage.setItem(STORAGE_KEYS.GENERATED_PLANS, JSON.stringify(newPlans));
+
+      // 保存到服务器
+      try {
+        const { api } = await import('../services/apiClient');
+        await api.post('/api/ai/save-history', {
+          background: background,
+          goal: goal,
+          difficulty: selectedDifficulty,
+          generated_plan: JSON.stringify(plan)
+        });
+      } catch (saveError) {
+        console.error('Failed to save AI history to server:', saveError);
+        // 如果服务器保存失败，仍保存到localStorage作为备份
+        const STORAGE_KEYS = getStorageKeys();
+        if (background.trim()) {
+          localStorage.setItem(STORAGE_KEYS.BACKGROUND, background);
+        }
+        localStorage.setItem(STORAGE_KEYS.LAST_GOAL, goal);
+        localStorage.setItem(STORAGE_KEYS.GENERATED_PLANS, JSON.stringify(newPlans));
+      }
       
       toast.success('计划生成成功！');
     } catch {
