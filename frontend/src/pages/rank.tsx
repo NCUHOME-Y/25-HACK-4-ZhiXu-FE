@@ -20,7 +20,7 @@ interface RankUser {
 
 /**
  * 封神榜页面
- * 展示打卡总天数、完成Flag数、积分总数三个维度的封神榜
+ * 毅力榜（按累计打卡天数）、勤勉榜（按完成Flag数量）、功德榜（按持有积分）
  */
 export default function RankPage() {
   const navigate = useNavigate();
@@ -148,24 +148,33 @@ export default function RankPage() {
               className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-orange-600 data-[state=active]:font-medium"
             >
               <Flame className="h-4 w-4" />
-              打卡总天数
+              毅力榜
             </TabsTrigger>
             <TabsTrigger 
               value="flags" 
               className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-medium"
             >
               <Trophy className="h-4 w-4" />
-              完成Flag数
+              勤勉榜
             </TabsTrigger>
             <TabsTrigger 
               value="points" 
               className="flex items-center gap-2 py-2.5 px-4 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-purple-600 data-[state=active]:font-medium"
             >
               <Sparkles className="h-4 w-4" />
-              积分总数
+              功德榜
             </TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {/* 榜单说明 */}
+        <div className="text-center py-2">
+          <p className="text-sm text-gray-600">
+            {activeTab === 'days' && '按累计打卡天数排名，体现坚持与毅力'}
+            {activeTab === 'flags' && '按完成Flag数量排名，体现勤奋与执行力'}
+            {activeTab === 'points' && '按持有积分排名，体现贡献与价值'}
+          </p>
+        </div>
 
         {/* 封神榜列表 - 固定显示前20名 */}
         <div className="space-y-2">
