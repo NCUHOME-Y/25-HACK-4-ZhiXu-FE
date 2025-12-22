@@ -168,7 +168,7 @@ export default function MinePage() {
       }
       
       // 检查是否需要自动启动教程（仅新用户，积分0）
-      if (points === 0 && shouldAutoStartTutorial()) {
+      if ((user.count || 0) === 0 && shouldAutoStartTutorial()) {
         setTimeout(() => startTutorial(), 500);
       }
     } catch (error) {

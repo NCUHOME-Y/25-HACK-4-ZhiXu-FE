@@ -16,7 +16,7 @@ RUN npm install
 COPY . .
 
 # 构建生产版本
-    RUN npm run build
+RUN npm run build
 # 第二阶段:运行 - 使用 Nginx 提供静态文件服务
 FROM nginx:alpine
 
