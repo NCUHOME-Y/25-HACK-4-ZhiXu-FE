@@ -736,12 +736,19 @@ export default function FlagPage() {
   /** 开始编辑任务 */
   const startEditTask = (task: (typeof tasks)[0]) => {
     setEditingTaskId(task.id);
+    // 确保 label 和 priority 是数字类型
+    const labelValue = typeof task.label === 'string' ? parseInt(task.label) : (task.label || 1);
+    const priorityValue = typeof task.priority === 'string' ? parseInt(task.priority) : (task.priority || 3);
+    
+    console.log('编辑任务 - 原始值:', { label: task.label, priority: task.priority, labelType: typeof task.label, priorityType: typeof task.priority });
+    console.log('编辑任务 - 转换后:', { labelValue, priorityValue });
+    
     setNewTask({ 
       title: task.title, 
       detail: task.detail || '', 
       total: task.total || 1,
-      label: task.label || 1,
-      priority: task.priority || 3,
+      label: labelValue as FlagLabel,
+      priority: priorityValue as FlagPriority,
       isPublic: task.isPublic || false,
       points: task.points || 0,
       startDate: task.startDate || '',
@@ -1509,7 +1516,14 @@ export default function FlagPage() {
               <Label htmlFor="flag-label" className="text-sm sm:text-base">类型标签</Label>
               <Select
                 value={String(newTask.label)}
-                onValueChange={(value: string) => setNewTask((s) => ({ ...s, label: Number(value) as FlagLabel }))}
+                onValueChange={(value: string) => {
+                  console.log('标签变更:', { 原始值: value, 当前label: newTask.label });
+                  const numValue = parseInt(value, 10);
+                  if (!isNaN(numValue) && numValue >= 1 && numValue <= 5) {
+                    console.log('标签更新为:', numValue);
+                    setNewTask((s) => ({ ...s, label: numValue as FlagLabel }));
+                  }
+                }}
               >
                 <SelectTrigger className="mt-1 text-base">
                   <SelectValue placeholder="选择类型标签" />
@@ -1528,7 +1542,12 @@ export default function FlagPage() {
               <Label htmlFor="flag-priority" className="text-sm sm:text-base">优先级</Label>
               <Select
                 value={String(newTask.priority)}
-                onValueChange={(value: string) => setNewTask((s) => ({ ...s, priority: Number(value) as FlagPriority }))}
+                onValueChange={(value: string) => {
+                  const numValue = parseInt(value, 10);
+                  if (!isNaN(numValue) && [1, 2, 3, 4].includes(numValue)) {
+                    setNewTask((s) => ({ ...s, priority: numValue as FlagPriority }));
+                  }
+                }}
               >
                 <SelectTrigger className="mt-1 text-base">
                   <SelectValue placeholder="选择优先级" />
