@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Plus, CheckSquare, Clock, CalendarDays, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -243,6 +243,11 @@ export default function FlagPage() {
       return () => clearTimeout(timer);
     }
   }, [showError, alertVisible]);
+
+  // Debug: 监听 newTask.label 变化
+  useEffect(() => {
+    console.log('newTask.label 变化:', newTask.label, 'FLAG_LABELS[newTask.label]:', FLAG_LABELS[newTask.label]);
+  }, [newTask.label]);
 
   // 错误提示自动关闭副作用
   useEffect(() => {
@@ -736,28 +741,57 @@ export default function FlagPage() {
   /** 开始编辑任务 */
   const startEditTask = (task: (typeof tasks)[0]) => {
     setEditingTaskId(task.id);
-    // 确保 label 和 priority 是数字类型
-    const labelValue = typeof task.label === 'string' ? parseInt(task.label) : (task.label || 1);
-    const priorityValue = typeof task.priority === 'string' ? parseInt(task.priority) : (task.priority || 3);
-    
-    console.log('编辑任务 - 原始值:', { label: task.label, priority: task.priority, labelType: typeof task.label, priorityType: typeof task.priority });
-    console.log('编辑任务 - 转换后:', { labelValue, priorityValue });
-    
-    setNewTask({ 
-      title: task.title, 
-      detail: task.detail || '', 
-      total: task.total || 1,
-      label: labelValue as FlagLabel,
-      priority: priorityValue as FlagPriority,
-      isPublic: task.isPublic || false,
-      points: task.points || 0,
-      startDate: task.startDate || '',
-      endDate: task.endDate || '',
-      reminderTime: task.reminderTime || '12:00',
-      enableNotification: task.enableNotification || false
-    });
     setOpenDrawer(true);
   };
+  // 只在抽屉打开时初始化 newTask（且仅初始化一次），避免 tasks 变化覆盖正在编辑的数据
+  const editInitRef = useRef<string | 'new' | null>(null);
+  useEffect(() => {
+    if (!openDrawer) {
+      editInitRef.current = null;
+      return;
+    }
+
+    // 如果已经为当前 editingTaskId 初始化过，则跳过
+    if (editingTaskId) {
+      if (editInitRef.current === editingTaskId) return;
+      editInitRef.current = editingTaskId;
+      const task = useTaskStore.getState().tasks.find((t) => t.id === editingTaskId);
+      if (task) {
+        const labelValue = typeof task.label === 'string' ? parseInt(task.label) : (task.label || 1);
+        const priorityValue = typeof task.priority === 'string' ? parseInt(task.priority) : (task.priority || 3);
+        const safeLabelValue = (labelValue >= 1 && labelValue <= 5) ? labelValue : 1;
+        setNewTask({
+          title: task.title,
+          detail: task.detail || '',
+          total: task.total || 1,
+          label: safeLabelValue as FlagLabel,
+          priority: priorityValue as FlagPriority,
+          isPublic: task.isPublic || false,
+          points: task.points || 0,
+          startDate: task.startDate || '',
+          endDate: task.endDate || '',
+          reminderTime: task.reminderTime || '12:00',
+          enableNotification: task.enableNotification || false,
+        });
+      }
+    } else {
+      if (editInitRef.current === 'new') return;
+      editInitRef.current = 'new';
+      setNewTask({
+        title: '',
+        detail: '',
+        total: 1,
+        label: 1 as FlagLabel,
+        priority: 3 as FlagPriority,
+        isPublic: false,
+        points: 0,
+        startDate: '',
+        endDate: '',
+        reminderTime: '12:00',
+        enableNotification: false,
+      });
+    }
+  }, [openDrawer, editingTaskId]);
 
   /** 切换今日打卡状态 */
   const togglePunchToday = async () => {
@@ -1168,48 +1202,13 @@ export default function FlagPage() {
                         
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">消息提醒</span>
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                              t.enableNotification
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {t.enableNotification ? `已开启 (${t.reminderTime || '12:00'})` : '未开启'}
-                            </span>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const { toggleFlagNotification } = await import('../services/flag.service');
-                                  const result = await toggleFlagNotification(t.id, !t.enableNotification);
-                                  if (result.success) {
-                                    updateTaskInStore(t.id, { enableNotification: result.enable_notification });
-                                    toast.success(t.enableNotification ? '已关闭提醒' : '已开启提醒');
-                                    // 重新加载数据以同步状态
-                                    await loadData();
-                                  }
-                                } catch (error) {
-                                  console.error('切换提醒状态失败:', error);
-                                  toast.error('切换提醒状态失败');
-                                }
-                              }}
-                              className={`p-1 rounded transition-colors ${
-                                t.enableNotification
-                                  ? 'hover:bg-red-50 text-red-600'
-                                  : 'hover:bg-green-50 text-green-600'
-                              }`}
-                              title={t.enableNotification ? '点击关闭提醒' : '点击开启提醒'}
-                            >
-                              {t.enableNotification ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                            t.enableNotification
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {t.enableNotification ? `已开启 (${t.reminderTime || '12:00'})` : '未开启'}
+                          </span>
                         </div>
                         
                         {t.createdAt && (
@@ -1550,7 +1549,8 @@ export default function FlagPage() {
             <div>
               <Label htmlFor="flag-label" className="text-sm sm:text-base">类型标签</Label>
               <Select
-                value={String(newTask.label)}
+                key={editingTaskId || 'new'}
+                value={String(FLAG_LABELS[newTask.label] ? newTask.label : 1)}
                 onValueChange={(value: string) => {
                   console.log('标签变更:', { 原始值: value, 当前label: newTask.label });
                   const numValue = parseInt(value, 10);
