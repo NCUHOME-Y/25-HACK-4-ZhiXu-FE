@@ -93,7 +93,7 @@ export default function MinePage() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // 消息提醒状态
-  const [notificationEnabled, setNotificationEnabled] = useState(true);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [tempNotificationHour, setTempNotificationHour] = useState('12');
   const [tempNotificationMinute, setTempNotificationMinute] = useState('00');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -138,7 +138,7 @@ export default function MinePage() {
       setNickname(user.name || '');
       setAvatar(avatarPath);
       // 设置消息提醒状态
-      setNotificationEnabled(user.is_remind ?? true);
+      setNotificationEnabled(user.is_remind ?? false);
       const hour = (user.time_remind ?? 12).toString().padStart(2, '0');
       const minute = (user.min_remind ?? 0).toString().padStart(2, '0');
       setTempNotificationHour(hour);
