@@ -5,7 +5,14 @@ import apiClient from './apiClient';
 /** 更新通知开关状态 */
 export const updateNotificationEnabled = async (enabled: boolean): Promise<void> => {
   const { api } = await import('./apiClient');
+  // 该接口用于更新“学习提醒”开关（向后兼容）
   await api.put('/api/updateRemindStatus', { status: enabled });
+};
+
+/** 更新用户级 Flag 提醒开关 */
+export const updateFlagNotificationEnabled = async (enabled: boolean): Promise<void> => {
+  const { api } = await import('./apiClient');
+  await api.put('/api/updateFlagRemindStatus', { status: enabled });
 };
 
 /** 更新通知时间 */
@@ -45,6 +52,7 @@ export const switchAvatar = async (avatarIndex: number): Promise<void> => {
 
 export default {
   updateNotificationEnabled,
+  updateFlagNotificationEnabled,
   updateNotificationTime,
   changePassword,
   updateProfile,

@@ -42,7 +42,7 @@ import { BirdMascot, Tutorial, startTutorial, shouldAutoStartTutorial } from '..
 import { api } from '../services/apiClient';
 import contactService from '../services/contact.service';
 import { fetchPunchDates } from '../services/flag.service';
-import { switchAvatar, updateNotificationEnabled, updateNotificationTime, changePassword } from '../services/set.service';
+import { switchAvatar, updateNotificationEnabled, updateNotificationTime, updateFlagNotificationEnabled, changePassword } from '../services/set.service';
 import { authService } from '../services/auth.service';
 
 // PWA BeforeInstallPromptEvent 类型定义
@@ -96,6 +96,8 @@ export default function MinePage() {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [tempNotificationHour, setTempNotificationHour] = useState('12');
   const [tempNotificationMinute, setTempNotificationMinute] = useState('00');
+  // Flag 提醒状态（用户是否允许 Flag 级别的邮件提醒）
+  const [flagNotificationEnabled, setFlagNotificationEnabled] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // 计算属性
@@ -107,7 +109,7 @@ export default function MinePage() {
   const [totalLikes, setTotalLikes] = useState(0);
   
   /** 加载用户统计数据 */
-  const loadUserStats = async () => {
+  const loadUserStats = useCallback(async () => {
     try {
       if (!authService.isAuthenticated()) {
         return;
@@ -121,7 +123,8 @@ export default function MinePage() {
           name: string;
           email: string;
           head_show: number;
-          is_remind: boolean;
+            is_remind: boolean;
+            is_flag_remind?: boolean;
           time_remind: number;
           min_remind: number;
         }
@@ -137,8 +140,38 @@ export default function MinePage() {
       }));
       setNickname(user.name || '');
       setAvatar(avatarPath);
-      // 设置消息提醒状态
+      // 设置消息提醒状态（向后兼容旧字段）
       setNotificationEnabled(user.is_remind ?? false);
+      // Flag 提醒状态（后端可能返回 is_flag_remind）
+      setFlagNotificationEnabled(user.is_flag_remind ?? false);
+      setHasUnsavedChanges(false);
+      // 🐛 修复：后端返回的 month_learn_time 已经是秒，不需要乘 60
+      useTaskStore.setState({
+        dailyElapsed: user.month_learn_time || 0 // 本月学习时长（秒）
+      });
+      
+      // 获取点赞总数（静默失败）
+      try {
+        const likedPostIds = await contactService.getUserLikedPosts();
+        setTotalLikes(likedPostIds.length);
+      } catch (err) {
+        console.warn('获取点赞数据失败:', err);
+        setTotalLikes(0);
+      }
+      
+      // 加载打卡数据（静默失败）
+      try {
+        const punchData = await fetchPunchDates();
+        console.log('我的页面-打卡数据:', punchData);
+        useTaskStore.setState({ punchedDates: punchData });
+      } catch (err) {
+        console.warn('获取打卡数据失败:', err);
+      }
+      
+      // 设置消息提醒状态（向后兼容旧字段）
+      setNotificationEnabled(user.is_remind ?? false);
+      // Flag 提醒状态（后端可能返回 is_flag_remind）
+      setFlagNotificationEnabled(user.is_flag_remind ?? false);
       const hour = (user.time_remind ?? 12).toString().padStart(2, '0');
       const minute = (user.min_remind ?? 0).toString().padStart(2, '0');
       setTempNotificationHour(hour);
@@ -174,10 +207,10 @@ export default function MinePage() {
     } catch (error) {
       console.error('加载用户统计失败:', error);
     }
-  };
+  }, [setPoints, setProfile, setNickname, setAvatar, setNotificationEnabled, setFlagNotificationEnabled, setTempNotificationHour, setTempNotificationMinute, setHasUnsavedChanges, setTotalLikes]);
 
-  // 加载任务数据
-  const loadTasks = async () => {
+  // 加载任务数据并同步Flag提醒状态
+  const loadTasks = useCallback(async () => {
     try {
       if (!authService.isAuthenticated()) {
         console.log('未登录，跳过加载任务数据');
@@ -187,15 +220,27 @@ export default function MinePage() {
       const tasksData = await fetchTasks();
       console.log('我的页面-加载到的任务数据:', tasksData);
       useTaskStore.setState({ tasks: tasksData });
+
+      // 同步Flag提醒总开关状态：如果有flag开启了提醒，但用户级总开关为false，则自动开启
+      const hasEnabledNotifications = tasksData.some(task => task.enableNotification && !task.completed);
+      if (hasEnabledNotifications && !flagNotificationEnabled) {
+        try {
+          await updateFlagNotificationEnabled(true);
+          setFlagNotificationEnabled(true);
+          console.log('自动同步Flag提醒总开关为开启');
+        } catch (err) {
+          console.warn('自动同步Flag提醒总开关失败:', err);
+        }
+      }
     } catch (error) {
       console.error('加载任务数据失败:', error);
     }
-  };
+  }, [flagNotificationEnabled, setFlagNotificationEnabled]);
   
   useEffect(() => {
     loadUserStats();
     loadTasks();
-  }, []);
+  }, [loadUserStats, loadTasks]);
   
   // 所有徽章配置 - 使用useMemo以避免每次渲染都重新创建
   const allBadges = useMemo(() => [
@@ -305,7 +350,7 @@ export default function MinePage() {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [loadUserStats, loadTasks]);
   
   /** 已获得徽章数 */
   const achievedBadges = badges.filter(b => b.isUnlocked).length;
@@ -514,6 +559,16 @@ export default function MinePage() {
     try {
       await updateNotificationEnabled(enabled);
       setNotificationEnabled(enabled);
+    } catch {
+      // 忽略错误
+    }
+  };
+
+  /** 切换 Flag 提醒（只控制用户是否接收 Flag 级别的提醒） */
+  const handleToggleFlagNotification = async (enabled: boolean) => {
+    try {
+      await updateFlagNotificationEnabled(enabled);
+      setFlagNotificationEnabled(enabled);
     } catch {
       // 忽略错误
     }
@@ -801,10 +856,11 @@ export default function MinePage() {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4 pt-4">
+                    {/* 学习提醒（用户级） */}
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <Label className="text-sm font-medium">启用消息提醒</Label>
-                        <p className="text-xs text-muted-foreground">接收学习提醒和系统通知</p>
+                        <Label className="text-sm font-medium">学习提醒</Label>
+                        <p className="text-xs text-muted-foreground">收到每日学习汇总的邮件提醒</p>
                       </div>
                       <Switch
                         checked={notificationEnabled}
@@ -816,6 +872,7 @@ export default function MinePage() {
                         }
                       />
                     </div>
+
                     {notificationEnabled && (
                       <div className="space-y-3 pt-2 border-t border-gray-200/50">
                         <Label className="text-sm font-medium">提醒时间</Label>
@@ -856,16 +913,36 @@ export default function MinePage() {
                               onClick={handleSaveNotificationTime}
                               className="rounded-xl px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
                             >
-                              保存设置
+                              保存学习提醒时间
                             </Button>
                           </div>
                         )}
-                        
-                        {/* Flag提醒列表 */}
-                        <div className="space-y-2 pt-2 border-t border-gray-200/50">
-                          <Label className="text-sm font-medium">开启提醒的Flag（最多5个）</Label>
+                      </div>
+                    )}
+
+                    {/* Flag 提醒（用户是否允许接收 Flag 级别提醒） */}
+                    <div className="pt-2 border-t border-gray-200/50">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium">Flag 提醒</Label>
+                          <p className="text-xs text-muted-foreground">允许接收您开启的 Flag 的邮件提醒（由每个 Flag 单独设置时间）</p>
+                        </div>
+                        <Switch
+                          checked={flagNotificationEnabled}
+                          onCheckedChange={handleToggleFlagNotification}
+                          className={
+                            flagNotificationEnabled
+                              ? 'data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 data-[state=checked]:shadow-lg'
+                              : 'bg-gray-200 border-gray-300'
+                          }
+                        />
+                      </div>
+
+                      {flagNotificationEnabled ? (
+                        <div className="space-y-2 pt-4">
+                          <Label className="text-sm font-medium">已开启提醒的 Flag（最多5个）</Label>
                           {tasks.filter(t => t.enableNotification && !t.completed).length === 0 ? (
-                            <p className="text-xs text-muted-foreground">暂无开启提醒的Flag，去圭表页面开启吧~</p>
+                            <p className="text-xs text-muted-foreground">暂无开启提醒的 Flag，去 Flag 页面为任务开启提醒吧~</p>
                           ) : (
                             <div className="space-y-2">
                               {tasks.filter(t => t.enableNotification && !t.completed).map(task => (
@@ -877,10 +954,7 @@ export default function MinePage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => {
-                                      // 跳转到flag页面进行修改
-                                      navigate('/flag');
-                                    }}
+                                    onClick={() => navigate('/flag')}
                                     className="text-xs px-2 h-7"
                                   >
                                     修改
@@ -890,8 +964,12 @@ export default function MinePage() {
                             </div>
                           )}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="pt-3">
+                          <p className="text-xs text-muted-foreground">当前未开启 Flag 提醒，启用后您将收到由每个 Flag 单独设置的提醒邮件。</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -1013,7 +1091,7 @@ export default function MinePage() {
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-medium mb-2">版本信息</h4>
-                    <p className="text-xs text-muted-foreground">知序 v1.2.0</p>
+                    <p className="text-xs text-muted-foreground">知序 v1.2.2</p>
                   </div>
                   <Separator />
                   <div className="space-y-2">

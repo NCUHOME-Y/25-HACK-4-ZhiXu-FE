@@ -202,9 +202,9 @@ export default function FlagPage() {
   const [expiredFlags, setExpiredFlags] = useState<typeof tasks>([]);
   const [flagsWithDates, setFlagsWithDates] = useState<typeof tasks>([]);
 
-  // 计算当前启用提醒的flag数量
+  // 计算当前启用提醒的flag数量（只统计未完成的flag）
   const enabledNotificationCount = useMemo(() => {
-    return tasks.filter(t => t.enableNotification).length;
+    return tasks.filter(t => t.enableNotification && !t.completed).length;
   }, [tasks]);
 
   useEffect(() => {
@@ -1168,13 +1168,48 @@ export default function FlagPage() {
                         
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">消息提醒</span>
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                            t.enableNotification
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {t.enableNotification ? `已开启 (${t.reminderTime || '12:00'})` : '未开启'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                              t.enableNotification
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {t.enableNotification ? `已开启 (${t.reminderTime || '12:00'})` : '未开启'}
+                            </span>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const { toggleFlagNotification } = await import('../services/flag.service');
+                                  const result = await toggleFlagNotification(t.id, !t.enableNotification);
+                                  if (result.success) {
+                                    updateTaskInStore(t.id, { enableNotification: result.enable_notification });
+                                    toast.success(t.enableNotification ? '已关闭提醒' : '已开启提醒');
+                                    // 重新加载数据以同步状态
+                                    await loadData();
+                                  }
+                                } catch (error) {
+                                  console.error('切换提醒状态失败:', error);
+                                  toast.error('切换提醒状态失败');
+                                }
+                              }}
+                              className={`p-1 rounded transition-colors ${
+                                t.enableNotification
+                                  ? 'hover:bg-red-50 text-red-600'
+                                  : 'hover:bg-green-50 text-green-600'
+                              }`}
+                              title={t.enableNotification ? '点击关闭提醒' : '点击开启提醒'}
+                            >
+                              {t.enableNotification ? (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
                         
                         {t.createdAt && (
