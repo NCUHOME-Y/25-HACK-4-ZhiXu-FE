@@ -7,11 +7,11 @@ export function BottomNav() {
   const location = useLocation();
 
   const navItems = [
-    { path: '/flag', label: '¹ç±í', icon: Flag },
-    { path: '/ai', label: 'Ì«¸µ', icon: Bot },
-    { path: '/data', label: 'è¯Àú', icon: BarChart3 },
-    { path: '/contact', label: 'º²ÁÖ', icon: MessageSquare },
-    { path: '/mine', label: 'ËØÔý', icon: User },
+    { path: '/flag', label: 'åœ­è¡¨', icon: Flag },
+    { path: '/ai', label: 'å¤ªå‚…', icon: Bot },
+    { path: '/data', label: 'ç’‡åŽ†', icon: BarChart3 },
+    { path: '/contact', label: 'ç¿°æž—', icon: MessageSquare },
+    { path: '/mine', label: 'ç´ æœ­', icon: User },
   ];
 
   return (

@@ -16,7 +16,7 @@ interface LoginFormProps extends React.ComponentPropsWithoutRef<"div"> {
   onSwitchToOTP?: () => void
   onForgotPassword?: () => void
   onSubmit?: (e: React.FormEvent) => void // 添加提交回调
-  loading?: boolean // 添加加载状�?
+  loading?: boolean // 添加加载状态
   error?: string // 添加错误信息
 }
 
