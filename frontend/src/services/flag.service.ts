@@ -1,8 +1,9 @@
 /** Flag 相关服务 */
 
+import { api } from './apiClient';
 import type { Task, StudyRecord } from "../lib/types/types";
 
-// 后端返回的 flag 扩展字段
+// 后端返回的flag 扩展字段
 export interface BackendFlag extends Task {
   start_time?: string;
   end_time?: string;
@@ -20,7 +21,6 @@ export interface CreateTaskPayload {
 
 /** 获取已打卡日期列表 */
 export async function fetchPunchDates(): Promise<string[]> {
-  const { api } = await import('./apiClient');
   const response = await api.get<{ date: string }[]>('/api/getDakaRecords');
   if (!response || !Array.isArray(response)) {
     return [];
@@ -30,14 +30,12 @@ export async function fetchPunchDates(): Promise<string[]> {
 
 /** 切换今日打卡状态 */
 export async function togglePunch(date: string): Promise<boolean> {
-  const { api } = await import('./apiClient');
   await api.put('/api/updateDaka', { date });
   return true;
 }
 
 /** 获取任务列表 */
 export async function fetchTasks(): Promise<Task[]> {
-  const { api } = await import('./apiClient');
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
   
   const flags = (response.flags || []).map(flag => {
@@ -66,8 +64,6 @@ export async function createTask(payload: CreateTaskPayload & {
   endDate?: string;        // 结束日期
   isRecurring?: boolean;   // 是否循环任务
 }): Promise<Task> {
-  const { api } = await import('./apiClient');
-  
   let labelNum: number;
   if (typeof payload.label === 'number') {
     labelNum = payload.label;
@@ -162,7 +158,6 @@ export async function updateTask(id: string, taskData: {
 
 /** 删除任务 */
 export async function deleteTask(id: string): Promise<boolean> {
-  const { api } = await import('./apiClient');
   try {
     await api.delete('/api/deleteFlag', {
       data: { id: parseInt(id) }
@@ -176,7 +171,6 @@ export async function deleteTask(id: string): Promise<boolean> {
 
 /** 任务记一次 - 增加计数 */
 export async function tickTask(id: string): Promise<boolean> {
-  const { api } = await import('./apiClient');
   try {
     await api.put('/api/doneFlag', { id: parseInt(id) });
     return true;
@@ -203,8 +197,6 @@ export async function startStudySession(): Promise<StudyRecord> {
 
 /** 停止学习计时 */
 export async function stopStudySession(_sessionId: string, duration: number): Promise<boolean> {
-  const { api } = await import('./apiClient');
-  
   await api.post('/api/addLearnTime', { duration });
   
   // 🔧 新增：刷新用户数据
@@ -255,7 +247,7 @@ export async function addUserPoints(taskId: string, points: number): Promise<{ s
       method: 'PUT'
     };
 
-    console.error('❌ 添加积分失败 - 详细信息:', errorDetails);
+    console.error('❗ 添加积分失败 - 详细信息:', errorDetails);
 
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 400) {
@@ -369,7 +361,7 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
   return flags;
 }
 
-/** 切换 flag 提醒状态 - 最多 5 个 */
+/** 切换 flag 提醒状态 - 最后 5 个 */
 export async function toggleFlagNotification(flagId: string, enableNotification: boolean): Promise<{ success: boolean; enable_notification: boolean }> {
   const { api } = await import('./apiClient');
   const response = await api.post<{ success: boolean; enable_notification: boolean }>('/api/toggleFlagNotification', {

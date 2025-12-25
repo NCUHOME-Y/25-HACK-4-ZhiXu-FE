@@ -60,7 +60,9 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
   if (data.avatar && /^\d+$/.test(data.avatar)) {
     try {
       const number = parseInt(data.avatar);
-      await api.post('/api/swithhead', { number });
+      // 使用统一的switchAvatar服务
+      const { switchAvatar } = await import('./set.service');
+      await switchAvatar(number);
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const userObj = JSON.parse(userStr);
@@ -76,13 +78,6 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
   
   return data as User;
 };
-
-/** 修改密码 */
-export const changePassword = (oldPassword: string, newPassword: string) =>
-  api.post('/user/change-password', {
-    oldPassword,
-    newPassword,
-  });
 
 /**
  * 退出登录

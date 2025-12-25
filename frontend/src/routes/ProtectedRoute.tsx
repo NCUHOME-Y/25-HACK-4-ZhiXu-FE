@@ -5,7 +5,6 @@ import { authService } from '../services/auth.service';
 /** 路由保护组件 - 需要登录才能访问 */
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
@@ -13,7 +12,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
     const hasToken = authService.isAuthenticated();
     if (!hasToken) {
-      setShouldRedirect(true);
       setIsAuthenticated(false);
       setIsChecking(false);
       return;
@@ -23,18 +21,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
-        if (user) {
-          setIsAuthenticated(true);
-          setShouldRedirect(false);
-        } else {
-          setIsAuthenticated(false);
-          setShouldRedirect(true);
-        }
+        setIsAuthenticated(!!user);
       } catch (error) {
         // 网络错误或其他异常
         console.error('[ProtectedRoute] 验证失败:', error);
         setIsAuthenticated(false);
-        setShouldRedirect(true);
       } finally {
         setIsChecking(false);
       }
@@ -43,11 +34,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [location.pathname]);
   
-  // 如果需要重定向，立即返回Navigate，不渲染任何内容
-  if (shouldRedirect) {
-    return <Navigate to="/auth" replace />;
-  }
-
   // 显示加载状态
   if (isChecking) {
     return (

@@ -48,7 +48,7 @@ import {
   ProgressRing,
 } from '../components';
 import { useTaskStore } from '../lib/stores/stores';
-import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime } from '../lib/helpers/helpers';
+import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, formatDurationHMS, formatDurationFlexible } from '../lib/helpers/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
@@ -395,14 +395,6 @@ export default function FlagPage() {
   const { minutes, seconds } = formatElapsedTime(sessionElapsed);
 
   // ========== 工具函数 ========== 
-  /** 格式化每日累计时长为 HH:MM:SS */
-  const formatDailyTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
-
   /** 获取 flag 日期状态显示文本 */
   const getFlagDateStatus = (flag: Task) => {
     // 只显示 YYYY-MM-DD，不显示时分秒
@@ -412,24 +404,6 @@ export default function FlagPage() {
     if (flag.startDate) return `开始：${format(flag.startDate)}`;
     if (flag.endDate) return `截止：${format(flag.endDate)}`;
     return '每天';
-  };
-
-  /** 格式化本次学习时长, 超过1小时返回长格式 */
-  const formatSessionTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) {
-      return {
-        time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
-        isLong: true
-      };
-    } else {
-      return {
-        time: `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
-        isLong: false
-      };
-    }
   };
 
   /** 任务记次（打卡/完成）- 冷却机制为前端临时检查 */
@@ -1005,8 +979,8 @@ export default function FlagPage() {
                 {studying 
                   ? `${minutes}:${seconds}` 
                   : sessionElapsed > 0 
-                    ? formatSessionTime(sessionElapsed).time
-                    : formatDailyTime(dailyElapsed).split(':').slice(0, 2).join(':')
+                    ? formatDurationFlexible(sessionElapsed).time
+                    : formatDurationHMS(dailyElapsed).split(':').slice(0, 2).join(':')
                 }
               </div>
             </div>

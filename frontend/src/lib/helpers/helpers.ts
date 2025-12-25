@@ -26,19 +26,8 @@ export const formatDateYMD = (date: Date): string => {
   return `${y}-${m}-${d}`;
 };
 
-/** 计算连续打卡天数 */
-export const calculateStreak = (punchedDates: string[]): number => {
-  let n = 0;
-  const cursor = new Date();
-  while (true) {
-    const curStr = formatDateYMD(cursor);
-    if (punchedDates.includes(curStr)) {
-      n++;
-      cursor.setDate(cursor.getDate() - 1);
-    } else break;
-  }
-  return n;
-};
+// 重新导出 points-system 的连续打卡计算函数，使用更完善的实现
+export { calculateStreakDays as calculateStreak } from './points-system';
 
 /** 计算本月已打卡天数 */
 export const calculateMonthlyPunches = (punchedDates: string[]): number => {
@@ -57,6 +46,42 @@ export const formatElapsedTime = (seconds: number): { minutes: string; seconds: 
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
   const s = (seconds % 60).toString().padStart(2, "0");
   return { minutes: m, seconds: s };
+};
+
+/** 格式化时长为 HH:MM:SS 格式 */
+export const formatDurationHMS = (seconds: number): string => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
+/** 格式化时长为简短格式（Xh 或 Xm） */
+export const formatDurationShort = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h${mins}`;
+  }
+  return `${mins}m`;
+};
+
+/** 格式化时长，超过1小时返回 HH:MM:SS，否则返回 MM:SS */
+export const formatDurationFlexible = (seconds: number): { time: string; isLong: boolean } => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) {
+    return {
+      time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+      isLong: true
+    };
+  } else {
+    return {
+      time: `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+      isLong: false
+    };
+  }
 };
 
 /** 验证邮箱格式 */
@@ -211,32 +236,6 @@ export const scrollToBottom = (ref: React.RefObject<HTMLDivElement | null>) => {
   ref.current?.scrollIntoView({ behavior: 'smooth' });
 };
 
-/** 根据任务属性计算积分 */
-export const calculateTaskPoints = (params: {
-  total: number;
-  priority: 1 | 2 | 3 | 4;
-  difficulty?: 'easy' | 'medium' | 'hard';
-}): number => {
-  const { total, priority } = params;
-  
-  // 使用新的积分系统 - 基础积分
-  const BASE_COMPLETE = 15;
-  
-  // 难度系数（根据优先级）
-  const diffMultiplier: Record<number, number> = {
-    1: 2.0,   // 急切
-    2: 1.6,   // 较急
-    3: 1.3,   // 一般
-    4: 1.0,   // 不急
-  };
-  
-  // 任务量系数：防止拆分任务刷分
-  const volumeMultiplier = 1 + Math.log10(total) * 0.2;
-  
-  const points = Math.round(
-    BASE_COMPLETE * diffMultiplier[priority] * volumeMultiplier
-  );
-  
-  return points;
-};
+// 重新导出 points-system 的积分计算函数，避免重复
+export { calculateTaskCompletionPoints as calculateTaskPoints } from './points-system';
 

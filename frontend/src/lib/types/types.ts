@@ -15,6 +15,35 @@ export interface User {
 }
 
 /**
+ * 后端 /api/getUser 返回的用户完整信息
+ */
+export interface UserInfoResponse {
+  user_id: number;
+  name: string;
+  email: string;
+  head_show: number;
+  daka: number;
+  flag_number: number;
+  count: number;
+  month_learn_time: number;
+  is_remind?: boolean;
+  is_flag_remind?: boolean;
+  time_remind?: number;
+  min_remind?: number;
+}
+
+/**
+ * /api/getUser API 的响应类型
+ */
+export interface GetUserResponse {
+  user: UserInfoResponse;
+  id?: number;
+  user_id?: number;
+  username?: string;
+  phone?: string;
+}
+
+/**
  * 认证相关类型
  */
 export interface LoginCredentials { phone: string; password: string }

@@ -171,6 +171,7 @@ const contactService = {
 
 
   createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<Post> => {
+    const { formatDateYMD } = await import('../lib/helpers/helpers');
     const labelNames: Record<number, string> = {
       1: '学习提升',
       2: '健康运动',
@@ -181,8 +182,7 @@ const contactService = {
     
     const formatDate = (dateStr?: string) => {
       if (!dateStr) return '';
-      const date = new Date(dateStr);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      return formatDateYMD(new Date(dateStr));
     };
     
     let dateRange = '每天';

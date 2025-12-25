@@ -14,6 +14,7 @@ import {
   Tutorial
 } from '../components';
 import { getStudyTimeTrend } from '../services/data.service';
+import { formatDurationShort, calculateStreak } from '../lib/helpers/helpers';
 import { authService } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
@@ -96,29 +97,8 @@ export default function DataPage() {
     return [...timeMessages, ...generalMessages];
   }, []);
 
-  // 计算连续打卡天数
-  const streak = useMemo(() => {
-    if (punchedDates.length === 0) return 0;
-    const sorted = [...punchedDates].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let count = 0;
-    for (let i = 0; i < sorted.length; i++) {
-      const date = new Date(sorted[i]);
-      date.setHours(0, 0, 0, 0);
-      const expectedDate = new Date(today);
-      expectedDate.setDate(today.getDate() - i);
-      expectedDate.setHours(0, 0, 0, 0);
-      if (date.getTime() === expectedDate.getTime()) {
-        count++;
-      } else {
-        break;
-      }
-    }
-    return count;
-  }, [punchedDates]);
-
-
+  // 计算连续打卡天数 - 使用统一工具函数
+  const streak = useMemo(() => calculateStreak(punchedDates), [punchedDates]);
 
   /** 加载用户数据 */
   useEffect(() => {
@@ -277,26 +257,7 @@ export default function DataPage() {
   }, [flagStats]);
 
 
-  /** 格式化学习时长（秒转小时/分钟/秒）*/
-  // 总时长显示：大于1小时显示小时，否则显示分钟
-  // 累计时长和今日学习时长格式化：XhX 或 XmX
-  const formatTotalHours = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h${mins}`;
-    }
-    return `${mins}m`;
-  };
-
-  const formatTodayTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h${mins}`;
-    }
-    return `${mins}m`;
-  };
+  /** 格式化学习时长 - 使用统一工具函数 */
 
   // ========== 渲染 ========== 
   if (loading) {
@@ -350,7 +311,7 @@ export default function DataPage() {
               </div>
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200/50 hover:shadow-md transition-all duration-200">
                 <Clock className="h-6 w-6 text-green-600 mb-2" />
-                <div className="text-2xl font-bold text-green-600">{formatTotalHours(calculatedMonthlyStats.totalStudyTime)}</div>
+                <div className="text-2xl font-bold text-green-600">{formatDurationShort(calculatedMonthlyStats.totalStudyTime)}</div>
                 <div className="text-xs text-green-700 mt-1 whitespace-nowrap">累计时长({Math.floor(calculatedMonthlyStats.totalStudyTime / 3600) > 0 ? 'h' : 'm'})</div>
               </div>
             </div>
@@ -399,7 +360,7 @@ export default function DataPage() {
                 <Clock className="h-7 w-7 text-green-600 mb-2" />
                 <div className="text-xs text-muted-foreground mb-1">今日学习</div>
                 <div className="text-3xl font-bold text-green-600 tabular-nums">
-                  {formatTodayTime(dailyElapsed)}
+                  {formatDurationShort(dailyElapsed)}
                 </div>
               </div>
             </div>
