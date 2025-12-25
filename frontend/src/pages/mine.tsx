@@ -92,7 +92,8 @@ export default function MinePage() {
   const [flagNotificationEnabled, setFlagNotificationEnabled] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+  // 累计完成Flag总数（从后端flag_number字段获取）
+  const [completedCount, setCompletedCount] = useState(0);
   
   const [points, setPoints] = useState(0);
   const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
@@ -117,10 +118,12 @@ export default function MinePage() {
             is_flag_remind?: boolean;
           time_remind: number;
           min_remind: number;
+          flag_number: number;
         }
       }>('/api/getUser');
       const user = userData.user;
       setPoints(user.count || 0);
+      setCompletedCount(user.flag_number || 0);
       // 使用后端head_show生成头像URL（后端提供/api/avatar/:id接口）
       const avatarPath = user.head_show ? `/api/avatar/${user.head_show}` : '';
       setProfile(prev => ({

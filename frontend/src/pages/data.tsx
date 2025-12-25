@@ -35,6 +35,8 @@ export default function DataPage() {
   const [studyPeriod, setStudyPeriod] = useState<'week' | 'month' | 'year'>('week'); // 学习趋势周期：周(最近7天)/月(当前月份)/年(最近6个月)
   // 新增：本月累计学习时长（秒）
   const [monthLearnTime, setMonthLearnTime] = useState(0);
+  // 累计完成Flag总数（从后端flag_number字段获取）
+  const [completedFlagsCount, setCompletedFlagsCount] = useState(0);
   const [studyData, setStudyData] = useState<StudyTimeTrend[]>([]); // 学习趋势数据
   
   // 鸟消息
@@ -169,13 +171,15 @@ export default function DataPage() {
   /** 刷新用户数据 */
   const refreshUserData = async () => {
     try {
-      const [todayData, todayPointsResp, currentMonthData] = await Promise.all([
+      const [todayData, todayPointsResp, currentMonthData, userData] = await Promise.all([
         api.get<{ today_learn_time: number }>('/api/getTodayLearnTime').catch(() => ({ today_learn_time: 0 })),
         api.get<{ today_points: number }>('/api/getTodayPoints').catch(() => ({ today_points: 0 })),
-        api.get<{ learn_times: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learn_times: [] }))
+        api.get<{ learn_times: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learn_times: [] })),
+        api.get<{ user: { flag_number: number } }>('/api/getUser').catch(() => ({ user: { flag_number: 0 } }))
       ]);
 
       setTodayPoints(todayPointsResp?.today_points || 0);
+      setCompletedFlagsCount(userData?.user?.flag_number || 0);
 
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
       const todayTime = todayData.today_learn_time || 0; // 今日学习时长（秒）
@@ -233,7 +237,8 @@ export default function DataPage() {
 
   /** 计算Flag统计数据 */
   const flagStats = useMemo(() => {
-    const completedCount = tasks.filter(t => t.completed).length;
+    // 使用后端累计完成Flag总数（历史统计）
+    const completedCount = completedFlagsCount;
     const uncompletedCount = tasks.filter(t => !t.completed).length;
     const totalCount = tasks.length;
     
@@ -259,7 +264,7 @@ export default function DataPage() {
     // 更新图表数据
     setChartData(completedCount, uncompletedCount);
     return { completedCount, uncompletedCount, totalCount, labelStats };
-  }, [tasks]);
+  }, [tasks, completedFlagsCount]);
 
   /** 饼图数据转换 */
   const pieChartData = useMemo(() => {
