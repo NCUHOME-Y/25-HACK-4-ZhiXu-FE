@@ -4,7 +4,7 @@ import { BrowserRouter, useRoutes, useNavigate, useLocation } from 'react-router
 import { useEffect } from 'react'
 import './styles/globals.css'
 import { routes } from './routes/routes'
-import { UserProvider } from './lib/stores/userContext'
+import { UserProvider } from './lib/stores/stores'
 import { Toaster } from './components/ui/sonner'
 import { authService } from './services/auth.service'
 

@@ -1,7 +1,48 @@
 import { api } from './apiClient';
 import type { User } from '../lib/types/types';
 
-/** 个人中心服务 */
+/** 个人中心服务 & 用户设置服务 */
+
+// ==================== 用户设置相关 ====================
+
+/** 更新通知开关状态 */
+export const updateNotificationEnabled = async (enabled: boolean): Promise<void> => {
+  await api.put('/api/updateRemindStatus', { status: enabled });
+};
+
+/** 更新用户级 Flag 提醒开关 */
+export const updateFlagNotificationEnabled = async (enabled: boolean): Promise<void> => {
+  await api.put('/api/updateFlagRemindStatus', { status: enabled });
+};
+
+/** 更新通知时间 */
+export const updateNotificationTime = async (hour: string, minute: string): Promise<void> => {
+  await api.put('/api/updateRemindTime', { 
+    time_remind: parseInt(hour), 
+    min_remind: parseInt(minute) 
+  });
+};
+
+/** 修改密码 */
+export const changePassword = async (oldPassword: string, newPassword: string): Promise<void> => {
+  await api.put('/updatePassword', { old_password: oldPassword, new_password: newPassword });
+};
+
+/** 切换头像 */
+export const switchAvatar = async (avatarIndex: number): Promise<void> => {
+  try {
+    await api.post('/api/swithhead', { number: avatarIndex });
+  } catch (error: unknown) {
+    console.error('❌ 头像切换失败:', {
+      status: (error as { response?: { status?: number } })?.response?.status,
+      data: (error as { response?: { data?: unknown } })?.response?.data,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
+  }
+};
+
+// ==================== 个人资料相关 ====================
 
 /** 获取用户个人信息 */
 export const getUserProfile = () =>
@@ -60,8 +101,7 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
   if (data.avatar && /^\d+$/.test(data.avatar)) {
     try {
       const number = parseInt(data.avatar);
-      // 使用统一的switchAvatar服务
-      const { switchAvatar } = await import('./set.service');
+      // 使用本地的switchAvatar服务
       await switchAvatar(number);
       const userStr = localStorage.getItem('user');
       if (userStr) {

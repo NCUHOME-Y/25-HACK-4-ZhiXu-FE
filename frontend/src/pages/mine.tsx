@@ -34,7 +34,7 @@ import {
 } from "../components";
 import { useTaskStore } from '../lib/stores/stores';
 import { updateUserProfile } from '../services/mine.service';
-import { useUser } from '../lib/stores/userContext';
+import { useUser } from '../lib/stores/stores';
 import { getUserAchievements } from '../services/mine.service';
 import { toast } from 'sonner';
 import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/asset-helpers';
@@ -42,7 +42,7 @@ import { BirdMascot, Tutorial, startTutorial, shouldAutoStartTutorial } from '..
 import { api } from '../services/apiClient';
 import contactService from '../services/contact.service';
 import { fetchPunchDates } from '../services/flag.service';
-import { switchAvatar, updateNotificationEnabled, updateNotificationTime, updateFlagNotificationEnabled, changePassword } from '../services/set.service';
+import { switchAvatar, updateNotificationEnabled, updateNotificationTime, updateFlagNotificationEnabled, changePassword } from '../services/mine.service';
 import { authService } from '../services/auth.service';
 
 // PWA BeforeInstallPromptEvent 类型定义

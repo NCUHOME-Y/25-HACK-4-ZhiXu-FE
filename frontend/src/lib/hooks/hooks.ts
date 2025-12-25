@@ -164,19 +164,21 @@ export function usePagination<T>({
     setError(null);
   }, []);
 
+  // Use a stable serialized key for deps to keep dependency list a literal array
+  const depsKey = JSON.stringify(deps);
   useEffect(() => {
     reset();
-  }, deps);
+  }, [reset, depsKey]);
 
   return { items, loading, hasMore, error, loadMore, reset, setItems };
 }
 
 // 通用表单状态管理 Hook
-export function useFormState<T extends Record<string, any>>(initialState: T) {
+export function useFormState<T extends Record<string, unknown>>(initialState: T) {
   const [values, setValues] = useState<T>(initialState);
   const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
 
-  const handleChange = useCallback((field: keyof T, value: any) => {
+  const handleChange = useCallback((field: keyof T, value: T[keyof T]) => {
     setValues(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: undefined }));
   }, []);

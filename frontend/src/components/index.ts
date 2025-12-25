@@ -1,4 +1,9 @@
-// 统一导出所有 UI 组件
+/**
+ * 统一导出所有组件
+ * UI组件、布局组件、功能组件
+ */
+
+// ==================== UI 组件 ====================
 export * from "./ui/alert"
 export * from "./ui/alert-dialog"
 export * from "./ui/accordion"
@@ -27,24 +32,19 @@ export * from "./ui/toggle"
 export * from "./ui/toggle-group"
 export * from "./ui/tabs"
 
-// 导出布局组件
+// ==================== 布局组件 ====================
 export * from "./layout/bottomnav"
-export * from "./feature/search"
 
-// 导出功能组件
+// ==================== 功能组件 ====================
+export * from "./feature/search"
 export * from "./feature/login-form"
 export * from "./feature/signup-form"
 export * from "./feature/otp-form"
-// Feature Components
-export { ChartRadialStacked, setChartData } from "./feature/chart-radial-stacked";
+export { ChartRadialStacked, setChartData } from "./feature/chart-radial-stacked"
 export { ChartPieLabel } from "./feature/chart-pie-label"
 export { StudyTimeChart } from "./feature/study-time-chart"
 export { ProgressRing } from "./feature/ProgressRing"
 export { default as BirdMascot } from "./feature/BirdMascot"
-
-// 导出功能日历组件(统一从 index 导入)
 export { default as Calendar21 } from "./feature/calendar-21"
 export { default as Calendar23 } from "./feature/calendar-23"
-
-// 导出教程组件
 export { Tutorial, startTutorial, shouldAutoStartTutorial, markTutorialCompleted } from "./feature/Tutorial"

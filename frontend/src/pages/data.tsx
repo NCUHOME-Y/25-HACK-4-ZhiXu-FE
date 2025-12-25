@@ -19,7 +19,7 @@ import { authService } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
 import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
-import { BirdMascot } from '../components/feature';
+import { BirdMascot } from '../components';
 import { fetchTasks, fetchPunchDates } from '../services/flag.service';
 import { api } from '../services/apiClient';
 

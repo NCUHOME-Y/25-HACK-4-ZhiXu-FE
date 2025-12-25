@@ -17,10 +17,10 @@ import contactService, { type SearchUserResult } from '../services/contact.servi
 import { api } from '../services/apiClient';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
 import { adaptPostToUser, formatTimeAgo } from '../lib/helpers/helpers';
-import { useUser } from '../lib/stores/userContext';
+import { useUser } from '../lib/stores/stores';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
-import { BirdMascot } from '../components/feature';
+import { BirdMascot } from '../components';
 
 /**
  * 用户统计数据组件：显示打卡天数、完成flag、总积分

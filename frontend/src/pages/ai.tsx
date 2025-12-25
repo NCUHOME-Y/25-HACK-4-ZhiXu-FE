@@ -16,7 +16,7 @@ import {
 import { generateStudyPlan, type StudyPlan, type Difficulty } from '../services/ai.service';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion';
 import { FLAG_LABELS } from '../lib/constants/constants';
-import { BirdMascot } from '../components/feature';
+import { BirdMascot } from '../components';
 
 // 🔧 获取当前用户 ID 的函数（从 token 中提取或使用默认值）
 const getCurrentUserId = (): string => {

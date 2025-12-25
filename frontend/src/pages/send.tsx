@@ -7,7 +7,7 @@ import type { PrivateMessage } from '../lib/types/types';
 import { scrollToBottom } from '../lib/helpers/helpers';
 import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import authService from '../services/auth.service';
-import { useUser } from '../lib/stores/userContext';
+import { useUser } from '../lib/stores/stores';
 import { API_BASE, makeWsUrl } from '../services/apiClient';
 
 /** 格式化消息时间显示 */
