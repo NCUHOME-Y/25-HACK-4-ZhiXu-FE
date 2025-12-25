@@ -244,11 +244,6 @@ export default function FlagPage() {
     }
   }, [showError, alertVisible]);
 
-  // Debug: 监听 newTask.label 变化
-  useEffect(() => {
-    console.log('newTask.label 变化:', newTask.label, 'FLAG_LABELS[newTask.label]:', FLAG_LABELS[newTask.label]);
-  }, [newTask.label]);
-
   // 错误提示自动关闭副作用
   useEffect(() => {
     if (alertVisible && !alertHiding) {
@@ -751,11 +746,15 @@ export default function FlagPage() {
       return;
     }
 
-    // 如果已经为当前 editingTaskId 初始化过，则跳过
+    // 如果已经为当前 editingTaskId 初始化过，则跳过（防止重复初始化覆盖用户编辑）
     if (editingTaskId) {
-      if (editInitRef.current === editingTaskId) return;
+      if (editInitRef.current === editingTaskId) {
+        console.log('⏭️ 跳过重复初始化，保留用户编辑的数据');
+        return;
+      }
       editInitRef.current = editingTaskId;
-      const task = useTaskStore.getState().tasks.find((t) => t.id === editingTaskId);
+      // 使用闭包捕获的 tasks，而不是依赖 tasks 变化触发重新执行
+      const task = tasks.find((t) => t.id === editingTaskId);
       if (task) {
         const labelValue = typeof task.label === 'string' ? parseInt(task.label) : (task.label || 1);
         const priorityValue = typeof task.priority === 'string' ? parseInt(task.priority) : (task.priority || 3);
@@ -775,8 +774,12 @@ export default function FlagPage() {
         });
       }
     } else {
-      if (editInitRef.current === 'new') return;
+      if (editInitRef.current === 'new') {
+        console.log('⏭️ 跳过新建任务的重复初始化');
+        return;
+      }
       editInitRef.current = 'new';
+      console.log('✅ 初始化新建任务');
       setNewTask({
         title: '',
         detail: '',
@@ -791,6 +794,7 @@ export default function FlagPage() {
         enableNotification: false,
       });
     }
+    // 注意：不要把 tasks 放在依赖数组中，否则会在用户编辑时重新初始化！
   }, [openDrawer, editingTaskId]);
 
   /** 切换今日打卡状态 */
@@ -1549,13 +1553,10 @@ export default function FlagPage() {
             <div>
               <Label htmlFor="flag-label" className="text-sm sm:text-base">类型标签</Label>
               <Select
-                key={editingTaskId || 'new'}
-                value={String(FLAG_LABELS[newTask.label] ? newTask.label : 1)}
+                value={String(newTask.label)}
                 onValueChange={(value: string) => {
-                  console.log('标签变更:', { 原始值: value, 当前label: newTask.label });
                   const numValue = parseInt(value, 10);
                   if (!isNaN(numValue) && numValue >= 1 && numValue <= 5) {
-                    console.log('标签更新为:', numValue);
                     setNewTask((s) => ({ ...s, label: numValue as FlagLabel }));
                   }
                 }}
