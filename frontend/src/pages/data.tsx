@@ -14,7 +14,7 @@ import {
   Tutorial
 } from '../components';
 import { getStudyTimeTrend } from '../services/data.service';
-import { formatDurationShort, calculateStreak } from '../lib/helpers/helpers';
+import { formatDurationShort, calculateStreak } from '../lib/helpers';
 import { authService } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';

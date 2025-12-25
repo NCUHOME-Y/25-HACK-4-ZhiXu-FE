@@ -1,6 +1,6 @@
 ﻿import axios from 'axios';
 import { handleApiError } from './error.service';
-import { createApiWrapper } from '../lib/helpers/api-helpers';
+import { createApiWrapper } from '../lib/helpers';
 
 /** API 客户端配置 */
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || undefined;

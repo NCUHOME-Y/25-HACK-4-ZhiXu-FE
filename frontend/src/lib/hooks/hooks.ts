@@ -164,11 +164,10 @@ export function usePagination<T>({
     setError(null);
   }, []);
 
-  // Use a stable serialized key for deps to keep dependency list a literal array
-  const depsKey = JSON.stringify(deps);
   useEffect(() => {
     reset();
-  }, [reset, depsKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 
   return { items, loading, hasMore, error, loadMore, reset, setItems };
 }
@@ -178,7 +177,7 @@ export function useFormState<T extends Record<string, unknown>>(initialState: T)
   const [values, setValues] = useState<T>(initialState);
   const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
 
-  const handleChange = useCallback((field: keyof T, value: T[keyof T]) => {
+  const handleChange = useCallback((field: keyof T, value: unknown) => {
     setValues(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: undefined }));
   }, []);

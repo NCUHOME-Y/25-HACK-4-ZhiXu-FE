@@ -171,7 +171,7 @@ const contactService = {
 
 
   createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<Post> => {
-    const { formatDateYMD } = await import('../lib/helpers/helpers');
+    const { formatDateYMD } = await import('../lib/helpers');
     const labelNames: Record<number, string> = {
       1: '学习提升',
       2: '健康运动',

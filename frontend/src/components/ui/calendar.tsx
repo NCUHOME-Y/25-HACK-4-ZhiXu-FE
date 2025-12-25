@@ -6,7 +6,7 @@ import {
 } from "lucide-react"
 import { DayButton, DayPicker, getDefaultClassNames, type DropdownProps } from "react-day-picker"
 
-import { cn } from "../../lib/helpers/utils"
+import { cn } from "../../lib/helpers"
 import { Button, buttonVariants } from "./button"
 import {
   Select,

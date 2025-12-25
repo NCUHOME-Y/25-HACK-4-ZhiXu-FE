@@ -1,6 +1,6 @@
 import { api } from './apiClient';
 import type { FlagLabel, FlagPriority } from '../lib/types/types';
-import { calculateTaskCompletionPoints } from '../lib/helpers/points-system';
+import { calculateTaskCompletionPoints } from '../lib/helpers';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 

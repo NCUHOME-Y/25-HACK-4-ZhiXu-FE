@@ -43,12 +43,12 @@ import {
   SelectValue,
   Popover,
   PopoverTrigger,
-  PopoverContent,
   Progress,
   ProgressRing,
+  FlagDetailCard,
 } from '../components';
 import { useTaskStore } from '../lib/stores/stores';
-import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, formatDurationHMS, formatDurationFlexible } from '../lib/helpers/helpers';
+import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, formatDurationHMS, formatDurationFlexible } from '../lib/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
@@ -589,7 +589,7 @@ export default function FlagPage() {
       await loadData();
     } else {
       // 如果没有设置积分，自动计算
-      const { calculateTaskCompletionPoints } = await import('../lib/helpers/points-system');
+      const { calculateTaskCompletionPoints } = await import('../lib/helpers');
       const points = calculateTaskCompletionPoints({
         total: newTask.total || 1,
         priority: newTask.priority || 3,
@@ -766,6 +766,7 @@ export default function FlagPage() {
       });
     }
     // 注意：不要把 tasks 放在依赖数组中，否则会在用户编辑时重新初始化！
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openDrawer, editingTaskId]);
 
   /** 切换今日打卡状态 */
@@ -1110,91 +1111,7 @@ export default function FlagPage() {
                       </div>
                     </Card>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 bg-white/95 backdrop-blur-sm border-white/20 shadow-xl rounded-xl">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold text-base mb-1">{t.title}</h4>
-                        <div className="text-xs text-gray-500 mb-2">
-                          {getFlagDateStatus(t)}
-                        </div>
-                        {t.detail && (
-                          <p className="text-sm text-muted-foreground">{t.detail}</p>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2 text-sm">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">进度</span>
-                            <span className="font-medium">{t.count}/{t.total} 次</span>
-                          </div>
-                          <Progress 
-                            value={(t.count || 0) / (t.total || 1) * 100}
-                            indicatorColor="#2563eb"
-                            className="h-2"
-                          />
-                        </div>
-                        
-                        {t.priority && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">优先级</span>
-                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                              t.priority === 1 ? 'bg-red-100 text-red-700' : 
-                              t.priority === 2 ? 'bg-orange-100 text-orange-700' :
-                              t.priority === 3 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
-                              {FLAG_PRIORITIES[t.priority]}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {t.label && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">类型</span>
-                            <span 
-                              className="inline-block px-2 py-0.5 text-xs font-medium rounded"
-                              style={{ 
-                                backgroundColor: `${FLAG_LABELS[t.label].color}20`,
-                                color: FLAG_LABELS[t.label].color
-                              }}
-                            >
-                              {FLAG_LABELS[t.label].name}
-                            </span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">分享状态</span>
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                            t.isPublic 
-                              ? 'bg-purple-100 text-purple-700' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {t.isPublic ? '已分享' : '未分享'}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">消息提醒</span>
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                            t.enableNotification
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {t.enableNotification ? `已开启 (${t.reminderTime || '12:00'})` : '未开启'}
-                          </span>
-                        </div>
-                        
-                        {t.createdAt && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">创建时间</span>
-                            <span className="text-xs">{new Date(t.createdAt).toLocaleDateString('zh-CN')}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </PopoverContent>
+                  <FlagDetailCard task={t} getFlagDateStatus={getFlagDateStatus} />
                 </Popover>
               ))}
               
@@ -1283,70 +1200,7 @@ export default function FlagPage() {
                       </div>
                     </Card>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 bg-white/95 backdrop-blur-sm border-white/20 shadow-xl rounded-xl">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-semibold text-base mb-1">{t.title}</h4>
-                        <div className="text-xs text-gray-500 mb-2">
-                          {getFlagDateStatus(t)}
-                        </div>
-                        {t.detail && (
-                          <p className="text-sm text-muted-foreground">{t.detail}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">进度</span>
-                            <span className="font-medium">{t.count || 0}/{t.total || 1} 次</span>
-                          </div>
-                          <Progress 
-                            value={(t.count || 0) / (t.total || 1) * 100}
-                            indicatorColor="#9ca3af"
-                            className="h-2"
-                          />
-                        </div>
-                        {t.priority && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">优先级</span>
-                            {/* 可复用优先级标签渲染 */}
-                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${t.priority === 1 ? 'bg-red-100 text-red-700' : t.priority === 2 ? 'bg-orange-100 text-orange-700' : t.priority === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
-                              {FLAG_PRIORITIES[t.priority]}
-                            </span>
-                          </div>
-                        )}
-                        {t.label && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">类型标签</span>
-                            <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700`}>
-                              {FLAG_LABELS[t.label]?.name}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">分享状态</span>
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${t.isPublic ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
-                            {t.isPublic ? '已分享' : '未分享'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">消息提醒</span>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded ${
-                            t.enableNotification
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-gray-100 text-gray-600'}`}>
-                            {t.enableNotification ? `已启用 (${t.reminderTime || '12:00'})` : '未开启'}
-                          </span>
-                        </div>
-                        {t.createdAt && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">创建时间</span>
-                            <span className="text-xs">{new Date(t.createdAt).toLocaleDateString('zh-CN')}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </PopoverContent>
+                  <FlagDetailCard task={t} getFlagDateStatus={getFlagDateStatus} />
                 </Popover>
               ))}
             </section>
@@ -1421,7 +1275,9 @@ export default function FlagPage() {
             
             <section className="space-y-2">
               {completedTasks.map((t) => (
-                <Card key={t.id} className="p-4 bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Popover key={t.id}>
+                  <PopoverTrigger asChild>
+                    <Card className="p-4 bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200/50 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
                       <div className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-2">
                           <ProgressRing current={t.count || 0} total={t.total || 1} size={44} color="#059669" showLabel={true} />
@@ -1485,6 +1341,9 @@ export default function FlagPage() {
                         </div>
                       </div>
                     </Card>
+                  </PopoverTrigger>
+                  <FlagDetailCard task={t} isCompleted={true} getFlagDateStatus={getFlagDateStatus} />
+                </Popover>
               ))}
             </section>
           </>

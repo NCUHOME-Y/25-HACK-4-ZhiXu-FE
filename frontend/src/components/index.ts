@@ -32,14 +32,13 @@ export * from "./ui/toggle"
 export * from "./ui/toggle-group"
 export * from "./ui/tabs"
 
-// ==================== 布局组件 ====================
-export * from "./layout/bottomnav"
-
 // ==================== 功能组件 ====================
+export * from "./feature/bottomnav"
 export * from "./feature/search"
 export * from "./feature/login-form"
 export * from "./feature/signup-form"
 export * from "./feature/otp-form"
+export * from "./feature/FlagDetailCard"
 export { ChartRadialStacked, setChartData } from "./feature/chart-radial-stacked"
 export { ChartPieLabel } from "./feature/chart-pie-label"
 export { StudyTimeChart } from "./feature/study-time-chart"

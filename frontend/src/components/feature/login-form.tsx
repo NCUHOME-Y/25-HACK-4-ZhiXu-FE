@@ -1,4 +1,4 @@
-import { cn } from "../../lib/helpers/utils"
+import { cn } from "../../lib/helpers"
 import { Button } from "../ui/button"
 import {
   Card,
@@ -16,7 +16,7 @@ interface LoginFormProps extends React.ComponentPropsWithoutRef<"div"> {
   onSwitchToOTP?: () => void
   onForgotPassword?: () => void
   onSubmit?: (e: React.FormEvent) => void // 添加提交回调
-  loading?: boolean // 添加加载状态
+  loading?: boolean // 添加加载状�?
   error?: string // 添加错误信息
 }
 

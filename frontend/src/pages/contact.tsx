@@ -16,10 +16,9 @@ import {
 import contactService, { type SearchUserResult } from '../services/contact.service';
 import { api } from '../services/apiClient';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
-import { adaptPostToUser, formatTimeAgo } from '../lib/helpers/helpers';
+import { adaptPostToUser, formatTimeAgo, getAvatarUrl } from '../lib/helpers';
 import { useUser } from '../lib/stores/stores';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
-import { getAvatarUrl } from '../lib/helpers/asset-helpers';
 import { BirdMascot } from '../components';
 
 /**
