@@ -3,14 +3,12 @@ import { handleApiError } from './error.service';
 import { createApiWrapper } from '../lib/helpers/api-helpers';
 
 /** API 客户端配置 */
-// 后端地址通过 Vite 环境变量 VITE_API_BASE_URL 注入
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || undefined;
 
 /** 将 http(s) 地址转换为 ws(s) 地址并拼接路径 */
 export function makeWsUrl(path: string) {
   let origin = API_BASE;
   
-  // 如果 API_BASE 是空字符串或相对路径，使用当前页面的 origin
   if (!origin || origin === '' || !origin.startsWith('http')) {
     if (typeof window !== 'undefined') {
       origin = window.location.origin;
@@ -19,13 +17,10 @@ export function makeWsUrl(path: string) {
     }
   }
   
-  // 移除末尾的斜杠
   if (origin.endsWith('/')) origin = origin.slice(0, -1);
   
-  // 将 http(s) 协议转换为 ws(s)
   const wsOrigin = origin.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
   
-  // 确保 path 以 '/' 开头
   const p = path.startsWith('/') ? path : `/${path}`;
   
   return `${wsOrigin}${p}`;

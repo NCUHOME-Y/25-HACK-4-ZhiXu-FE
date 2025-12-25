@@ -41,9 +41,8 @@ interface TaskState {
 	increaseDailyElapsed: () => void;
 }
 
-// 全局计时器ID，存储在模块作用域
 let globalTimerId: number | null = null;
-let autoStopTimeoutId: number | null = null; // 自动停止定时器
+let autoStopTimeoutId: number | null = null;
 
 const fmt = (d: Date) => {
 	const y = d.getFullYear();
@@ -52,17 +51,14 @@ const fmt = (d: Date) => {
 	return `${y}-${m}-${day}`;
 };
 
-// 学习计时相关localStorage键
 const STUDY_START_TIME_KEY = 'study_start_time';
 const STUDY_DAILY_ELAPSED_KEY = 'study_daily_elapsed';
 
-// 获取下一个凌晨4点的毫秒数（如果当前未到4点，则是今天4点；否则是明天4点）
 const getNext4AM = () => {
 	const now = new Date();
 	const next4AM = new Date(now);
 	next4AM.setHours(4, 0, 0, 0);
 	
-	// 如果今天4点已经过了，设置为明天4点
 	if (next4AM.getTime() <= now.getTime()) {
 		next4AM.setDate(now.getDate() + 1);
 	}
@@ -70,25 +66,21 @@ const getNext4AM = () => {
 	return next4AM.getTime() - now.getTime();
 };
 
-// 自动停止学习（凌晨4点，保存当前时长后停止）
 const autoStopStudy = async () => {
 	const startTimeStr = localStorage.getItem(STUDY_START_TIME_KEY);
 	if (startTimeStr) {
-		// 🔧 修复：保存当前学习时长后再停止
 		const currentState = useTaskStore.getState();
 		const session = currentState.sessionElapsed;
 		
-		// 如果有学习时长，先保存到后端
 		if (session > 0) {
 			try {
 				const { stopStudySession } = await import('../../services/flag.service');
 				await stopStudySession('', session);
 			} catch (error) {
-				console.error('❌ [凌晨4点] 保存学习时长失败:', error);
+				console.error('[autoStopStudy] 保存学习时长失败:', error);
 			}
 		}
 		
-		// 清除 localStorage 和计时器
 		localStorage.removeItem(STUDY_START_TIME_KEY);
 		localStorage.removeItem(STUDY_DAILY_ELAPSED_KEY);
 		
@@ -97,16 +89,12 @@ const autoStopStudy = async () => {
 			globalTimerId = null;
 		}
 		
-		// 设置状态为停止
 		useTaskStore.setState({ studying: false, sessionElapsed: 0 });
 		
-		
-		// 设置下一个自动停止
 		autoStopTimeoutId = window.setTimeout(autoStopStudy, getNext4AM());
 	}
 };
 
-// 初始化自动停止定时器
 const initAutoStop = () => {
 	if (autoStopTimeoutId !== null) {
 		window.clearTimeout(autoStopTimeoutId);
@@ -115,7 +103,6 @@ const initAutoStop = () => {
 	autoStopTimeoutId = window.setTimeout(autoStopStudy, delay);
 };
 
-// 恢复学习计时（页面刷新后）
 const getInitialStudyState = () => {
 	const startTimeStr = localStorage.getItem(STUDY_START_TIME_KEY);
 	const dailyElapsedStr = localStorage.getItem(STUDY_DAILY_ELAPSED_KEY);

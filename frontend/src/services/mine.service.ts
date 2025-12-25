@@ -9,11 +9,9 @@ export const getUserProfile = () =>
 
 /** 更新用户个人信息 */
 export const updateUserProfile = async (data: Partial<User> & { originalNickname?: string }) => {
-  // 更新用户名：只在用户名实际改变时调用,避免重复错误导致无法只改头像)
   if (data.nickname && data.nickname !== data.originalNickname) {
     try {
       await api.put('/api/updateUsername', { new_name: data.nickname });
-      // 同步本地缓存的用户名，供聊天/评论等实时读取
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const userObj = JSON.parse(userStr);
@@ -21,35 +19,32 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
         localStorage.setItem('user', JSON.stringify(userObj));
       }
     } catch (error) {
-      console.error('❌ [updateUserProfile] 更新用户名失败', error);
+      console.error('[updateUserProfile] 更新用户名失败', error);
       
-      // 正确处理Axios错误，提取后端返回的错误信息
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: unknown; status?: number } };
         
-        console.error('📊 后端响应状态码:', axiosError.response?.status);
+        console.error('后端响应状态码:', axiosError.response?.status);
         
         const responseData = axiosError.response?.data;
         
-        // 检查是否返回了HTML（前端页面）而不是JSON
         if (typeof responseData === 'string' && (
           responseData.toLowerCase().includes('<!doctype html>') || 
           responseData.includes('<html') ||
           responseData.includes('<body>')
         )) {
-          console.error('🚨 后端API未正确配置，返回了HTML页面而不是JSON');
-          console.error('🔍 HTML响应预览:', responseData.substring(0, 200) + '...');
+          console.error('后端API未正确配置，返回了HTML页面而不是JSON');
+          console.error('HTML响应预览:', responseData.substring(0, 200) + '...');
           throw new Error('服务器配置错误，请联系管理员（API路由未正确配置）');
         }
         
-        console.error('📦 后端响应完整数据:', JSON.stringify(responseData, null, 2));
+        console.error('后端响应完整数据:', JSON.stringify(responseData, null, 2));
         
-        // 尝试提取错误信息
         if (responseData && typeof responseData === 'object') {
           const errorData = responseData as { error?: string; message?: string };
           const errorMsg = errorData.error || errorData.message;
           
-          console.error('💬 提取的后端错误信息:', errorMsg);
+          console.error('提取的后端错误信息:', errorMsg);
           
           if (errorMsg) {
             throw new Error(`更新用户名失败: ${errorMsg}`);
@@ -57,18 +52,15 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
         }
       }
       
-      // 如果无法提取具体错误信息，抛出通用错误
-      console.warn('⚠️ 无法提取后端错误信息，使用通用错误');
+      console.warn('无法提取后端错误信息，使用通用错误');
       throw new Error('更新用户名失败，请稍后重试');
     }
   }
   
-  // 更新头像（如果有avatar且是数字编号）
   if (data.avatar && /^\d+$/.test(data.avatar)) {
     try {
       const number = parseInt(data.avatar);
       await api.post('/api/swithhead', { number });
-      // 同步本地缓存头像为后端统一路径 /api/avatar/:id
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const userObj = JSON.parse(userStr);

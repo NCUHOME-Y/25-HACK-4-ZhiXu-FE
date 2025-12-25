@@ -40,7 +40,6 @@ export async function fetchTasks(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
   
-  // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
     const backendFlag = flag as BackendFlag & { enable_notification?: boolean; reminder_time?: string };
     const mapped = {
@@ -69,7 +68,6 @@ export async function createTask(payload: CreateTaskPayload & {
 }): Promise<Task> {
   const { api } = await import('./apiClient');
   
-  // 统一转换label为数字类型（1-5）
   let labelNum: number;
   if (typeof payload.label === 'number') {
     labelNum = payload.label;
@@ -79,19 +77,15 @@ export async function createTask(payload: CreateTaskPayload & {
     labelNum = 1; // 默认为学习类
   }
   
-  // 确保label在有效范围内
   if (labelNum < 1 || labelNum > 5) {
     console.warn(`Invalid label: ${labelNum}, defaulting to 1`);
     labelNum = 1;
   }
   
-  // 确保priority在有效范围内
   const priorityNum = payload.priority && payload.priority >= 1 && payload.priority <= 4 
     ? payload.priority 
-    : 3; // 默认为一般
+    : 3;
   
-  // 前后端字段已统一，直接发送
-  // 日期格式转换：YYYY-MM-DD -> RFC3339 (如果有)
   let startTimeISO = '';
   let endTimeISO = '';
   

@@ -1,7 +1,6 @@
 import { api } from './apiClient';
 import type { Conversation } from './chat.service';
 
-// 帖子接口类型
 export interface Post {
   id: string;
   userId: string;
@@ -72,10 +71,8 @@ export interface AddCommentParams {
 }
 
 const contactService = {
-  // 获取帖子列表（分页）
   getPosts: async (page: number = 1, pageSize: number = 15): Promise<PaginatedResponse<Post>> => {
     const response = await api.get<{ posts: Post[] }>('/api/getAllPosts');
-    // 模拟分页
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const paginatedPosts = response.posts.slice(startIndex, endIndex);
@@ -89,11 +86,9 @@ const contactService = {
     };
   },
 
-  // 搜索帖子
   searchPosts: async (params: SearchPostsParams): Promise<PaginatedResponse<Post>> => {
     const response = await api.post<{ post: Post[] }>('/api/searchPosts', { keyword: params.query });
     const posts = response.post || [];
-    // 模拟分页
     const page = params.page || 1;
     const pageSize = params.pageSize || 15;
     const startIndex = (page - 1) * pageSize;
@@ -147,7 +142,6 @@ const contactService = {
       content: params.content
     });
     
-    // 后端现在返回完整的评论数据
     return {
       id: String(response.id),
       postId: params.postId,
@@ -159,27 +153,23 @@ const contactService = {
     };
   },
 
-  // 获取帖子的评论列表
   getComments: (postId: string) =>
     api.get<PostComment[]>(`/api/getComments/${postId}`),
 
-  // 删除评论
   deleteComment: (_postId: string, commentId: string) =>
     api.delete<{ success: boolean }>('/api/deleteComment', {
       data: { comment_id: commentId }
     }),
 
-  // 获取用户信息（后端可能没有这个接口）
   getUserInfo: (userId: string) =>
     api.get<UserInfo>(`/api/getUser?user_id=${userId}`),
 
-  // 删除帖子
   deletePost: (postId: string) =>
     api.delete<{ success: boolean }>('/api/deleteUserPost', {
       data: { post_id: parseInt(postId, 10) }
     }),
 
-  // 从Flag创建帖子（分享Flag到社交页面）
+
   createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<Post> => {
     const labelNames: Record<number, string> = {
       1: '学习提升',
@@ -189,8 +179,6 @@ const contactService = {
       5: '生活习惯'
     };
     
-    // 不使用 emoji，采用简洁优雅的文本格式
-    // 格式化日期范围
     const formatDate = (dateStr?: string) => {
       if (!dateStr) return '';
       const date = new Date(dateStr);

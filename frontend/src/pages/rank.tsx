@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 import rankService from '../services/rank.service';
 import { getAvatarUrl } from '../lib/helpers/helpers';
 
-// 封神榜用户数据
 interface RankUser {
   id: string;
   rank: number;
@@ -18,10 +17,6 @@ interface RankUser {
   totalPoints: number;
 }
 
-/**
- * 封神榜页面
- * 毅力榜（按累计打卡天数）、勤勉榜（按完成Flag数量）、功德榜（按持有积分）
- */
 export default function RankPage() {
   const navigate = useNavigate();
 
@@ -53,7 +48,6 @@ export default function RankPage() {
     loadRankData();
   }, [activeTab]);
 
-  // 监听页面可见性，页面显示时重新加载数据
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {

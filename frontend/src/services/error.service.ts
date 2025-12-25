@@ -10,9 +10,7 @@ import type { AxiosError } from 'axios';
  * 根据错误状态码跳转到相应的错误页面
  */
 export function handleApiError(error: AxiosError): void {
-  // 网络错误
   if (!error.response) {
-    // 如果在登录/注册页面或数据页面，不跳转，让页面自己处理错误
     const currentPath = window.location.pathname;
     if (currentPath === '/auth' || currentPath === '/' || currentPath === '/data') {
       return;
@@ -22,18 +20,14 @@ export function handleApiError(error: AxiosError): void {
 
   const status = error.response.status;
 
-  // 根据状态码跳转到对应错误页面
   if (status === 401) {
-    // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;
     if (currentPath === '/auth' || currentPath === '/') {
       return;
     }
-    // 只有在已登录状态下的401才清除token并跳转
     localStorage.removeItem('auth_token');
     window.location.href = '/auth';
   } else if (status === 404) {
-    // 如果在登录页面或注册页面，不跳转，让表单显示错误消息
     const currentPath = window.location.pathname;
     if (currentPath === '/auth' || currentPath === '/' || currentPath === '/data') {
       return;

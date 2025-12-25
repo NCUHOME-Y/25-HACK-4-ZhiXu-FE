@@ -1,6 +1,5 @@
 import { api } from './apiClient';
 
-// 预设头像列表（共32个头像）
 const PRESET_AVATARS = [
   '/assets/head/screenshot_20251114_131601.png',
   '/assets/head/screenshot_20251114_131629.png',
@@ -36,7 +35,6 @@ const PRESET_AVATARS = [
   '/assets/head/微信图片_20251118000148_74_227.jpg',
 ];
 
-// 封神榜用户数据
 export interface RankUser {
   user_id: number;
   rank: number;
@@ -45,10 +43,9 @@ export interface RankUser {
   daka?: number;           // 总打卡数
   flag_number?: number;    // 完成flag数量
   count?: number;          // 积分
-  month_learn_time?: number; // 月学习时长
+  month_learn_time?: number;
 }
 
-// 后端返回的用户数据需要转换为前端格式
 interface FrontendRankUser {
   id: string;
   rank: number;
@@ -66,7 +63,6 @@ const rankService = {
    */
   getRankList: async (type: 'days' | 'flags' | 'points'): Promise<FrontendRankUser[]> => {
     try {
-      // 根据类型选择对应的后端 API
       let endpoint = '';
       if (type === 'days') {
         endpoint = '/api/dakaRanking';

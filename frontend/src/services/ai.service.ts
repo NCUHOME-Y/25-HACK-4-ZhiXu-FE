@@ -29,16 +29,14 @@ export interface StudyPlan {
  * 标签定义：1-学习提升, 2-健康运动, 3-工作效率, 4-兴趣爱好, 5-生活习惯
  */
 function inferLabel(text: string): FlagLabel {
-  // 每个类别的权重得分
   const scores: Record<FlagLabel, number> = {
-    1: 0, // 学习提升
-    2: 0, // 健康运动
-    3: 0, // 工作效率
-    4: 0, // 兴趣爱好
-    5: 0, // 生活习惯
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
   };
   
-  // 1. 学习提升 - 包含学习、阅读、知识相关的关键词
   const learningKeywords = [
     '学习', '阅读', '教程', '课程', '书籍', '复习', '预习', '笔记', '理论', '知识', 
     '掌握', '练习', '作业', '学会', '提升', '考试', '证书', '培训', '研究', '专业',
@@ -49,7 +47,6 @@ function inferLabel(text: string): FlagLabel {
     if (text.includes(keyword)) scores[1] += 2;
   });
   
-  // 2. 健康运动 - 包含健康、运动、锻炼相关的关键词
   const healthKeywords = [
     '锻炼', '运动', '健身', '跑步', '瑜伽', '健康', '休息', '睡眠', '饮食', '体能',
     '减肥', '增肌', '体重', '早睡', '早起', '作息', '散步', '游泳', '球类', '拉伸',
@@ -60,7 +57,6 @@ function inferLabel(text: string): FlagLabel {
     if (text.includes(keyword)) scores[2] += 2;
   });
   
-  // 3. 工作效率 - 包含工作、项目、任务、效率相关的关键词
   const workKeywords = [
     '工作', '项目', '任务', '开发', '实现', '构建', '部署', '测试', '调试', '职场',
     '会议', '汇报', '文档', '效率', '时间管理', '计划', '安排', 'deadline', '完成',
@@ -71,7 +67,6 @@ function inferLabel(text: string): FlagLabel {
     if (text.includes(keyword)) scores[3] += 2;
   });
   
-  // 4. 兴趣爱好 - 包含兴趣、娱乐、创作相关的关键词
   const hobbyKeywords = [
     '兴趣', '爱好', '娱乐', '游戏', '电影', '音乐', '绘画', '摄影', '旅游', '唱歌',
     '跳舞', '乐器', '手工', '收藏', '观影', '追剧', '动漫', '漫画', '小说', '创作',
@@ -82,7 +77,6 @@ function inferLabel(text: string): FlagLabel {
     if (text.includes(keyword)) scores[4] += 2;
   });
   
-  // 5. 生活习惯 - 包含习惯、日常、生活、社交相关的关键词
   const habitKeywords = [
     '习惯', '日常', '生活', '社交', '朋友', '聚会', '活动', '交流', '分享', '讨论',
     '合作', '团队', '打卡', '坚持', '记录', '整理', '清洁', '家务', '购物', '理财',
@@ -93,21 +87,17 @@ function inferLabel(text: string): FlagLabel {
     if (text.includes(keyword)) scores[5] += 2;
   });
   
-  // 特殊规则：如果同时包含"学习"和其他类别关键词，学习权重提升
   if (/学习.*?(编程|代码|算法|框架|语言)/.test(text) || /（编程|代码|算法|框架|语言）.*?学习/.test(text)) {
     scores[1] += 3;
   }
   
-  // 特殊规则：如果是"早睡早起"、"作息"等，偏向健康类
   if (/早睡|早起|作息|睡眠/.test(text)) {
     scores[2] += 3;
   }
   
-  // 找出得分最高的类别
   let maxScore = 0;
   let bestLabel: FlagLabel = 1;
   
-  // 遍历所有标签类型
   ([1, 2, 3, 4, 5] as const).forEach((label) => {
     if (scores[label] > maxScore) {
       maxScore = scores[label];
@@ -115,7 +105,6 @@ function inferLabel(text: string): FlagLabel {
     }
   });
   
-  // 如果没有任何关键词匹配，默认返回学习提升
   return bestLabel;
 }
 
@@ -137,13 +126,11 @@ function calculateTaskSchedule(
   const now = new Date();
   const startDate = new Date(now);
   
-  // 根据任务顺序和优先级设置开始日期
-  // 急切的任务立即开始，不急的任务延后
   const priorityDelay = {
-    1: 0,  // 急切：立即开始
-    2: 1,  // 较急：延后1天
-    3: 2,  // 一般：延后2天
-    4: 3,  // 不急：延后3天
+    1: 0,
+    2: 1,
+    3: 2,
+    4: 3,
   }[priority];
   
   // 根据任务序号错开开始时间（每3个任务错开1天）
@@ -206,7 +193,6 @@ export async function generateStudyPlan(
   background: string,
   difficulty: Difficulty
 ): Promise<StudyPlan> {
-  // 输入验证
   const trimmedGoal = goal.trim();
   const trimmedBackground = background.trim();
   
@@ -223,8 +209,7 @@ export async function generateStudyPlan(
     throw new Error('请输入有效的学习目标');
   }
 
-  // 映射难度到后端参数
-    const difficultyMap: Record<Difficulty, number> = {
+  const difficultyMap: Record<Difficulty, number> = {
       easy: 100,
       medium: 200,
       hard: 300,
@@ -249,7 +234,6 @@ export async function generateStudyPlan(
       throw new Error(response.error || '生成学习计划失败');
     }
 
-    // 解析AI返回的学习计划和生成flag
     const { phases, flags } = parsePlanAndGenerateFlags(response.plan, difficulty);
 
     const descriptions: Record<Difficulty, string> = {
@@ -282,13 +266,9 @@ function parsePlanAndGenerateFlags(planText: string, difficulty: Difficulty): {
   const phases: string[] = [];
   const flags: GeneratedFlag[] = [];
   
-  // 按行分割
   const lines = planText.split(/[\n\r]+/).map(l => l.trim()).filter(l => l.length > 0);
   
-  // 根据难度设置默认参数（与后端一致：100分=1-3天，200分=1-2周，300分=1-2月）
-  // baseTotal表示每日完成次数，不宜过高避免用户压力过大
-  // 专家级通过增加任务数量(maxFlags)和任务持续时间来达到300分左右的总积分
-    let baseTotal = 1, maxFlags = 5;
+  let baseTotal = 1, maxFlags = 5;
     if (difficulty === 'easy') {
       baseTotal = 1;  // 入门级：每天1次，轻松入门
       maxFlags = 5;   // 3-5个任务

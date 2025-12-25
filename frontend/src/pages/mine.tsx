@@ -61,7 +61,6 @@ export default function MinePage() {
   
   const tasks = useTaskStore((s) => s.tasks);
   
-  // 本地UI状态
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [profile, setProfile] = useState({
     nickname: '知序学习者',
@@ -73,37 +72,28 @@ export default function MinePage() {
   const [avatar, setAvatar] = useState(profile.avatar);
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
 
-  // 修改密码状态
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // 退出登录状态
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
-  // 保存状态
   const [isSaving, setIsSaving] = useState(false);
 
-  // 弹窗状态
   const [aboutPopoverOpen, setAboutPopoverOpen] = useState(false);
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
 
-  // PWA 安装状态
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
-  // 消息提醒状态
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [tempNotificationHour, setTempNotificationHour] = useState('12');
   const [tempNotificationMinute, setTempNotificationMinute] = useState('00');
-  // Flag 提醒状态（用户是否允许 Flag 级别的邮件提醒）
   const [flagNotificationEnabled, setFlagNotificationEnabled] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // 计算属性
   const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
   
-  // 用户数据
   const [points, setPoints] = useState(0);
   const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
   const [totalLikes, setTotalLikes] = useState(0);
@@ -140,12 +130,9 @@ export default function MinePage() {
       }));
       setNickname(user.name || '');
       setAvatar(avatarPath);
-      // 设置消息提醒状态（向后兼容旧字段）
       setNotificationEnabled(user.is_remind ?? false);
-      // Flag 提醒状态（后端可能返回 is_flag_remind）
       setFlagNotificationEnabled(user.is_flag_remind ?? false);
       setHasUnsavedChanges(false);
-      // 🐛 修复：后端返回的 month_learn_time 已经是秒，不需要乘 60
       useTaskStore.setState({
         dailyElapsed: user.month_learn_time || 0 // 本月学习时长（秒）
       });

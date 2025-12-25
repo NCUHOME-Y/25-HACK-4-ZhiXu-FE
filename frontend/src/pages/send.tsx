@@ -24,34 +24,15 @@ const formatMessageTime = (date: Date): string => {
   });
   
   if (messageDate.getTime() === today.getTime()) {
-    // 今天的消息：只显示时间
     return timeStr;
   } else if (messageDate.getTime() === yesterday.getTime()) {
-    // 昨天的消息：显示"昨天 时间"
     return `昨天 ${timeStr}`;
   } else {
-    // 更早的消息：显示"月日 时间"
     const month = date.getMonth() + 1;
     const day = date.getDate();
     return `${month}月${day}日 ${timeStr}`;
   }
 };
-
-/**
- * 私聊发送页面
- */
-// API返回的私聊消息类型
-interface PrivateMessageApi {
-  id?: string | number;
-  ID?: string | number;
-  content: string;
-  created_at: string;
-  from_user_id?: string | number;
-  from?: string | number;  // 后端实际返回的字段
-  to?: string | number;
-  user_avatar?: string;  // 添加用户头像字段
-  user_name?: string;    // 添加用户名字段
-}
 
 export default function SendPage() {
   const navigate = useNavigate();
@@ -68,7 +49,6 @@ export default function SendPage() {
   const reconnectAttemptsRef = useRef<number>(0);
   const MAX_RECONNECT_ATTEMPTS = 5;
 
-  // 验证是否有用户信息
   useEffect(() => {
     if (!user.id) {
       console.error('没有用户信息,返回上一页');
@@ -110,17 +90,16 @@ export default function SendPage() {
         const data = await response.json();
         
         if (data.messages && Array.isArray(data.messages)) {
-            const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => {
-            // 后端返回的字段是 from 和 to，不是 from_user_id
+            const historyMessages: PrivateMessage[] = data.messages.map((msg: Record<string, unknown>) => {
             const fromUserId = msg.from || msg.from_user_id;
             const isMine = String(fromUserId) === String(currentUserId);
             return {
               id: String(msg.id || msg.ID),
-              message: msg.content,
-              time: formatMessageTime(new Date(msg.created_at)),
+              message: msg.content as string,
+              time: formatMessageTime(new Date(msg.created_at as string)),
               isMe: isMine,
-              avatar: isMine ? (currentUserCtx?.avatar || '') : msg.user_avatar || user.avatar,
-              userName: isMine ? (currentUserCtx?.name || '我') : msg.user_name || user.name,
+              avatar: isMine ? (currentUserCtx?.avatar || '') : (msg.user_avatar as string) || user.avatar,
+              userName: isMine ? (currentUserCtx?.name || '我') : (msg.user_name as string) || user.name,
             };
           });
           
