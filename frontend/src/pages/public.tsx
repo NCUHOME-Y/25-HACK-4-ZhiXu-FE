@@ -51,7 +51,7 @@ export default function PublicPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptsRef = useRef<number>(0);
   const MAX_RECONNECT_ATTEMPTS = 5;
   
@@ -131,7 +131,6 @@ export default function PublicPage() {
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('✅ 群聊WebSocket连接成功');
           reconnectAttemptsRef.current = 0;
         };
 
@@ -162,14 +161,12 @@ export default function PublicPage() {
           console.error('群聊WebSocket错误:', error);
         };
 
-        ws.onclose = (event) => {
-          console.log('群聊WebSocket连接关闭:', event.code, event.reason);
+        ws.onclose = () => {
           wsRef.current = null;
           
           if (!isIntentionallyClosed && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttemptsRef.current++;
             const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
-            console.log(`尝试重连 (${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})，延迟 ${delay}ms`);
             reconnectTimeoutRef.current = setTimeout(connect, delay);
           }
         };

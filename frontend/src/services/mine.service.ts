@@ -9,7 +9,7 @@ export const getUserProfile = () =>
 
 /** 更新用户个人信息 */
 export const updateUserProfile = async (data: Partial<User> & { originalNickname?: string }) => {
-  // 更新用户名(只在用户名实际改变时调用,避免重复错误导致无法只改头像)
+  // 更新用户名：只在用户名实际改变时调用,避免重复错误导致无法只改头像)
   if (data.nickname && data.nickname !== data.originalNickname) {
     try {
       await api.put('/api/updateUsername', { new_name: data.nickname });
@@ -21,7 +21,7 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
         localStorage.setItem('user', JSON.stringify(userObj));
       }
     } catch (error) {
-      console.error('❌ [updateUserProfile] 更新用户名失败:', error);
+      console.error('❌ [updateUserProfile] 更新用户名失败', error);
       
       // 正确处理Axios错误，提取后端返回的错误信息
       if (error && typeof error === 'object' && 'response' in error) {
@@ -58,7 +58,7 @@ export const updateUserProfile = async (data: Partial<User> & { originalNickname
       }
       
       // 如果无法提取具体错误信息，抛出通用错误
-      console.error('⚠️ 无法提取后端错误信息，使用通用错误');
+      console.warn('⚠️ 无法提取后端错误信息，使用通用错误');
       throw new Error('更新用户名失败，请稍后重试');
     }
   }
@@ -116,15 +116,13 @@ export const getUserAchievements = async (): Promise<{ achievements: Array<{ id:
   try {
     const response = await api.get<{ message: string; achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }>('/api/getUserAchievement');
     
-    console.log('🏆 获取成就数据:', response);
-    
     // 后端返回的就是正确格式的数组
     if (response.achievements && Array.isArray(response.achievements)) {
       return { achievements: response.achievements };
     }
     
     // 如果格式不对，返回空数组
-    console.warn('成就数据格式不正确:', response);
+    console.warn('成就数据格式不正确', response);
     return { achievements: [] };
   } catch (error) {
     console.error('获取成就失败:', error);

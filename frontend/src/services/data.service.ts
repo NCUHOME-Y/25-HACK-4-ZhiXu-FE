@@ -133,8 +133,7 @@ export async function getStudyTimeTrend(period: 'week' | 'month' | 'year'): Prom
         seconds: item.duration || 0
       };
     });
-    
-    console.log(`${period}周期转换后数据:`, result);
+
     return result;
   } catch (error) {
     console.error('获取学习时长趋势失败:', error);

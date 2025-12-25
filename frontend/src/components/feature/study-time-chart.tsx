@@ -42,7 +42,6 @@ export function StudyTimeChart({
   
   // 格式化数据，添加显示标签，并将秒转换为分钟
   const chartData = useMemo(() => {
-    console.log(`${period}周期原始数据:`, data);
     return data.map((item, index) => {
       const dateStr = item.date;
       const [yearStr, monthStr, dayStr] = dateStr.split('-');
@@ -64,7 +63,6 @@ export function StudyTimeChart({
       }
       // 统一转换为分钟
       const minutes = Math.floor((item.seconds ?? 0) / 60);
-      console.log(`数据点[${index}]: 日期=${dateStr}, 月份=${month}, 标签=${label}, 时长=${minutes}`);
       return {
         date: dateStr,
         label,

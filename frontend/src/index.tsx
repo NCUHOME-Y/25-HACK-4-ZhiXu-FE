@@ -26,7 +26,6 @@ const App = () => {
     // 检查是否有有效的token
     const hasToken = authService.isAuthenticated();
     if (!hasToken) {
-      console.log('[全局路由守卫] 无有效token，重定向到登录页');
       navigate('/auth', { replace: true });
     }
   }, [location.pathname, navigate]);

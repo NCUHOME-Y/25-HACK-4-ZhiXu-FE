@@ -749,7 +749,6 @@ export default function FlagPage() {
     // 如果已经为当前 editingTaskId 初始化过，则跳过（防止重复初始化覆盖用户编辑）
     if (editingTaskId) {
       if (editInitRef.current === editingTaskId) {
-        console.log('⏭️ 跳过重复初始化，保留用户编辑的数据');
         return;
       }
       editInitRef.current = editingTaskId;
@@ -775,11 +774,9 @@ export default function FlagPage() {
       }
     } else {
       if (editInitRef.current === 'new') {
-        console.log('⏭️ 跳过新建任务的重复初始化');
         return;
       }
       editInitRef.current = 'new';
-      console.log('✅ 初始化新建任务');
       setNewTask({
         title: '',
         detail: '',

@@ -10,7 +10,7 @@ export interface ChatMessage {
   is_deleted?: boolean;
   deleted_at?: string;
   deleted_by?: string;
-  // 谈玄斋消息特有字段
+  // 谈玄斋消息特有字�?
   room_id?: string;
   // 私聊消息特有字段
   sender_id?: string;
@@ -25,10 +25,10 @@ export interface Conversation {
   last_message: string;
   last_message_time: string;
   unread_count: number;
-  last_message_at: string; // 补充 last_message_at 字段，兼容 contact.tsx 的类型检查
+  last_message_at: string; // 补充 last_message_at 字段，兼�?contact.tsx 的类型检�?
 }
 
-// 谈玄斋接口
+// 谈玄斋接�?
 export interface ChatRoom {
   id: string;
   name: string;
@@ -47,7 +47,7 @@ class PrivateChatService {
   private currentTargetUserId: string | null = null;
 
   /**
-   * 连接到私聊
+   * 连接到私�?
    */
   connect(targetUserId: string, token: string): void {
     // 断开现有连接
@@ -59,19 +59,17 @@ class PrivateChatService {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log('Connected to private chat with user:', targetUserId);
     };
 
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      // 修复：后端返回的消息类型是 'message'，不是 'private_message'
+      // 修复：后端返回的消息类型�?'message'，不�?'private_message'
       if (data.type === 'message' || data.type === 'private_message') {
         this.messageCallbacks.forEach(callback => callback(data.message));
       }
     };
 
     this.ws.onclose = () => {
-      console.log('Disconnected from private chat');
       this.currentTargetUserId = null;
     };
 
@@ -93,7 +91,7 @@ class PrivateChatService {
   }
 
   /**
-   * 发送消息
+   * 发送消�?
    */
   sendMessage(content: string): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -101,7 +99,7 @@ class PrivateChatService {
       return;
     }
 
-    // 修复：后端期望的消息类型是 'message'
+    // 修复：后端期望的消息类型�?'message'
     this.ws.send(JSON.stringify({
       type: 'message',
       content: content
@@ -131,14 +129,14 @@ class PrivateChatService {
     api.delete<void>(`/api/private-chat/messages/${messageId}`);
 
   /**
-   * 监听新消息
+   * 监听新消�?
    */
   onMessage(callback: (message: ChatMessage) => void): void {
     this.messageCallbacks.push(callback);
   }
 
   /**
-   * 获取连接状态
+   * 获取连接状�?
    */
   getConnectionStatus(): { isConnected: boolean; targetUserId: string | null } {
     return {
@@ -149,7 +147,7 @@ class PrivateChatService {
 }
 
 /**
- * 公共谈玄斋服务
+ * 公共谈玄斋服�?
  * 支持公共谈玄斋的WebSocket连接、消息发送、历史记录获取等功能
  */
 class PublicChatService {
@@ -169,7 +167,6 @@ class PublicChatService {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log('Connected to public chat room');
     };
 
     this.ws.onmessage = (event) => {
@@ -180,7 +177,6 @@ class PublicChatService {
     };
 
     this.ws.onclose = () => {
-      console.log('Disconnected from public chat room');
     };
 
     this.ws.onerror = (error) => {
@@ -200,7 +196,7 @@ class PublicChatService {
   }
 
   /**
-   * 发送消息
+   * 发送消�?
    */
   sendMessage(content: string): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -215,13 +211,13 @@ class PublicChatService {
   }
 
   /**
-   * 获取谈玄斋列表
+   * 获取谈玄斋列�?
    */
   getChatRooms = () =>
     api.get<ChatRoom[]>('/api/chat/rooms');
 
   /**
-   * 获取公共谈玄斋历史消息
+   * 获取公共谈玄斋历史消�?
    */
   getHistory = (page: number = 1, limit: number = 50) =>
     api.get<ChatMessage[]>(`/api/chat/history/${this.PUBLIC_ROOM_ID}`, {
@@ -235,14 +231,14 @@ class PublicChatService {
     api.delete<void>(`/api/chat/messages/${messageId}`);
 
   /**
-   * 监听新消息
+   * 监听新消�?
    */
   onMessage(callback: (message: ChatMessage) => void): void {
     this.messageCallbacks.push(callback);
   }
 
   /**
-   * 获取连接状态
+   * 获取连接状�?
    */
   getConnectionStatus(): { isConnected: boolean; roomId: string } {
     return {

@@ -213,12 +213,10 @@ export default function MinePage() {
   const loadTasks = useCallback(async () => {
     try {
       if (!authService.isAuthenticated()) {
-        console.log('未登录，跳过加载任务数据');
         return;
       }
       const { fetchTasks } = await import('../services/flag.service');
       const tasksData = await fetchTasks();
-      console.log('我的页面-加载到的任务数据:', tasksData);
       useTaskStore.setState({ tasks: tasksData });
 
       // 同步Flag提醒总开关状态：如果有flag开启了提醒，但用户级总开关为false，则自动开启
@@ -227,7 +225,6 @@ export default function MinePage() {
         try {
           await updateFlagNotificationEnabled(true);
           setFlagNotificationEnabled(true);
-          console.log('自动同步Flag提醒总开关为开启');
         } catch (err) {
           console.warn('自动同步Flag提醒总开关失败:', err);
         }
@@ -266,7 +263,6 @@ export default function MinePage() {
   const loadAchievementsData = useCallback(async () => {
     try {
       if (!authService.isAuthenticated()) {
-        console.log('未登录，使用默认徽章');
         // 设置默认未解锁徽章
         setBadges(allBadges.map((badge, index) => ({
           id: index,
@@ -289,7 +285,6 @@ export default function MinePage() {
         })));
       } else {
         // 后端返回了16个成就数据
-        console.log(`✅ 加载了 ${data.achievements.length} 个成就`);
         setBadges(data.achievements);
       }
     } catch (error) {
@@ -342,7 +337,6 @@ export default function MinePage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('[Mine] 页面可见，重新加载数据');
         loadUserStats();
         loadTasks();
       }
@@ -493,7 +487,6 @@ export default function MinePage() {
     }
 
     setIsSaving(true);
-    console.log('[handleSaveProfile] 开始保存个人资料');
 
     try {
       await updateUserProfile({
@@ -507,7 +500,6 @@ export default function MinePage() {
       // 使用全局上下文统一更新并分发事件
       updateUserContextProfile({ name: nickname, avatar });
       toast.success('个人信息更新成功');
-      console.log('[handleSaveProfile] 个人资料保存成功');
     } catch (error) {
       console.error('保存个人资料失败:', error);
       // 显示后端返回的具体错误消息

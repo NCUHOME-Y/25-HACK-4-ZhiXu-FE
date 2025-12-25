@@ -91,7 +91,7 @@ export async function createTask(payload: CreateTaskPayload & {
     : 3; // 默认为一般
   
   // 前后端字段已统一，直接发送
-  // 日期格式转换：YYYY-MM-DD -> RFC3339 (如果有值)
+  // 日期格式转换：YYYY-MM-DD -> RFC3339 (如果有)
   let startTimeISO = '';
   let endTimeISO = '';
   
@@ -210,13 +210,6 @@ export async function startStudySession(): Promise<StudyRecord> {
 /** 停止学习计时 */
 export async function stopStudySession(_sessionId: string, duration: number): Promise<boolean> {
   const { api } = await import('./apiClient');
-  
-  // 🐛 调试日志：记录传递的学习时长
-  console.log('📊 [停止学习] 准备保存学习时长:', {
-    duration_seconds: duration,
-    duration_minutes: Math.floor(duration / 60),
-    timestamp: new Date().toISOString()
-  });
   
   await api.post('/api/addLearnTime', { duration });
   

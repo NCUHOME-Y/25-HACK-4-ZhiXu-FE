@@ -115,9 +115,6 @@ function inferLabel(text: string): FlagLabel {
     }
   });
   
-  // 调试日志
-  console.log(`[inferLabel] "${text.substring(0, 30)}..." -> 标签${bestLabel} (得分:`, scores, ')');
-  
   // 如果没有任何关键词匹配，默认返回学习提升
   return bestLabel;
 }

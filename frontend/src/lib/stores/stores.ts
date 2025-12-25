@@ -1,5 +1,5 @@
 /**
- * 全局状态管理 (Zustand)
+ * 全局状态管理(Zustand)
  * 管理用户认证和任务状态
  */
 import { create } from "zustand";
@@ -83,9 +83,8 @@ const autoStopStudy = async () => {
 			try {
 				const { stopStudySession } = await import('../../services/flag.service');
 				await stopStudySession('', session);
-				console.log('⏰ [凌晨4点] 自动保存学习时长:', session, '秒');
 			} catch (error) {
-				console.error('⏰ [凌晨4点] 保存学习时长失败:', error);
+				console.error('❌ [凌晨4点] 保存学习时长失败:', error);
 			}
 		}
 		
@@ -101,7 +100,6 @@ const autoStopStudy = async () => {
 		// 设置状态为停止
 		useTaskStore.setState({ studying: false, sessionElapsed: 0 });
 		
-		console.log('⏰ [凌晨4点] 自动停止学习计时');
 		
 		// 设置下一个自动停止
 		autoStopTimeoutId = window.setTimeout(autoStopStudy, getNext4AM());
@@ -114,8 +112,6 @@ const initAutoStop = () => {
 		window.clearTimeout(autoStopTimeoutId);
 	}
 	const delay = getNext4AM();
-	const next4AMDate = new Date(Date.now() + delay);
-	console.log('⏰ [自动停止] 已设置凌晨4点自动停止计时，下次执行时间:', next4AMDate.toLocaleString('zh-CN'));
 	autoStopTimeoutId = window.setTimeout(autoStopStudy, delay);
 };
 
@@ -211,12 +207,9 @@ export const useTaskStore = create<TaskState>(
 		
 		const session = get().sessionElapsed;
 		
-		// 🐛 调试日志：记录学习时长
-		console.log('⏱️ [学习计时] 停止学习:', {
-			sessionElapsed: session,
-			dailyElapsed: get().dailyElapsed,
-			willSave: session > 0
-		});
+		if (session <= 0) {
+			console.warn('⚠️ [学习计时] session时长≤0，跳过保存');
+		}
 		
 		set({ 
 			studying: false,
@@ -232,7 +225,7 @@ export const useTaskStore = create<TaskState>(
 				console.error('保存学习时长失败:', error);
 			}
 		} else {
-			console.warn('⚠️ [学习计时] session时长为0，跳过保存');
+			console.warn('⚠️ [学习计时] session时长≤0，跳过保存');
 		}
 	},
 	increaseDailyElapsed: () => set({ 

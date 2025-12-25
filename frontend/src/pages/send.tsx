@@ -64,7 +64,7 @@ export default function SendPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptsRef = useRef<number>(0);
   const MAX_RECONNECT_ATTEMPTS = 5;
 
@@ -86,7 +86,6 @@ export default function SendPage() {
   // 加载历史消息
   const loadHistoryMessages = useCallback(async () => {
     if (!currentUserId || !user.id) {
-      console.log('⏭️ 跳过加载历史消息，缺少用户信息:', { currentUserId, targetUserId: user.id });
       return;
     }
     
@@ -97,7 +96,6 @@ export default function SendPage() {
         return;
       }
       
-      console.log('📡 开始加载历史消息...', { currentUserId, targetUserId: user.id });
       const response = await fetch(
         `${API_BASE}/api/private-chat/history?target_user_id=${user.id}&limit=50`,
         {
@@ -110,18 +108,12 @@ export default function SendPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 API返回数据:', data);
         
         if (data.messages && Array.isArray(data.messages)) {
             const historyMessages: PrivateMessage[] = data.messages.map((msg: PrivateMessageApi) => {
             // 后端返回的字段是 from 和 to，不是 from_user_id
             const fromUserId = msg.from || msg.from_user_id;
             const isMine = String(fromUserId) === String(currentUserId);
-            console.log('🔍 消息判断:', {
-              msgFrom: fromUserId,
-              currentUserId,
-              isMine
-            });
             return {
               id: String(msg.id || msg.ID),
               message: msg.content,
@@ -133,9 +125,6 @@ export default function SendPage() {
           });
           
           setMessages(historyMessages);
-          console.log('✅ 历史消息加载成功，共', historyMessages.length, '条');
-        } else {
-          console.log('ℹ️ 没有历史消息');
         }
       } else {
         const errorText = await response.text();
@@ -176,14 +165,12 @@ export default function SendPage() {
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('✅ 私聊WebSocket连接已建立', { targetUserId: user.id });
           reconnectAttemptsRef.current = 0;
         };
 
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log('📨 收到私聊消息:', data);
             
             if (String(data.from) === user.id && String(data.to) === currentUserId) {
               const newMessage: PrivateMessage = {
@@ -195,8 +182,6 @@ export default function SendPage() {
                 userName: data.user_name || user.name,
               };
               setMessages((prev) => [...prev, newMessage]);
-            } else if (String(data.from) === currentUserId) {
-              console.log('⏭️ 跳过自己的私聊消息');
             }
           } catch (error) {
             console.error('解析私聊消息失败:', error);
@@ -207,14 +192,12 @@ export default function SendPage() {
           console.error('私聊WebSocket错误:', error);
         };
 
-        ws.onclose = (event) => {
-          console.log('私聊WebSocket连接关闭:', event.code, event.reason);
+        ws.onclose = () => {
           wsRef.current = null;
           
           if (!isIntentionallyClosed && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttemptsRef.current++;
             const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
-            console.log(`尝试重连 (${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})，延迟 ${delay}ms`);
             reconnectTimeoutRef.current = setTimeout(connect, delay);
           }
         };
@@ -259,8 +242,6 @@ export default function SendPage() {
       to: parseInt(user.id),
     };
     
-    console.log('私聊WebSocket状态:', wsRef.current.readyState, '准备发送消息:', messageData);
-    
     try {
       wsRef.current.send(JSON.stringify(messageData));
       
@@ -275,7 +256,6 @@ export default function SendPage() {
       };
       setMessages((prev) => [...prev, newMessage]);
       
-      console.log('✅ 私聊消息已发送并显示:', messageData);
       setMessage('');
     } catch (error) {
       console.error('发送消息失败:', error);
