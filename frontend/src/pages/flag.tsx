@@ -153,13 +153,23 @@ export default function FlagPage() {
   
   // 监听帖子删除事件，同步更新flag状态
   useEffect(() => {
-    const handlePostDeleted = () => {
-      loadData();
+    const handlePostDeleted = (event: Event) => {
+      const customEvent = event as CustomEvent<{ postId: string }>;
+      const deletedPostId = customEvent.detail?.postId;
+      
+      if (deletedPostId) {
+        // 找到对应的flag并清除其postId
+        const affectedTask = tasks.find(t => t.postId === deletedPostId);
+        if (affectedTask) {
+          updateTaskInStore(affectedTask.id, { postId: undefined, isPublic: false });
+          toast.info('分享已撤回');
+        }
+      }
     };
     
     window.addEventListener('postDeleted', handlePostDeleted);
     return () => window.removeEventListener('postDeleted', handlePostDeleted);
-  }, [loadData]);
+  }, [tasks, updateTaskInStore]);
   
   const studying = useTaskStore((s) => s.studying);
   const dailyElapsed = useTaskStore((s) => s.dailyElapsed);
@@ -506,6 +516,39 @@ export default function FlagPage() {
     }
   };
 
+  /** 分享flag到社交 */
+  const shareToSocial = async (taskId: string, task: { title: string; detail?: string; label?: number; startDate?: string; endDate?: string }) => {
+    try {
+      const post = await contactService.createPostFromTask({
+        id: taskId,
+        title: task.title,
+        detail: task.detail,
+        label: task.label,
+        startDate: task.startDate,
+        endDate: task.endDate
+      });
+      updateTaskInStore(taskId, { postId: post.id });
+      toast.success('已分享到社交', {
+        action: { label: '查看', onClick: () => navigate('/contact') }
+      });
+    } catch (error) {
+      console.error('分享失败:', error);
+      toast.error('分享失败');
+    }
+  };
+
+  /** 撤回社交分享 */
+  const unshareFromSocial = async (taskId: string, postId: string) => {
+    try {
+      await contactService.deletePost(postId);
+      updateTaskInStore(taskId, { postId: undefined });
+      toast.success('已撤回分享');
+    } catch (error) {
+      console.error('撤回失败:', error);
+      toast.error('撤回失败');
+    }
+  };
+
   /** 保存任务（新建或编辑） */
   const handleSaveTask = async () => {
     if (!newTask.title.trim()) {
@@ -522,36 +565,9 @@ export default function FlagPage() {
       // 处理分享/撤回逻辑
       if (isPublicChanged) {
         if (newTask.isPublic && !oldTask?.postId) {
-          // 分享到社交页面
-          try {
-            const post = await contactService.createPostFromTask({
-              id: editingTaskId,
-              title: newTask.title,
-              detail: newTask.detail,
-              label: newTask.label,
-              startDate: newTask.startDate,
-              endDate: newTask.endDate
-            });
-            updateTaskInStore(editingTaskId, { ...newTask, postId: post.id });
-            toast.success('flag已分享到翰林院论', {
-              action: {
-                label: '查看',
-                onClick: () => navigate('/contact')
-              }
-            });
-          } catch {
-            toast.error('分享失败，请检查网络连接');
-          }
+          await shareToSocial(editingTaskId, newTask);
         } else if (!newTask.isPublic && oldTask?.postId) {
-          // 撤回社交帖子
-          try {
-            await contactService.deletePost(oldTask.postId);
-            updateTaskInStore(editingTaskId, { ...newTask, postId: undefined });
-            toast.success('已从翰林院论撤回');
-          } catch (error) {
-            console.error('撤回失败:', error);
-            toast.error('撤回失败，请稍后重试');
-          }
+          await unshareFromSocial(editingTaskId, oldTask.postId);
         }
       }
       
@@ -559,15 +575,7 @@ export default function FlagPage() {
         action: oldTask ? {
           label: '撤销',
           onClick: () => {
-            updateTaskInStore(editingTaskId, {
-              title: oldTask.title,
-              detail: oldTask.detail || '',
-              total: oldTask.total || 1,
-              label: oldTask.label,
-              priority: oldTask.priority,
-              isPublic: oldTask.isPublic,
-              postId: oldTask.postId
-            });
+            updateTaskInStore(editingTaskId, oldTask);
             toast.success('已撤销更新');
           }
         } : undefined
@@ -607,37 +615,21 @@ export default function FlagPage() {
       
       // 如果设置为公开，自动分享到社交页面
       if (newTask.isPublic) {
-        try {
-          const post = await contactService.createPostFromTask({
-            id: created.id,
-            title: newTask.title,
-            detail: newTask.detail,
-            label: newTask.label,
-            startDate: newTask.startDate,
-            endDate: newTask.endDate
-          });
-          updateTaskInStore(created.id, { postId: post.id });
-          toast.success('flag已创建并分享到翰林院论', {
-            action: {
-              label: '查看',
-              onClick: () => navigate('/contact')
-            }
-          });
-        } catch (error) {
-          console.error('分享失败:', error);
-          toast.success('flag已创建');
-        }
-      } else {
-        toast.success('flag已创建', {
-          action: {
-            label: '撤销',
-            onClick: () => {
-              useTaskStore.getState().deleteTask(created.id);
-              toast.success('已撤销创建');
-            }
-          }
-        });
+        await shareToSocial(created.id, created);
       }
+      
+      toast.success(newTask.isPublic ? 'flag已创建并分享' : 'flag已创建', {
+        action: newTask.isPublic ? {
+          label: '查看',
+          onClick: () => navigate('/contact')
+        } : {
+          label: '撤销',
+          onClick: () => {
+            useTaskStore.getState().deleteTask(created.id);
+            toast.success('已撤销创建');
+          }
+        }
+      });
       // 接入后端
       await createTask({
         title: newTask.title,
@@ -672,17 +664,30 @@ export default function FlagPage() {
       }
     }
     
+    // 先从本地删除以获得即时反馈
     deleteTaskInStore(editingTaskId);
-    toast.success('flag已删除', {
-      action: {
-        label: '撤销',
-        onClick: () => {
-          addTask(taskToDelete);
-          toast.success('已撤销删除');
+    
+    try {
+      // 调用后端API删除flag
+      const { deleteTask } = await import('../services/flag.service');
+      await deleteTask(editingTaskId);
+      
+      toast.success('flag已删除', {
+        action: {
+          label: '撤销',
+          onClick: () => {
+            addTask(taskToDelete);
+            toast.success('已撤销删除');
+          }
         }
-      }
-    });
-    // 接入后端 - 删除任务后端暂时不支持，只删除本地
+      });
+    } catch (error) {
+      // 删除失败，恢复数据
+      addTask(taskToDelete);
+      console.error('删除flag失败:', error);
+      toast.error('删除失败，请重试');
+    }
+    
     setDeleteDialogOpen(false);
     closeDrawer();
   };

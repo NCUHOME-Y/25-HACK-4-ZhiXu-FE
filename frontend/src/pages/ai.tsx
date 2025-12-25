@@ -17,6 +17,7 @@ import { generateStudyPlan, type StudyPlan, type Difficulty } from '../services/
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion';
 import { FLAG_LABELS } from '../lib/constants/constants';
 import { BirdMascot } from '../components';
+import { useTaskStore } from '../lib/stores/stores';
 
 // 🔧 获取当前用户 ID 的函数（从 token 中提取或使用默认值）
 const getCurrentUserId = (): string => {
@@ -49,6 +50,7 @@ const getStorageKeys = () => {
  */
 export default function AIPage() {
   const navigate = useNavigate();
+  const addTask = useTaskStore((s) => s.addTask);
 
   const [background, setBackground] = useState('');
   const [goal, setGoal] = useState('');
@@ -327,6 +329,28 @@ export default function AIPage() {
         
         try {
           toast.loading(`正在添加 ${i + 1}/${plan.flags.length}: ${flag.title}`, { id: toastId });
+          // 同时更新本地store和后端
+          const created = {
+            id: String(Date.now() + i),
+            title: flag.title,
+            detail: flag.detail || '',
+            total: flag.total || 1,
+            label: flag.label || 1,
+            priority: flag.priority || 3,
+            points: flag.points || 0,
+            startDate: flag.startDate || '',
+            endDate: flag.endDate || '',
+            count: 0,
+            completed: false,
+            isPublic: false,
+            reminderTime: '12:00',
+            enableNotification: false
+          };
+          
+          // 立即添加到store，用户可以在flag页面看到
+          addTask(created);
+          
+          // 同步到后端
           
           await createTask({
             title: flag.title,

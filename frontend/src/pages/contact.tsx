@@ -308,8 +308,8 @@ export default function ContactPage() {
   const handleLike = (postId: string, liked: string[]) => {
     const isLiked = liked.includes('liked');
     
-    // 先乐观更新UI
-    setDisplayedPosts(displayedPosts.map(post => 
+    // 先乐观更新UI - 使用函数式更新避免闭包问题
+    setDisplayedPosts(prevPosts => prevPosts.map(post => 
       post.id === postId 
         ? { ...post, likes: isLiked ? post.likes + 1 : post.likes - 1 }
         : post
@@ -330,15 +330,15 @@ export default function ContactPage() {
       .then(response => {
         // 用后端返回的真实点赞数更新UI
         if (response && typeof response.likes === 'number') {
-          setDisplayedPosts(displayedPosts.map(post => 
+          setDisplayedPosts(prevPosts => prevPosts.map(post => 
             post.id === postId ? { ...post, likes: response.likes } : post
           ));
         }
       })
       .catch(error => {
         console.error('点赞操作失败:', error);
-        // 回滚UI到原始状态
-        setDisplayedPosts(displayedPosts.map(post => 
+        // 回滚UI到原始状态 - 使用函数式更新
+        setDisplayedPosts(prevPosts => prevPosts.map(post => 
           post.id === postId 
             ? { ...post, likes: isLiked ? post.likes - 1 : post.likes + 1 }
             : post
@@ -375,13 +375,17 @@ export default function ContactPage() {
           content: comment, // 使用用户输入的评论内容
           time: formatTimeAgo(new Date().toISOString()) // 使用相对时间格式，与其他评论保持一致
         };
-        setDisplayedPosts(displayedPosts.map(post => {
+        // 使用函数式更新，避免闭包陷阱
+        setDisplayedPosts(prevPosts => prevPosts.map(post => {
           if (post.id === postId) {
-            return { ...post, comments: [...post.comments, adaptedComment] };
+            return { 
+              ...post, 
+              comments: [...post.comments, adaptedComment]
+            };
           }
           return post;
         }));
-        setNewComment({ ...newComment, [postId]: '' });
+        setNewComment(prev => ({ ...prev, [postId]: '' }));
       })
       .catch(error => {
         console.error('添加评论失败:', error);

@@ -191,6 +191,36 @@ export default function DataPage() {
     loadStudyData();
   }, [studyPeriod]);
 
+  /** 页面可见性变化时重新加载数据 */
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // 页面重新可见时，刷新所有数据
+        const reloadData = async () => {
+          try {
+            const [tasksData, punchData] = await Promise.all([
+              fetchTasks().catch(() => []),
+              fetchPunchDates().catch(() => [])
+            ]);
+            
+            useTaskStore.setState({ 
+              tasks: tasksData,
+              punchedDates: punchData
+            });
+            
+            await refreshUserData();
+          } catch {
+            // 静默失败
+          }
+        };
+        reloadData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   /** 计算本月打卡统计 */
   const calculatedMonthlyStats = useMemo(() => {
     const now = new Date();
