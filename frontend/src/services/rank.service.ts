@@ -1,4 +1,5 @@
 import { api } from './apiClient';
+import type { GetUserResponse } from '../lib/types/types';
 
 const PRESET_AVATARS = [
   '/assets/head/screenshot_20251114_131601.png',
@@ -102,7 +103,7 @@ const rankService = {
   getCurrentUserRank: async (type: 'days' | 'flags' | 'points'): Promise<FrontendRankUser | null> => {
     try {
       // 获取当前用户信息
-      const userResponse = await api.get<{ user: { userId: number; name: string; email: string; headShow: number; daka: number; flagNumber: number; count: number; monthLearnTime: number } }>('/api/getUser');
+      const userResponse = await api.get<GetUserResponse>('/api/getUser');
       
       // 后端返回的数据结构是 { user: {...} }
       const user = userResponse.user;

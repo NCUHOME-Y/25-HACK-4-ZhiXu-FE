@@ -25,38 +25,38 @@ import { BirdMascot } from '../components';
  * 用户统计数据组件：显示打卡天数、完成flag、总积分
  */
 const UserStatsBlock: React.FC<{ userId: string }> = ({ userId }) => {
-  const [stats, setStats] = useState<{ daka_days: number; completed_flags: number; total_points: number } | null>(null);
+  const [stats, setStats] = useState<{ dakaDays: number; completedFlags: number; totalPoints: number } | null>(null);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     let active = true;
     setLoading(true);
-    interface UserStatsResponse { daka_days?: number; completed_flags?: number; total_points?: number }
+    interface UserStatsResponse { dakaDays?: number; completedFlags?: number; totalPoints?: number }
     api.get(`/api/getUserStats?userId=${userId}`)
       .then((raw) => {
         if (!active) return;
         const res = raw as UserStatsResponse;
         setStats({
-          daka_days: res.daka_days ?? 0,
-          completed_flags: res.completed_flags ?? 0,
-          total_points: res.total_points ?? 0,
+          dakaDays: res.dakaDays ?? 0,
+          completedFlags: res.completedFlags ?? 0,
+          totalPoints: res.totalPoints ?? 0,
         });
       })
-      .catch(() => active && setStats({ daka_days: 0, completed_flags: 0, total_points: 0 }))
+      .catch(() => active && setStats({ dakaDays: 0, completedFlags: 0, totalPoints: 0 }))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [userId]);
   return (
     <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-xl p-3">
       <div className="space-y-1">
-        <div className="font-bold text-xl text-blue-600">{loading ? '…' : stats?.daka_days ?? 0}</div>
+        <div className="font-bold text-xl text-blue-600">{loading ? '…' : stats?.dakaDays ?? 0}</div>
         <div className="text-xs text-slate-500 font-medium">打卡天数</div>
       </div>
       <div className="space-y-1">
-        <div className="font-bold text-xl text-green-600">{loading ? '…' : stats?.completed_flags ?? 0}</div>
+        <div className="font-bold text-xl text-green-600">{loading ? '…' : stats?.completedFlags ?? 0}</div>
         <div className="text-xs text-slate-500 font-medium">完成flag</div>
       </div>
       <div className="space-y-1">
-        <div className="font-bold text-xl text-purple-600">{loading ? '…' : stats?.total_points ?? 0}</div>
+        <div className="font-bold text-xl text-purple-600">{loading ? '…' : stats?.totalPoints ?? 0}</div>
         <div className="text-xs text-slate-500 font-medium">总积分</div>
       </div>
     </div>
@@ -125,9 +125,9 @@ export default function ContactPage() {
       
       // 从后端获取私聊未读数
       try {
-        const response = await api.get<{ conversations: { unread_count?: number }[] }>('/api/private-chat/conversations');
+        const response = await api.get<{ conversations: { unreadCount?: number }[] }>('/api/private-chat/conversations');
         if (response?.conversations) {
-          const totalPrivateUnread = response.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+          const totalPrivateUnread = response.conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
           localStorage.setItem(`privateUnread_${userId}`, String(totalPrivateUnread));
           setHasUnreadMessages(!commentsRead || totalPrivateUnread > 0);
           return;

@@ -21,6 +21,7 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "../components"
+import type { GetUserResponse } from '../lib/types/types';
 
 type AuthMode = "login" | "signup" | "otp" | "otp-input" | "forgot-password" | "reset-password" // P1修复：添加忘记密码模式
 
@@ -270,7 +271,7 @@ export default function AuthPage() {
       if (result.user) {
         // 补充头像信息：读取后端 headShow 转为 /api/avatar/:id
         try {
-          const u = await api.get<{ user: { userId: number; name: string; email: string; headShow?: number } }>('/api/getUser');
+          const u = await api.get<GetUserResponse>('/api/getUser');
           const avatarPath = u?.user?.headShow ? `/api/avatar/${u.user.headShow}` : '';
           localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
         } catch {
@@ -311,7 +312,7 @@ export default function AuthPage() {
       
       if (result.user) {
         try {
-          const u = await api.get<{ user: { userId: number; name: string; email: string; headShow?: number } }>('/api/getUser');
+          const u = await api.get<GetUserResponse>('/api/getUser');
           const avatarPath = u?.user?.headShow ? `/api/avatar/${u.user.headShow}` : '';
           localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
         } catch {
@@ -369,7 +370,7 @@ export default function AuthPage() {
         setPendingSignupData(null)
         
         try {
-          const u = await api.get<{ user: { userId: number; name: string; email: string; headShow?: number } }>('/api/getUser');
+          const u = await api.get<GetUserResponse>('/api/getUser');
           const avatarPath = u?.user?.headShow ? `/api/avatar/${u.user.headShow}` : '';
           localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
         } catch {

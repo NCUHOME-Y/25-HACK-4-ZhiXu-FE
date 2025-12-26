@@ -114,16 +114,16 @@ export default function MinePage() {
           name: string;
           email: string;
           headShow: number;
-            is_remind: boolean;
-            is_flag_remind?: boolean;
-          time_remind: number;
-          min_remind: number;
-          flag_number: number;
+          isRemind: boolean;
+          isFlagRemind?: boolean;
+          timeRemind: number;
+          minRemind: number;
+          flagNumber: number;
         }
       }>('/api/getUser');
       const user = userData.user;
       setPoints(user.count || 0);
-      setCompletedCount(user.flag_number || 0);
+      setCompletedCount(user.flagNumber || 0);
       // 使用后端headShow生成头像URL（后端提供/api/avatar/:id接口）
       const avatarPath = user.headShow ? `/api/avatar/${user.headShow}` : '';
       setProfile(prev => ({
@@ -133,8 +133,8 @@ export default function MinePage() {
       }));
       setNickname(user.name || '');
       setAvatar(avatarPath);
-      setNotificationEnabled(user.is_remind ?? false);
-      setFlagNotificationEnabled(user.is_flag_remind ?? false);
+      setNotificationEnabled(user.isRemind ?? false);
+      setFlagNotificationEnabled(user.isFlagRemind ?? false);
       setHasUnsavedChanges(false);
       useTaskStore.setState({
         dailyElapsed: user.monthLearnTime || 0 // 本月学习时长（秒）
@@ -159,11 +159,11 @@ export default function MinePage() {
       }
       
       // 设置消息提醒状态（向后兼容旧字段）
-      setNotificationEnabled(user.is_remind ?? false);
-      // Flag 提醒状态（后端可能返回 is_flag_remind）
-      setFlagNotificationEnabled(user.is_flag_remind ?? false);
-      const hour = (user.time_remind ?? 12).toString().padStart(2, '0');
-      const minute = (user.min_remind ?? 0).toString().padStart(2, '0');
+      setNotificationEnabled(user.isRemind ?? false);
+      // Flag 提醒状态（后端可能返回 isFlagRemind）
+      setFlagNotificationEnabled(user.isFlagRemind ?? false);
+      const hour = (user.timeRemind ?? 12).toString().padStart(2, '0');
+      const minute = (user.minRemind ?? 0).toString().padStart(2, '0');
       setTempNotificationHour(hour);
       setTempNotificationMinute(minute);
       setHasUnsavedChanges(false);

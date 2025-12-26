@@ -1,5 +1,5 @@
 import { api } from './apiClient';
-import type { User } from '../lib/types/types';
+import type { User, GetUserResponse } from '../lib/types/types';
 
 class AuthService {
   isAuthenticated(): boolean {
@@ -25,7 +25,7 @@ class AuthService {
       return null;
     }
     try {
-      const response = await api.get<{ user: { userId: number; name: string; email: string } }>('/api/getUser');
+      const response = await api.get<GetUserResponse>('/api/getUser');
       return {
         id: String(response.user.userId),
         name: response.user.name,
@@ -91,11 +91,11 @@ class AuthService {
       let waitSeconds: number | undefined;
       
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: { error?: string; wait_seconds?: number; message?: string } } };
+        const axiosError = error as { response?: { status?: number; data?: { error?: string; waitSeconds?: number; message?: string } } };
         
         // 处理429错误（频率限制）
         if (axiosError.response?.status === 429) {
-          waitSeconds = axiosError.response.data?.wait_seconds;
+          waitSeconds = axiosError.response.data?.waitSeconds;
           errorMessage = axiosError.response.data?.message || `发送过于频繁，请等待${waitSeconds}秒后重试`;
         } else {
           errorMessage = axiosError.response?.data?.error || errorMessage;
@@ -108,7 +108,7 @@ class AuthService {
   /** 忘记密码 - 通过邮箱验证码重置 */
   async resetPassword(email: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
-      await api.post('/api/forgetcode', { email, code, new_password: newPassword });
+      await api.post('/api/forgetcode', { email, code, newPassword });
       return { success: true, message: '密码重置成功' };
     } catch (error) {
       console.error('密码重置失败:', error);

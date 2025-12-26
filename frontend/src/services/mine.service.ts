@@ -18,14 +18,14 @@ export const updateFlagNotificationEnabled = async (enabled: boolean): Promise<v
 /** 更新通知时间 */
 export const updateNotificationTime = async (hour: string, minute: string): Promise<void> => {
   await api.put('/api/updateRemindTime', { 
-    time_remind: parseInt(hour), 
-    min_remind: parseInt(minute) 
+    timeRemind: parseInt(hour), 
+    minRemind: parseInt(minute) 
   });
 };
 
 /** 修改密码 */
 export const changePassword = async (oldPassword: string, newPassword: string): Promise<void> => {
-  await api.put('/updatePassword', { old_password: oldPassword, new_password: newPassword });
+  await api.put('/updatePassword', { oldPassword, newPassword });
 };
 
 /** 切换头像 */
@@ -52,7 +52,7 @@ export const getUserProfile = () =>
 export const updateUserProfile = async (data: Partial<User> & { originalNickname?: string }) => {
   if (data.nickname && data.nickname !== data.originalNickname) {
     try {
-      await api.put('/api/updateUsername', { new_name: data.nickname });
+      await api.put('/api/updateUsername', { newName: data.nickname });
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const userObj = JSON.parse(userStr);

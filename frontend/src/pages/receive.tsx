@@ -101,9 +101,9 @@ export default function ReceivePage() {
         userId: String(conv.userId),
         userName: conv.userName || `用户${conv.userId}`,
         userAvatar: conv.userAvatar || '',
-        lastMessage: conv.last_message,
-        lastMessageTime: conv.last_message_at,
-        unreadCount: conv.unread_count || 0,
+        lastMessage: conv.lastMessage,
+        lastMessageTime: conv.lastMessageAt,
+        unreadCount: conv.unreadCount || 0,
       }));
 
       // 统计所有未读私聊消息数

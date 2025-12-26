@@ -55,7 +55,7 @@ export default function PublicPage() {
   const reconnectAttemptsRef = useRef<number>(0);
   const MAX_RECONNECT_ATTEMPTS = 5;
   
-  const roomId = searchParams.get('room_id') || 'room-1';
+  const roomId = searchParams.get('roomId') || 'room-1';
   const roomName = (location.state as { roomName?: string })?.roomName || '学习交流室';
 
   useEffect(() => {
@@ -124,7 +124,7 @@ export default function PublicPage() {
     const connect = () => {
       if (isIntentionallyClosed) return;
       
-      const wsUrl = makeWsUrl(`/ws/chat?room_id=${roomId}&token=${token}`);
+      const wsUrl = makeWsUrl(`/ws/chat?roomId=${roomId}&token=${token}`);
       
       try {
         ws = new WebSocket(wsUrl);

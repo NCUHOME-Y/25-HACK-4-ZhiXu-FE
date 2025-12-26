@@ -158,7 +158,7 @@ const contactService = {
   getComments: (postId: number) =>
     api.get<PostComment[]>(`/api/getComments/${postId}`),
 
-  deleteComment: (_postId: number, commentId: number) =>
+  deleteComment: (commentId: number) =>
     api.delete<{ success: boolean }>('/api/deleteComment', {
       data: { commentId: commentId }
     }),
@@ -206,12 +206,6 @@ const contactService = {
     });
     return response.post;
   },
-
-  // 根据任务ID删除关联的帖子（后端可能没有这个接口）
-  deletePostByTaskId: (taskId: number) =>
-    api.delete<{ success: boolean }>('/api/deleteUserPost', {
-      data: { task_id: taskId }
-    }),
 
   // P1修复：搜索用户（支持32个头像映射）
   searchUsers: async (query: string): Promise<SearchUserResult[]> => {

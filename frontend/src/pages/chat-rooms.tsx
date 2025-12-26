@@ -7,10 +7,10 @@ import { api } from '../services/apiClient';
 interface ChatRoom {
   id: string;
   name: string;
-  user_count: number;
-  max_users: number;
+  userCount: number;
+  maxUsers: number;
   createdAt: string;
-  creator_id: number;
+  creatorId: number;
 }
 
 /**
@@ -75,11 +75,11 @@ export default function ChatRoomsPage() {
   };
 
   const handleEnterRoom = (room: ChatRoom) => {
-    if (room.user_count >= room.max_users) {
+    if (room.userCount >= room.maxUsers) {
       alert('聊天室已满，无法进入');
       return;
     }
-    navigate(`/public?room_id=${room.id}`, { state: { roomName: room.name } });
+    navigate(`/public?roomId=${room.id}`, { state: { roomName: room.name } });
   };
 
   const getRoomStatusColor = (userCount: number, maxUsers: number) => {
@@ -159,7 +159,7 @@ export default function ChatRoomsPage() {
           <div className="space-y-3">
             {rooms.map((room) => {
               const isDefault = ['room-1', 'room-2', 'room-3'].includes(room.id);
-              const isFull = room.user_count >= room.max_users;
+              const isFull = room.userCount >= room.maxUsers;
               
               return (
                 <Card
@@ -191,16 +191,16 @@ export default function ChatRoomsPage() {
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
                         <div className="flex items-center gap-1">
                           <Users className="h-3 w-3" />
-                          <span className="font-medium">{room.user_count}/{room.max_users}</span>
+                          <span className="font-medium">{room.userCount}/{room.maxUsers}</span>
                         </div>
                       </div>
 
                       <div>
                         <Badge
                           variant="outline"
-                          className={`text-xs font-medium rounded-full px-2 py-0.5 ${getRoomStatusColor(room.user_count, room.max_users)}`}
+                          className={`text-xs font-medium rounded-full px-2 py-0.5 ${getRoomStatusColor(room.userCount, room.maxUsers)}`}
                         >
-                          {isFull ? '已满' : room.user_count === 0 ? '空闲' : '在线中'}
+                          {isFull ? '已满' : room.userCount === 0 ? '空闲' : '在线中'}
                         </Badge>
                       </div>
                     </div>

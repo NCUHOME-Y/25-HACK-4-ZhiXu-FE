@@ -1,7 +1,7 @@
 /** Flag 相关服务 */
 
 import { api } from './apiClient';
-import type { Task, StudyRecord } from "../lib/types/types";
+import type { Task, StudyRecord, GetUserResponse } from "../lib/types/types";
 
 // 后端返回的flag 扩展字段
 export interface BackendFlag extends Task {
@@ -207,12 +207,12 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
   try {
     const { useTaskStore } = await import('../lib/stores/stores');
     const [, todayData] = await Promise.all([
-      api.get<{ monthLearnTime: number; count: number }>('/api/getUser'),
-      api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+      api.get<GetUserResponse>('/api/getUser'),
+      api.get<{ todayLearnTime: number }>('/api/getTodayLearnTime')
     ]);
     
-    // 🐛 修复：后端返回的 today_learn_time 已经是秒，不需要乘 60
-    const todayTime = todayData.today_learn_time || 0; // 单位：秒
+    // 🐛 修复：后端返回的 todayLearnTime 已经是秒，不需要乘 60
+    const todayTime = todayData.todayLearnTime || 0; // 单位：秒
     useTaskStore.setState({
       dailyElapsed: todayTime, // 直接使用，不要转换
     });
@@ -381,11 +381,11 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
 }
 
 /** 切换 flag 提醒状态 - 最后 5 个 */
-export async function toggleFlagNotification(flagId: number, enableNotification: boolean): Promise<{ success: boolean; enable_notification: boolean }> {
+export async function toggleFlagNotification(flagId: number, enableNotification: boolean): Promise<{ success: boolean; enableNotification: boolean }> {
   const { api } = await import('./apiClient');
-  const response = await api.post<{ success: boolean; enable_notification: boolean }>('/api/toggleFlagNotification', {
+  const response = await api.post<{ success: boolean; enableNotification: boolean }>('/api/toggleFlagNotification', {
     flagId: flagId,
-    enable_notification: enableNotification
+    enableNotification
   });
   return response;
 }

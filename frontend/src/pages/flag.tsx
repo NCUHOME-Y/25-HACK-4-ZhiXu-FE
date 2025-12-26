@@ -47,6 +47,7 @@ import {
   ProgressRing,
   FlagDetailCard,
 } from '../components';
+import type { GetUserResponse } from '../lib/types/types';
 import { useTaskStore } from '../lib/stores/stores';
 import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, formatDurationHMS, formatDurationFlexible } from '../lib/helpers/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
@@ -490,8 +491,8 @@ export default function FlagPage() {
       if (willComplete) {
         try {
           await Promise.all([
-            api.get<{ count: number; monthLearnTime: number }>('/api/getUser'),
-            api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
+            api.get<GetUserResponse>('/api/getUser'),
+            api.get<{ todayLearnTime: number }>('/api/getTodayLearnTime')
           ]);
         } catch {
           // 静默失败

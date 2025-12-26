@@ -18,7 +18,7 @@ import { formatDurationShort, calculateStreak } from '../lib/helpers/helpers';
 import { authService } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
-import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
+import type { FlagLabel, StudyTimeTrend, GetUserResponse } from '../lib/types/types';
 import { BirdMascot } from '../components';
 import { fetchTasks, fetchPunchDates } from '../services/flag.service';
 import { api } from '../services/apiClient';
@@ -36,7 +36,7 @@ export default function DataPage() {
   const [studyPeriod, setStudyPeriod] = useState<'week' | 'month' | 'year'>('week'); // 学习趋势周期：周(最近7天)/月(当前月份)/年(最近6个月)
   // 新增：本月累计学习时长（秒）
   const [monthLearnTime, setMonthLearnTime] = useState(0);
-  // 累计完成Flag总数（从后端flag_number字段获取）
+  // 累计完成Flag总数（从后端 flagNumber 字段获取）
   const [completedFlagsCount, setCompletedFlagsCount] = useState(0);
   const [studyData, setStudyData] = useState<StudyTimeTrend[]>([]); // 学习趋势数据
   
@@ -152,20 +152,20 @@ export default function DataPage() {
   const refreshUserData = async () => {
     try {
       const [todayData, todayPointsResp, currentMonthData, userData] = await Promise.all([
-        api.get<{ today_learn_time: number }>('/api/getTodayLearnTime').catch(() => ({ today_learn_time: 0 })),
-        api.get<{ today_points: number }>('/api/getTodayPoints').catch(() => ({ today_points: 0 })),
-        api.get<{ learn_times: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learn_times: [] })),
-        api.get<{ user: { flag_number: number } }>('/api/getUser').catch(() => ({ user: { flag_number: 0 } }))
+        api.get<{ todayLearnTime: number }>('/api/getTodayLearnTime').catch(() => ({ todayLearnTime: 0 })),
+        api.get<{ todayPoints: number }>('/api/getTodayPoints').catch(() => ({ todayPoints: 0 })),
+        api.get<{ learnTimes: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learnTimes: [] })),
+        api.get<GetUserResponse>('/api/getUser').catch(() => ({ user: { userId: 0, name: '', email: '', headShow: 1, daka: 0, flagNumber: 0, count: 0, monthLearnTime: 0 } }))
       ]);
 
-      setTodayPoints(todayPointsResp?.today_points || 0);
-      setCompletedFlagsCount(userData?.user?.flag_number || 0);
+      setTodayPoints(todayPointsResp?.todayPoints || 0);
+      setCompletedFlagsCount(userData?.user?.flagNumber || 0);
 
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
-      const todayTime = todayData.today_learn_time || 0; // 今日学习时长（秒）
+      const todayTime = todayData.todayLearnTime || 0; // 今日学习时长（秒）
       
       // 计算本月累计学习时长：将本月所有记录的duration求和
-      const monthTime = (currentMonthData?.learn_times || []).reduce((sum, record) => sum + (record.duration || 0), 0);
+      const monthTime = (currentMonthData?.learnTimes || []).reduce((sum, record) => sum + (record.duration || 0), 0);
       setMonthLearnTime(monthTime);
       
       useTaskStore.setState({
@@ -224,13 +224,16 @@ export default function DataPage() {
   /** 计算本月打卡统计 */
   const calculatedMonthlyStats = useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    // 本月打卡天数
+    const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+    const currentYear = String(now.getFullYear());
+    
+    // 本月打卡天数 - 直接使用字符串比较避免时区问题
     const monthlyPunches = punchedDates.filter(dateStr => {
-      const date = new Date(dateStr);
-      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      if (!dateStr || dateStr.length < 7) return false;
+      const yearMonth = dateStr.substring(0, 7); // "YYYY-MM"
+      return yearMonth === `${currentYear}-${currentMonth}`;
     }).length;
+    
     // 本月缺卡天数
     const missedDays = Math.max(0, now.getDate() - monthlyPunches);
     

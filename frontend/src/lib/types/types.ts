@@ -30,6 +30,9 @@ export interface UserInfoResponse {
   isFlagRemind?: boolean;
   timeRemind?: number;
   minRemind?: number;
+  isStudyRemind?: boolean; // 是否开启学习提醒
+  studyRemindHour?: number; // 学习提醒小时
+  studyRemindMin?: number; // 学习提醒分钟
 }
 
 /**

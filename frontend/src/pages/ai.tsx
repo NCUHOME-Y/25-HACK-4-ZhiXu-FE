@@ -129,24 +129,24 @@ export default function AIPage() {
       background?: string;
       goal?: string;
       difficulty?: string;
-      generated_plan?: StudyPlan;
+      generatedPlan?: StudyPlan;
       createdAt?: string;
     };
 
     const loadAIHistory = async () => {
       try {
         const { api } = await import('../services/apiClient');
-        const response = await api.get<{ ai_histories: AIHistory[] }>('/api/ai/get-history');
+        const response = await api.get<{ aiHistories: AIHistory[] }>('/api/ai/get-history');
 
-        if (response.ai_histories && response.ai_histories.length > 0) {
+        if (response.aiHistories && response.aiHistories.length > 0) {
           // 取最新的历史记录
-          const latestHistory = response.ai_histories[0];
+          const latestHistory = response.aiHistories[0];
           setLastBackground(latestHistory.background || '');
           setLastGoal(latestHistory.goal || '');
 
           // 转换生成的计划格式
-          if (latestHistory.generated_plan && typeof latestHistory.generated_plan === 'object') {
-            const plans = [latestHistory.generated_plan];
+          if (latestHistory.generatedPlan && typeof latestHistory.generatedPlan === 'object') {
+            const plans = [latestHistory.generatedPlan];
             setGeneratedPlans(plans);
           }
         }
@@ -235,7 +235,7 @@ export default function AIPage() {
           background: background,
           goal: goal,
           difficulty: selectedDifficulty,
-          generated_plan: JSON.stringify(plan)
+          generatedPlan: JSON.stringify(plan)
         });
       } catch (saveError) {
         console.error('Failed to save AI history to server:', saveError);
