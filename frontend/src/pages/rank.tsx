@@ -5,7 +5,7 @@ import { Card, Avatar, AvatarImage, AvatarFallback, Button, Tabs, TabsList, Tabs
 
 import { useEffect } from 'react';
 import rankService from '../services/rank.service';
-import { getAvatarUrl } from '../lib/helpers';
+import { getAvatarUrl } from '../lib/helpers/helpers';
 
 interface RankUser {
   id: string;

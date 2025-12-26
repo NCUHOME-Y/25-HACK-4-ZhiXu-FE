@@ -70,7 +70,7 @@ export type FlagLabel = 1 | 2 | 3 | 4 | 5;
  * 任务/Flag 数据结构
  */
 export interface Task {
-  id: string
+  id: number // 修改为number，与后端保持一致
   title: string // 对应后端 flag
   detail?: string // 对应后端 plan_content
   total?: number // 对应后端 daily_total (每日所需完成次数)
@@ -78,10 +78,10 @@ export interface Task {
   completed?: boolean // 对应后端 had_done
   label?: FlagLabel // 类型标签 1-5
   priority?: FlagPriority // 优先级 4:不急 3:一般 2:较急 1:急切
-  isPublic?: boolean // 对应后端 is_hiden 取反（是否公开到社交页面）
-  postId?: string // 关联的社交帖子ID（当isPublic为true时）
+  postId?: number // 修改为number，关联的社交帖子ID（有值=已分享，无值=未分享）
   points?: number // 该任务的积分值
-  agreeNumber?: number // 点赞数
+  likes?: number // 点赞数（对应后端likes字段）
+  comments?: unknown[] // 评论列表（对应后端comments字段）
   createdAt?: string // 创建时间
   startTime?: string // 计划起始时间
   endTime?: string // 计划结束时间
@@ -161,7 +161,7 @@ export interface PunchRecordExtended extends PunchRecord {
 // ========== 社交相关类型 ==========
 // 社交用户类型（联系页面使用）
 export interface ContactUser {
-  id: string;          // 帖子ID
+  id: number;          // 帖子ID
   userId: string;      // 发帖人的用户ID
   name: string;        // 映射自 API 的 userName
   avatar: string;      // 映射自 API 的 userAvatar
@@ -176,7 +176,7 @@ export interface ContactUser {
 
 // 评论类型（联系页面使用）
 export interface ContactComment {
-  id: string;
+  id: number;
   userId: string;
   userName: string;
   userAvatar: string;

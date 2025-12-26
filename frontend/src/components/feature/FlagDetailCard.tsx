@@ -73,11 +73,11 @@ export const FlagDetailCard = ({ task, isCompleted = false, getFlagDateStatus }:
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">分享状态</span>
           <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-            task.isPublic 
+            task.postId 
               ? 'bg-purple-100 text-purple-700' 
               : 'bg-gray-100 text-gray-600'
           }`}>
-            {task.isPublic ? '已分享' : '未分享'}
+            {task.postId ? '已分享' : '未分享'}
           </span>
         </div>
         

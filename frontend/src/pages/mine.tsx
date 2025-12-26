@@ -37,7 +37,7 @@ import { updateUserProfile } from '../services/mine.service';
 import { useUser } from '../lib/stores/stores';
 import { getUserAchievements } from '../services/mine.service';
 import { toast } from 'sonner';
-import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers';
+import { getAvatarUrl, AVATAR_FILES } from '../lib/helpers/helpers';
 import { BirdMascot, Tutorial, startTutorial, shouldAutoStartTutorial } from '../components';
 import { api } from '../services/apiClient';
 import contactService from '../services/contact.service';

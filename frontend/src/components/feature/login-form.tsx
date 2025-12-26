@@ -1,4 +1,4 @@
-import { cn } from "../../lib/helpers"
+import { cn } from "../../lib/helpers/helpers"
 import { Button } from "../ui/button"
 import {
   Card,

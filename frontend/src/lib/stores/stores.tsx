@@ -141,9 +141,9 @@ interface TaskState {
 	sessionElapsed: number; // 本次学习时长（秒）
 	studying: boolean;
 	addTask: (task: Task) => void;
-	updateTask: (id: string, partial: Partial<Task>) => void;
-	deleteTask: (id: string) => void;
-	tickTask: (id: string) => void;
+	updateTask: (id: number, partial: Partial<Task>) => void;
+	deleteTask: (id: number) => void;
+	tickTask: (id: number) => void;
 	togglePunchToday: () => void;
 	startStudy: () => void;
 	stopStudy: () => void;
@@ -249,9 +249,9 @@ export const useTaskStore = create<TaskState>(
 	sessionElapsed: initialStudyState.sessionElapsed,
 	studying: initialStudyState.studying,
 	addTask: (task: Task) => set({ tasks: [task, ...get().tasks] }),
-		updateTask: (id: string, partial: Partial<Task>) => set({ tasks: get().tasks.map((t: Task) => (t.id === id ? { ...t, ...partial } : t)) }),
-	deleteTask: (id: string) => set({ tasks: get().tasks.filter((t: Task) => t.id !== id) }),
-	tickTask: (id: string) => set({
+		updateTask: (id: number, partial: Partial<Task>) => set({ tasks: get().tasks.map((t: Task) => (t.id === id ? { ...t, ...partial } : t)) }),
+	deleteTask: (id: number) => set({ tasks: get().tasks.filter((t: Task) => t.id !== id) }),
+	tickTask: (id: number) => set({
 		tasks: get().tasks.map((t: Task) => {
 			if (t.id !== id) return t;
 			const total = t.total ?? 1;

@@ -48,7 +48,7 @@ import {
   FlagDetailCard,
 } from '../components';
 import { useTaskStore } from '../lib/stores/stores';
-import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, formatDurationHMS, formatDurationFlexible } from '../lib/helpers';
+import { formatDateYMD, calculateStreak, calculateMonthlyPunches, formatElapsedTime, formatDurationHMS, formatDurationFlexible } from '../lib/helpers/helpers';
 import { FLAG_LABELS, FLAG_PRIORITIES } from '../lib/constants/constants';
 import type { FlagLabel, FlagPriority, Task } from '../lib/types/types';
 import contactService from '../services/contact.service';
@@ -154,14 +154,14 @@ export default function FlagPage() {
   // 监听帖子删除事件，同步更新flag状态
   useEffect(() => {
     const handlePostDeleted = (event: Event) => {
-      const customEvent = event as CustomEvent<{ postId: string }>;
+      const customEvent = event as CustomEvent<{ postId: number }>;
       const deletedPostId = customEvent.detail?.postId;
       
       if (deletedPostId) {
         // 找到对应的flag并清除其postId
         const affectedTask = tasks.find(t => t.postId === deletedPostId);
         if (affectedTask) {
-          updateTaskInStore(affectedTask.id, { postId: undefined, isPublic: false });
+          updateTaskInStore(affectedTask.id, { postId: undefined });
           toast.info('分享已撤回');
         }
       }
@@ -178,7 +178,7 @@ export default function FlagPage() {
   const stopStudy = useTaskStore((s) => s.stopStudy);
 
   // 本地 UI 状态
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [openDrawer, setOpenDrawer] = useState(false);
   const [newTask, setNewTask] = useState({ 
     title: '', 
@@ -186,12 +186,12 @@ export default function FlagPage() {
     total: 1,
     label: 1 as FlagLabel,
     priority: 3 as FlagPriority,
-    isPublic: false,
     points: 0,
     startDate: '',
     endDate: '',
     reminderTime: '12:00',
-    enableNotification: false
+    enableNotification: false,
+    wantToShare: false
   });
   const [showError, setShowError] = useState(false);
   const [alertVisible, setAlertVisible] = useState(false);
@@ -417,7 +417,7 @@ export default function FlagPage() {
   };
 
   /** 任务记次（打卡/完成）- 冷却机制为前端临时检查 */
-  const handleTickTask = async (taskId: string) => {
+  const handleTickTask = async (taskId: number) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
@@ -517,7 +517,7 @@ export default function FlagPage() {
   };
 
   /** 分享flag到社交 */
-  const shareToSocial = async (taskId: string, task: { title: string; detail?: string; label?: number; startDate?: string; endDate?: string }) => {
+  const shareToSocial = async (taskId: number, task: { title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<number | undefined> => {
     try {
       const post = await contactService.createPostFromTask({
         id: taskId,
@@ -527,20 +527,23 @@ export default function FlagPage() {
         startDate: task.startDate,
         endDate: task.endDate
       });
+      // 直接使用number类型，不需要转换
       updateTaskInStore(taskId, { postId: post.id });
       toast.success('已分享到社交', {
         action: { label: '查看', onClick: () => navigate('/contact') }
       });
+      return post.id;
     } catch (error) {
       console.error('分享失败:', error);
       toast.error('分享失败');
+      return undefined;
     }
   };
 
   /** 撤回社交分享 */
-  const unshareFromSocial = async (taskId: string, postId: string) => {
+  const unshareFromSocial = async (taskId: number, postId: number) => {
     try {
-      await contactService.deletePost(postId);
+      await contactService.deletePost(postId); // 直接使用number
       updateTaskInStore(taskId, { postId: undefined });
       toast.success('已撤回分享');
     } catch (error) {
@@ -558,18 +561,27 @@ export default function FlagPage() {
     setShowError(false);
     if (editingTaskId) {
       const oldTask = tasks.find(t => t.id === editingTaskId);
-      const isPublicChanged = oldTask && oldTask.isPublic !== newTask.isPublic;
+      const hadPostId = !!oldTask?.postId;
+      const wantsToShare = newTask.wantToShare;
       
-      updateTaskInStore(editingTaskId, newTask);
+      // 保留postId字段
+      const updatedTask = {
+        ...newTask,
+        postId: oldTask?.postId
+      };
       
       // 处理分享/撤回逻辑
-      if (isPublicChanged) {
-        if (newTask.isPublic && !oldTask?.postId) {
-          await shareToSocial(editingTaskId, newTask);
-        } else if (!newTask.isPublic && oldTask?.postId) {
-          await unshareFromSocial(editingTaskId, oldTask.postId);
+      if (wantsToShare && !hadPostId) {
+        const postId = await shareToSocial(editingTaskId, newTask);
+        if (postId) {
+          updatedTask.postId = postId;
         }
+      } else if (!wantsToShare && hadPostId && oldTask?.postId) {
+        await unshareFromSocial(editingTaskId, oldTask.postId);
+        updatedTask.postId = undefined;
       }
+      
+      updateTaskInStore(editingTaskId, updatedTask);
       
       toast.success('flag已更新', {
         action: oldTask ? {
@@ -580,68 +592,72 @@ export default function FlagPage() {
           }
         } : undefined
       });
-      // 接入后端
+      // 接入后端（包含postId以保留分享状态）
       await updateTask(editingTaskId, {
         title: newTask.title,
         detail: newTask.detail,
         label: newTask.label,
         priority: newTask.priority,
         total: newTask.total || 1,
-        isPublic: newTask.isPublic,
         startDate: newTask.startDate,
         endDate: newTask.endDate,
         reminderTime: newTask.reminderTime,
-        enableNotification: newTask.enableNotification
+        enableNotification: newTask.enableNotification,
+        postId: updatedTask.postId
       });
       // 编辑后立即刷新数据
       await loadData();
     } else {
       // 如果没有设置积分，自动计算
-      const { calculateTaskCompletionPoints } = await import('../lib/helpers');
+      const { calculateTaskCompletionPoints } = await import('../lib/helpers/helpers');
       const points = calculateTaskCompletionPoints({
         total: newTask.total || 1,
         priority: newTask.priority || 3,
         label: newTask.label || 1
       });
       
-      const created = { 
-        id: String(Date.now()), 
-        ...newTask,
-        points, // 自动计算的积分
-        count: 0, 
-        completed: false 
-      };
-      addTask(created);
-      
-      // 如果设置为公开，自动分享到社交页面
-      if (newTask.isPublic) {
-        await shareToSocial(created.id, created);
-      }
-      
-      toast.success(newTask.isPublic ? 'flag已创建并分享' : 'flag已创建', {
-        action: newTask.isPublic ? {
-          label: '查看',
-          onClick: () => navigate('/contact')
-        } : {
-          label: '撤销',
-          onClick: () => {
-            useTaskStore.getState().deleteTask(created.id);
-            toast.success('已撤销创建');
-          }
-        }
-      });
-      // 接入后端
-      await createTask({
+      // 先调用后端创建flag，获取真实ID
+      const createdTaskResponse = await createTask({
         title: newTask.title,
         detail: newTask.detail,
         total: newTask.total,
         label: String(newTask.label),  // 数字转字符串，service层会转换为中文名称
         priority: newTask.priority,
-        points: newTask.points,
+        points,
         startDate: newTask.startDate,
         endDate: newTask.endDate,
         reminderTime: newTask.reminderTime,
         enableNotification: newTask.enableNotification
+      });
+      
+      // 使用后端返回的真实ID
+      const realTaskId = createdTaskResponse.id || Date.now();
+      
+      const created = { 
+        id: realTaskId,
+        ...newTask,
+        points,
+        count: 0, 
+        completed: false 
+      };
+      addTask(created);
+      
+      // 如果设置为公开，使用真实ID分享到社交页面
+      if (newTask.wantToShare) {
+        await shareToSocial(realTaskId, created);
+      }
+      
+      toast.success(newTask.wantToShare ? 'flag已创建并分享' : 'flag已创建', {
+        action: newTask.wantToShare ? {
+          label: '查看',
+          onClick: () => navigate('/contact')
+        } : {
+          label: '撤销',
+          onClick: () => {
+            useTaskStore.getState().deleteTask(realTaskId);
+            toast.success('已撤销创建');
+          }
+        }
       });
     }
     closeDrawer();
@@ -658,7 +674,7 @@ export default function FlagPage() {
     // 如果任务有关联的帖子，先删除帖子
     if (taskToDelete.postId) {
       try {
-        await contactService.deletePost(taskToDelete.postId);
+        await contactService.deletePost(taskToDelete.postId); // 直接使用number
       } catch {
         // 静默失败
       }
@@ -700,12 +716,12 @@ export default function FlagPage() {
       total: 1,
       label: 1 as FlagLabel,
       priority: 3 as FlagPriority,
-      isPublic: false,
       points: 0,
       startDate: '',
       endDate: '',
       reminderTime: '12:00',
-      enableNotification: false
+      enableNotification: false,
+      wantToShare: false
     });
     setEditingTaskId(null);
     setShowError(false);
@@ -718,7 +734,7 @@ export default function FlagPage() {
     setOpenDrawer(true);
   };
   // 只在抽屉打开时初始化 newTask（且仅初始化一次），避免 tasks 变化覆盖正在编辑的数据
-  const editInitRef = useRef<string | 'new' | null>(null);
+  const editInitRef = useRef<number | 'new' | null>(null);
   useEffect(() => {
     if (!openDrawer) {
       editInitRef.current = null;
@@ -743,12 +759,12 @@ export default function FlagPage() {
           total: task.total || 1,
           label: safeLabelValue as FlagLabel,
           priority: priorityValue as FlagPriority,
-          isPublic: task.isPublic || false,
           points: task.points || 0,
           startDate: task.startDate || '',
           endDate: task.endDate || '',
           reminderTime: task.reminderTime || '12:00',
           enableNotification: task.enableNotification || false,
+          wantToShare: !!task.postId
         });
       }
     } else {
@@ -762,12 +778,12 @@ export default function FlagPage() {
         total: 1,
         label: 1 as FlagLabel,
         priority: 3 as FlagPriority,
-        isPublic: false,
         points: 0,
         startDate: '',
         endDate: '',
         reminderTime: '12:00',
         enableNotification: false,
+        wantToShare: false
       });
     }
     // 注意：不要把 tasks 放在依赖数组中，否则会在用户编辑时重新初始化！
@@ -1078,7 +1094,7 @@ export default function FlagPage() {
                                 已提醒
                               </span>
                             )}
-                            {t.isPublic ? (
+                            {t.postId ? (
                               <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 flex-shrink-0">
                                 已分享
                               </span>
@@ -1315,7 +1331,7 @@ export default function FlagPage() {
                                 {FLAG_LABELS[t.label].name}
                               </span>
                             )}
-                            {t.isPublic ? (
+                            {t.postId ? (
                               <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 flex-shrink-0">
                                 已分享
                               </span>
@@ -1569,14 +1585,14 @@ export default function FlagPage() {
                   <input
                     id="flag-public"
                     type="checkbox"
-                    checked={newTask.isPublic}
-                    onChange={(e) => setNewTask((s) => ({ ...s, isPublic: e.target.checked }))}
+                    checked={newTask.wantToShare}
+                    onChange={(e) => setNewTask((s) => ({ ...s, wantToShare: e.target.checked }))}
                     className="peer h-4 w-4 rounded border border-gray-300 appearance-none focus:ring-0 focus:outline-none bg-white checked:bg-blue-600 checked:border-blue-600"
                   />
                   <span
                     className="pointer-events-none absolute left-0 top-0 h-4 w-4 flex items-center justify-center"
                   >
-                    {newTask.isPublic ? (
+                    {newTask.wantToShare ? (
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="0" y="0" width="16" height="16" rx="4" fill="#2563eb" />
                         <path d="M4 8.5L7 11.5L12 5.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

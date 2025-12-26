@@ -4,7 +4,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback, Input, Button } from "../components";
 import { Separator } from "../components/ui/separator";
 import type { ChatMessage } from '../lib/types/types';
-import { scrollToBottom, getAvatarUrl } from '../lib/helpers';
+import { scrollToBottom, getAvatarUrl } from '../lib/helpers/helpers';
 import authService from '../services/auth.service';
 import { useUser } from '../lib/stores/stores';
 import { api, makeWsUrl } from '../services/apiClient';

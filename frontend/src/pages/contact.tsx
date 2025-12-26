@@ -16,7 +16,7 @@ import {
 import contactService, { type SearchUserResult } from '../services/contact.service';
 import { api } from '../services/apiClient';
 import type { ContactUser as User, ContactComment as Comment } from '../lib/types/types';
-import { adaptPostToUser, formatTimeAgo, getAvatarUrl } from '../lib/helpers';
+import { adaptPostToUser, formatTimeAgo, getAvatarUrl } from '../lib/helpers/helpers';
 import { useUser } from '../lib/stores/stores';
 import { POSTS_PER_PAGE } from '../lib/constants/constants';
 import { BirdMascot } from '../components';
@@ -73,9 +73,9 @@ export default function ContactPage() {
 
   const [displayedPosts, setDisplayedPosts] = useState<User[]>([]);
   const [searchUserResults, setSearchUserResults] = useState<SearchUserResult[]>([]); // 用户搜索结果
-  const [newComment, setNewComment] = useState<Record<string, string>>({});
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [newComment, setNewComment] = useState<Record<number, string>>({}); // 修改为number key
+  const [showComments, setShowComments] = useState<Record<number, boolean>>({}); // 修改为number key
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set()); // 修改为number
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeSearchQuery, setActiveSearchQuery] = useState<string>(''); // 实际执行搜索的查询
   const [page, setPage] = useState(1);
@@ -231,7 +231,7 @@ export default function ContactPage() {
             setPage(2);
             setHasMore(response.hasMore);
             contactService.getUserLikedPosts()
-              .then(ids => setLikedPosts(new Set(ids.map(id => String(id)))))
+              .then(ids => setLikedPosts(new Set(ids))) // 直接使用number[]
               .catch(() => {});
           } else {
             setDisplayedPosts([]);
@@ -262,7 +262,7 @@ export default function ContactPage() {
             setPage(2);
             setHasMore(response.hasMore);
             contactService.getUserLikedPosts()
-              .then(ids => setLikedPosts(new Set(ids.map(id => String(id)))))
+              .then(ids => setLikedPosts(new Set(ids))) // 直接使用number[]
               .catch(() => {});
           } else {
             setDisplayedPosts([]);
@@ -305,7 +305,7 @@ export default function ContactPage() {
   }, [hasMore, loading, loadMorePosts]);
 
   /** 点赞处理（后端自动切换点赞/取消状态）*/
-  const handleLike = (postId: string, liked: string[]) => {
+  const handleLike = (postId: number, liked: string[]) => {
     const isLiked = liked.includes('liked');
     
     // 先乐观更新UI - 使用函数式更新避免闭包问题
@@ -356,7 +356,7 @@ export default function ContactPage() {
   };
 
   /** 评论处理 */
-  const handleAddComment = (postId: string) => {
+  const handleAddComment = (postId: number) => {
     const comment = newComment[postId]?.trim();
     if (!comment) return;
 
@@ -394,14 +394,13 @@ export default function ContactPage() {
   };
 
   /** 删除帖子 */
-  const handleDeletePost = async (postId: string) => {
+  const handleDeletePost = async (postId: number) => {
     try {
       await contactService.deletePost(postId);
-      // 从本地状态中移除该帖子
-      setDisplayedPosts(displayedPosts.filter(post => post.id !== postId));
+      // 从本地状态中移除该帖子 - 使用函数式更新
+      setDisplayedPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       
       // 通知其他页面（如flag页面）更新状态
-      // 使用localStorage触发跨页面通信
       const event = new CustomEvent('postDeleted', { detail: { postId } });
       window.dispatchEvent(event);
     } catch (error) {

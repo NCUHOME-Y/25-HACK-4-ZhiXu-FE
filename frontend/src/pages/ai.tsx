@@ -331,7 +331,7 @@ export default function AIPage() {
           toast.loading(`正在添加 ${i + 1}/${plan.flags.length}: ${flag.title}`, { id: toastId });
           // 同时更新本地store和后端
           const created = {
-            id: String(Date.now() + i),
+            id: Date.now() + i, // 直接使用number
             title: flag.title,
             detail: flag.detail || '',
             total: flag.total || 1,
@@ -342,7 +342,7 @@ export default function AIPage() {
             endDate: flag.endDate || '',
             count: 0,
             completed: false,
-            isPublic: false,
+            postId: undefined,
             reminderTime: '12:00',
             enableNotification: false
           };
@@ -368,6 +368,7 @@ export default function AIPage() {
           successCount++;
           totalPoints += flag.points || 0;
         } catch (error) {
+          console.error(`添加Flag失败 [${flag.title}]:`, error);
           console.error(`添加Flag失败 [${flag.title}]:`, error);
           errors.push(flag.title);
         }
@@ -688,6 +689,11 @@ export default function AIPage() {
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-full font-medium">
                                           <Timer className="w-3.5 h-3.5" /> {totalDays}天
                                         </span>
+                                        {flag.startDate && (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full font-medium">
+                                            <CalendarDays className="w-3.5 h-3.5" /> {new Date(flag.startDate).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })} - {new Date(flag.endDate).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })}
+                                          </span>
+                                        )}
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
                                           {flag.priority === 1 ? '急切' : flag.priority === 2 ? '较急' : flag.priority === 3 ? '一般' : '不急'}
                                         </span>

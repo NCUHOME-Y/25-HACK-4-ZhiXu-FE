@@ -7,7 +7,6 @@ import type { Task, StudyRecord } from "../lib/types/types";
 export interface BackendFlag extends Task {
   start_time?: string;
   end_time?: string;
-  is_public?: boolean;
 }
 
 export interface CreateTaskPayload {
@@ -39,14 +38,16 @@ export async function fetchTasks(): Promise<Task[]> {
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
   
   const flags = (response.flags || []).map(flag => {
-    const backendFlag = flag as BackendFlag & { enable_notification?: boolean; reminder_time?: string };
+    const backendFlag = flag as BackendFlag & { enable_notification?: boolean; reminder_time?: string; post_id?: number };
+    const rawPostId = (backendFlag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (backendFlag as unknown as { postId?: number | string }).postId;
+    const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
     const mapped = {
       ...flag,
       startDate: backendFlag.start_time && backendFlag.start_time !== '0001-01-01T00:00:00Z' ? backendFlag.start_time : '',
       endDate: backendFlag.end_time && backendFlag.end_time !== '0001-01-01T00:00:00Z' ? backendFlag.end_time : '',
-      isPublic: backendFlag.is_public ?? flag.isPublic ?? false,  // 确保从后端正确读取 is_public
-      enableNotification: backendFlag.enable_notification ?? flag.enableNotification ?? false,  // 映射 enable_notification
-      reminderTime: backendFlag.reminder_time ?? flag.reminderTime ?? '12:00'  // 映射 reminder_time
+      enableNotification: backendFlag.enable_notification ?? flag.enableNotification ?? false,
+      reminderTime: backendFlag.reminder_time ?? flag.reminderTime ?? '12:00',
+      postId
     };
     
     return mapped;
@@ -100,7 +101,6 @@ export async function createTask(payload: CreateTaskPayload & {
   const backendPayload = {
     title: payload.title || '未命名任务',
     detail: payload.detail || '',
-    is_public: false,
     label: labelNum,
     priority: priorityNum,
     total: payload.total && payload.total > 0 ? payload.total : 1, // 每日所需完成次数
@@ -123,33 +123,37 @@ export async function createTask(payload: CreateTaskPayload & {
 }
 
 /** 更新任务 */
-export async function updateTask(id: string, taskData: {
+export async function updateTask(id: number, taskData: {
   title: string;
   detail: string;
   label: number;
   priority: number;
-  total: number; // 每日所需完成次数
-  isPublic: boolean;
+  total: number;
   startDate?: string;
   endDate?: string;
   reminderTime?: string;
   enableNotification?: boolean;
+  postId?: number; // 直接使用number类型
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
   
-  const updatePayload = { 
-    id: parseInt(id),
+  const updatePayload: Record<string, unknown> = { 
+    id: id,
     title: taskData.title,
     detail: taskData.detail || '',
     label: taskData.label || 2,
     priority: taskData.priority || 3,
     total: taskData.total || 1,
-    is_public: taskData.isPublic,
     start_date: taskData.startDate || '',
     end_date: taskData.endDate || '',
     reminder_time: taskData.reminderTime || '12:00',
     enable_notification: taskData.enableNotification || false
   };
+  
+  // 直接使用number类型，不需要转换
+  if (taskData.postId !== undefined) {
+    updatePayload.postId = taskData.postId;
+  }
   
   await api.put('/api/updateFlag', updatePayload);
   
@@ -157,10 +161,10 @@ export async function updateTask(id: string, taskData: {
 }
 
 /** 删除任务 */
-export async function deleteTask(id: string): Promise<boolean> {
+export async function deleteTask(id: number): Promise<boolean> {
   try {
     await api.delete('/api/deleteFlag', {
-      data: { id: parseInt(id) }
+      data: { id: id }
     });
     return true;
   } catch (error) {
@@ -170,9 +174,9 @@ export async function deleteTask(id: string): Promise<boolean> {
 }
 
 /** 任务记一次 - 增加计数 */
-export async function tickTask(id: string): Promise<boolean> {
+export async function tickTask(id: number): Promise<boolean> {
   try {
-    await api.put('/api/doneFlag', { id: parseInt(id) });
+    await api.put('/api/doneFlag', { id: id });
     return true;
   } catch (error: unknown) {
     console.error('❌ Flag打卡失败:', {
@@ -277,9 +281,9 @@ export async function getUserPoints(): Promise<number> {
 }
 
 /** 切换 Flag 隐藏/公开状态 */
-export async function toggleFlagVisibility(flagId: string, _isHidden: boolean): Promise<boolean> {
+export async function toggleFlagVisibility(flagId: number, _isHidden: boolean): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.put('/api/updateFlagHide', { id: parseInt(flagId) });
+  await api.put('/api/updateFlagHide', { id: flagId });
   return true;
 }
 
@@ -293,7 +297,7 @@ export async function getVisibleFlags(): Promise<BackendFlag[]> {
 /** Flag 点赞 */
 export async function likeFlag(flagId: string, likeChange: number): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.post('/api/likeFlag', { flag_id: flagId, like: likeChange });
+  await api.post('/api/likeFlag', { flagId: flagId, like: likeChange });
   return true;
 }
 
@@ -301,7 +305,7 @@ export async function likeFlag(flagId: string, likeChange: number): Promise<bool
 export async function getFlagLikes(flagId: string): Promise<number> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ like: number }>('/api/getflaglike', {
-    params: { flag_id: flagId }
+    params: { flagId: flagId }
   });
   return response.like || 0;
 }
@@ -309,7 +313,7 @@ export async function getFlagLikes(flagId: string): Promise<number> {
 /** 发表 Flag 评论 */
 export async function commentOnFlag(flagId: string, content: string): Promise<boolean> {
   const { api } = await import('./apiClient');
-  await api.post('/api/flagcomment', { flag_id: flagId, content });
+  await api.post('/api/flagcomment', { flagId: flagId, content });
   return true;
 }
 
@@ -327,11 +331,16 @@ export async function fetchFlagsWithDates(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/with-dates');
   // 映射后端字段到前端字段
-  const flags = (response.flags || []).map(flag => ({
-    ...flag,
-    startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-    endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
-  }));
+  const flags = (response.flags || []).map(flag => {
+    const rawPostId = (flag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (flag as unknown as { postId?: number | string }).postId;
+    const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
+    return {
+      ...flag,
+      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
+      postId,
+    };
+  });
   return flags;
 }
 
@@ -340,11 +349,16 @@ export async function fetchPresetFlags(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/preset');
   // 映射后端字段到前端字段
-  const flags = (response.flags || []).map(flag => ({
-    ...flag,
-    startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-    endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
-  }));
+  const flags = (response.flags || []).map(flag => {
+    const rawPostId = (flag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (flag as unknown as { postId?: number | string }).postId;
+    const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
+    return {
+      ...flag,
+      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
+      postId,
+    };
+  });
   return flags;
 }
 
@@ -353,19 +367,24 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
   const { api } = await import('./apiClient');
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/expired');
   // 映射后端字段到前端字段
-  const flags = (response.flags || []).map(flag => ({
-    ...flag,
-    startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-    endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
-  }));
+  const flags = (response.flags || []).map(flag => {
+    const rawPostId = (flag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (flag as unknown as { postId?: number | string }).postId;
+    const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
+    return {
+      ...flag,
+      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
+      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
+      postId,
+    };
+  });
   return flags;
 }
 
 /** 切换 flag 提醒状态 - 最后 5 个 */
-export async function toggleFlagNotification(flagId: string, enableNotification: boolean): Promise<{ success: boolean; enable_notification: boolean }> {
+export async function toggleFlagNotification(flagId: number, enableNotification: boolean): Promise<{ success: boolean; enable_notification: boolean }> {
   const { api } = await import('./apiClient');
   const response = await api.post<{ success: boolean; enable_notification: boolean }>('/api/toggleFlagNotification', {
-    flag_id: parseInt(flagId),
+    flagId: flagId,
     enable_notification: enableNotification
   });
   return response;

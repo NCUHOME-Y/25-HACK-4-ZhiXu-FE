@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Flag, Bot, BarChart3, MessageSquare, User } from 'lucide-react';
-import { cn } from '../../lib/helpers';
+import { cn } from '../../lib/helpers/helpers';
 
 export function BottomNav() {
   const navigate = useNavigate();

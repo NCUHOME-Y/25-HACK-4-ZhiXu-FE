@@ -2,7 +2,7 @@ import { api } from './apiClient';
 import type { Conversation } from './chat.service';
 
 export interface Post {
-  id: string;
+  id: number; // 改为number类型，与后端保持一致
   userId: string;
   userName: string;
   userAvatar: string;
@@ -15,8 +15,8 @@ export interface Post {
 
 // 评论接口类型
 export interface PostComment {
-  id: string;
-  postId: string;
+  id: number;       // 改为number
+  postId: number;   // 改为number
   userId: string;
   userName: string;
   userAvatar: string;
@@ -66,7 +66,7 @@ export interface CreatePostParams {
 
 // 添加评论参数
 export interface AddCommentParams {
-  postId: string;
+  postId: number; // 修改为number
   content: string;
 }
 
@@ -105,26 +105,28 @@ const contactService = {
   },
 
   // 获取单个帖子详情
-  getPost: (postId: string) =>
+  getPost: (postId: number) =>
     api.get<Post>(`/api/getPost/${postId}`),
 
   // 创建帖子
-  createPost: (params: CreatePostParams) =>
-    api.post<Post>('/api/postUserPost', { 
+  createPost: async (params: CreatePostParams): Promise<Post> => {
+    const response = await api.post<{ success: boolean; post: Post; message?: string }>('/api/postUserPost', {
       title: '',
-      content: params.content 
-    }),
+      content: params.content
+    });
+    return response.post;
+  },
 
   // 点赞/取消点赞帖子（后端自动切换状态）
-  likePost: (postId: string) =>
+  likePost: (postId: number) =>
     api.post<{ success: boolean; likes: number }>('/api/likepost', { 
-      post_id: parseInt(postId)
+      postId: postId
     }),
 
   // 取消点赞（使用相同接口，后端会自动判断）
-  unlikePost: (postId: string) =>
+  unlikePost: (postId: number) =>
     api.post<{ success: boolean; likes: number }>('/api/likepost', { 
-      post_id: parseInt(postId)
+      postId: postId
     }),
 
   // 添加评论
@@ -138,13 +140,13 @@ const contactService = {
       content: string;
       createdAt: string;
     }>('/api/commentOnPost', {
-      postId: parseInt(params.postId),
+      postId: params.postId,  // 直接使用number
       content: params.content
     });
     
     return {
-      id: String(response.id),
-      postId: params.postId,
+      id: response.id,        // 直接使用number
+      postId: params.postId,  // 直接使用number
       userId: String(response.userId),
       userName: response.userName,
       userAvatar: response.userAvatar,
@@ -153,25 +155,25 @@ const contactService = {
     };
   },
 
-  getComments: (postId: string) =>
+  getComments: (postId: number) =>
     api.get<PostComment[]>(`/api/getComments/${postId}`),
 
-  deleteComment: (_postId: string, commentId: string) =>
+  deleteComment: (_postId: number, commentId: number) =>
     api.delete<{ success: boolean }>('/api/deleteComment', {
-      data: { comment_id: commentId }
+      data: { commentId: commentId }
     }),
 
   getUserInfo: (userId: string) =>
     api.get<UserInfo>(`/api/getUser?user_id=${userId}`),
 
-  deletePost: (postId: string) =>
+  deletePost: (postId: number) =>
     api.delete<{ success: boolean }>('/api/deleteUserPost', {
-      data: { post_id: parseInt(postId, 10) }
+      data: { postId: postId }
     }),
 
 
-  createPostFromTask: async (task: { id: string; title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<Post> => {
-    const { formatDateYMD } = await import('../lib/helpers');
+  createPostFromTask: async (task: { id: number; title: string; detail?: string; label?: number; startDate?: string; endDate?: string }): Promise<Post> => {
+    const { formatDateYMD } = await import('../lib/helpers/helpers');
     const labelNames: Record<number, string> = {
       1: '学习提升',
       2: '健康运动',
@@ -197,17 +199,18 @@ const contactService = {
     const content = task.detail
       ? `我的Flag:${task.title}\n详细:${task.detail}\n类型:${labelNames[task.label || 1]}  ${dateRange}`
       : `我的Flag:${task.title}\n类型:${labelNames[task.label || 1]}  ${dateRange}`;
-    return api.post<Post>('/api/postUserPost', {
+    const response = await api.post<{ success: boolean; post: Post; message?: string }>('/api/postUserPost', {
       title: task.title,
       content,
-      flag_id: parseInt(task.id) // 添加flag_id关联
+      flagId: task.id // 直接使用number
     });
+    return response.post;
   },
 
   // 根据任务ID删除关联的帖子（后端可能没有这个接口）
-  deletePostByTaskId: (taskId: string) =>
+  deletePostByTaskId: (taskId: number) =>
     api.delete<{ success: boolean }>('/api/deleteUserPost', {
-      data: { task_id: parseInt(taskId, 10) }
+      data: { task_id: taskId }
     }),
 
   // P1修复：搜索用户（支持32个头像映射）
