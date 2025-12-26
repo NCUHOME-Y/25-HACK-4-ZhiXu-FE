@@ -26,20 +26,20 @@ interface CommentNotification {
 }
 
 interface ConversationResponse {
-  user_id: number;
-  user_name: string;
-  user_avatar: string;
-  last_message: string;
-  last_message_at: string;
-  unread_count: number;
+  userId: number;
+  userName: string;
+  userAvatar: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
 }
 
 interface PostData {
   id: number;
-  user_id: number;
+  userId: number;
   title: string;
   content: string;
-  created_at: string;
+  createdAt: string;
   comments?: CommentData[];
 }
 
@@ -49,7 +49,7 @@ interface CommentData {
   userName: string;
   userAvatar: string;
   content: string;
-  created_at: string;
+  createdAt: string;
 }
 
 /**
@@ -98,9 +98,9 @@ export default function ReceivePage() {
       
       // 转换后端数据格式为前端格式
       const conversationList: PrivateConversation[] = response.conversations.map((conv: ConversationResponse) => ({
-        userId: String(conv.user_id),
-        userName: conv.user_name || `用户${conv.user_id}`,
-        userAvatar: conv.user_avatar || '',
+        userId: String(conv.userId),
+        userName: conv.userName || `用户${conv.userId}`,
+        userAvatar: conv.userAvatar || '',
         lastMessage: conv.last_message,
         lastMessageTime: conv.last_message_at,
         unreadCount: conv.unread_count || 0,
@@ -131,7 +131,7 @@ export default function ReceivePage() {
       if (postsResponse && Array.isArray(postsResponse)) {
         postsResponse.forEach((post: PostData) => {
           
-          if (String(post.user_id) === userId && post.comments && Array.isArray(post.comments)) {
+          if (String(post.userId) === userId && post.comments && Array.isArray(post.comments)) {
             post.comments.forEach((comment: CommentData) => {
               
               if (String(comment.userId) !== userId) {
@@ -142,7 +142,7 @@ export default function ReceivePage() {
                   fromUserAvatar: comment.userAvatar || '',
                   content: comment.content,
                   postTitle: post.title || '无标题',
-                  createdAt: comment.created_at,
+                  createdAt: comment.createdAt,
                 });
               }
             });

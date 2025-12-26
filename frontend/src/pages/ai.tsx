@@ -27,7 +27,7 @@ const getCurrentUserId = (): string => {
     
     // 尝试从 JWT token 中解析用户 ID
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.user_id?.toString() || payload.sub?.toString() || 'default';
+    return payload.userId?.toString() || payload.sub?.toString() || 'default';
   } catch {
     return 'default';
   }
@@ -125,12 +125,12 @@ export default function AIPage() {
     // 定义AI历史记录类型
     type AIHistory = {
       id?: number;
-      user_id?: string;
+      userId?: string;
       background?: string;
       goal?: string;
       difficulty?: string;
       generated_plan?: StudyPlan;
-      created_at?: string;
+      createdAt?: string;
     };
 
     const loadAIHistory = async () => {

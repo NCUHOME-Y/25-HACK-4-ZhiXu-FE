@@ -44,9 +44,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!str) { setUser(null); return; }
       const obj = JSON.parse(str);
       const normalized: UserState = {
-        id: String(obj.id ?? obj.user_id ?? ''),
-        name: obj.name || obj.username || '用户',
-        avatar: normalizeAvatar(obj.avatar || obj.head_show || '')
+        id: String(obj.id ?? obj.userId ?? ''),
+        name: obj.name || obj.username || '',
+        avatar: normalizeAvatar(obj.avatar || obj.headShow || '')
       };
       setUser(normalized);
     } catch (e) {

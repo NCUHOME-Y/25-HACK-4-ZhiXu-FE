@@ -268,10 +268,10 @@ export default function AuthPage() {
       const result = await authService.login({ email, password })
       
       if (result.user) {
-        // 补充头像信息：读取后端 head_show 转为 /api/avatar/:id
+        // 补充头像信息：读取后端 headShow 转为 /api/avatar/:id
         try {
-          const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
-          const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
+          const u = await api.get<{ user: { userId: number; name: string; email: string; headShow?: number } }>('/api/getUser');
+          const avatarPath = u?.user?.headShow ? `/api/avatar/${u.user.headShow}` : '';
           localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
         } catch {
           localStorage.setItem('user', JSON.stringify(result.user));
@@ -311,8 +311,8 @@ export default function AuthPage() {
       
       if (result.user) {
         try {
-          const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
-          const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
+          const u = await api.get<{ user: { userId: number; name: string; email: string; headShow?: number } }>('/api/getUser');
+          const avatarPath = u?.user?.headShow ? `/api/avatar/${u.user.headShow}` : '';
           localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
         } catch {
           localStorage.setItem('user', JSON.stringify(result.user));
@@ -369,8 +369,8 @@ export default function AuthPage() {
         setPendingSignupData(null)
         
         try {
-          const u = await api.get<{ user: { user_id: number; name: string; email: string; head_show?: number } }>('/api/getUser');
-          const avatarPath = u?.user?.head_show ? `/api/avatar/${u.user.head_show}` : '';
+          const u = await api.get<{ user: { userId: number; name: string; email: string; headShow?: number } }>('/api/getUser');
+          const avatarPath = u?.user?.headShow ? `/api/avatar/${u.user.headShow}` : '';
           localStorage.setItem('user', JSON.stringify({ ...result.user, avatar: avatarPath }));
         } catch {
           localStorage.setItem('user', JSON.stringify(result.user));

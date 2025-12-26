@@ -164,7 +164,7 @@ const contactService = {
     }),
 
   getUserInfo: (userId: string) =>
-    api.get<UserInfo>(`/api/getUser?user_id=${userId}`),
+    api.get<UserInfo>(`/api/getUser?userId=${userId}`),
 
   deletePost: (postId: number) =>
     api.delete<{ success: boolean }>('/api/deleteUserPost', {
@@ -216,18 +216,18 @@ const contactService = {
   // P1修复：搜索用户（支持32个头像映射）
   searchUsers: async (query: string): Promise<SearchUserResult[]> => {
     const response = await api.post<{ users: Array<{
-      user_id: number;
+      userId: number;
       name: string;
       email: string;
-      head_show?: number;
+      headShow?: number;
     }> }>('/api/searchUser', { username: query });
     
     // 头像由后端提供，通过/api/avatar/:id获取
     return (response.users || []).map(user => ({
-      id: user.user_id,
+      id: user.userId,
       name: user.name,
       email: user.email,
-      avatar: user.head_show ? `/api/avatar/${user.head_show}` : ''
+      avatar: user.headShow ? `/api/avatar/${user.headShow}` : ''
     }));
   },
 
@@ -244,8 +244,8 @@ const contactService = {
 
   // 获取当前用户点过赞的帖子ID列表
   getUserLikedPosts: async (): Promise<number[]> => {
-    const response = await api.get<{ liked_post_ids: number[] }>('/api/getUserLikedPosts');
-    return response.liked_post_ids || [];
+    const response = await api.get<{ likedPostIds: number[] }>('/api/getUserLikedPosts');
+    return response.likedPostIds || [];
   },
 };
 

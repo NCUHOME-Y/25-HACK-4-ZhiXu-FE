@@ -490,7 +490,7 @@ export default function FlagPage() {
       if (willComplete) {
         try {
           await Promise.all([
-            api.get<{ count: number; month_learn_time: number }>('/api/getUser'),
+            api.get<{ count: number; monthLearnTime: number }>('/api/getUser'),
             api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
           ]);
         } catch {

@@ -31,7 +31,7 @@ const UserStatsBlock: React.FC<{ userId: string }> = ({ userId }) => {
     let active = true;
     setLoading(true);
     interface UserStatsResponse { daka_days?: number; completed_flags?: number; total_points?: number }
-    api.get(`/api/getUserStats?user_id=${userId}`)
+    api.get(`/api/getUserStats?userId=${userId}`)
       .then((raw) => {
         if (!active) return;
         const res = raw as UserStatsResponse;

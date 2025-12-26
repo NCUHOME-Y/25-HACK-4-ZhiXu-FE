@@ -25,9 +25,9 @@ class AuthService {
       return null;
     }
     try {
-      const response = await api.get<{ user: { user_id: number; name: string; email: string } }>('/api/getUser');
+      const response = await api.get<{ user: { userId: number; name: string; email: string } }>('/api/getUser');
       return {
-        id: String(response.user.user_id),
+        id: String(response.user.userId),
         name: response.user.name,
         phone: response.user.email,
       };
@@ -43,12 +43,12 @@ class AuthService {
 
   /** 用户登录 */
   async login(credentials: { email: string; password: string }): Promise<{ user: User; token: string }> {
-    const response = await api.post<{ token: string; user_id: number; name: string; email: string }>(
+    const response = await api.post<{ token: string; userId: number; name: string; email: string }>(
       '/api/login',
       credentials
     );
     const user: User = {
-      id: String(response.user_id),
+      id: String(response.userId),
       name: response.name,
       phone: response.email,
     };
@@ -124,13 +124,13 @@ class AuthService {
 
   /** 验证码登录 */
   async loginWithOTP(email: string, code: string): Promise<{ user: User; token: string }> {
-    const response = await api.post<{ token: string; user_id: number; name: string; email: string }>(
+    const response = await api.post<{ token: string; userId: number; name: string; email: string }>(
       '/api/loginWithOTP',
       { email, code }
     );
     
     const user: User = {
-      id: String(response.user_id),
+      id: String(response.userId),
       name: response.name,
       phone: response.email,
     };
@@ -144,13 +144,13 @@ class AuthService {
     const response = await api.post<{ 
       success: boolean; 
       token: string; 
-      user_id: number; 
+      userId: number; 
       name: string; 
       email: string 
     }>('/api/verifyEmail', { email, code });
     
     const user: User = {
-      id: String(response.user_id),
+      id: String(response.userId),
       name: response.name,
       phone: response.email,
     };
@@ -163,13 +163,13 @@ class AuthService {
   async completeRegistration(data: { name: string; email: string; password: string; code: string }): Promise<{ user: User; token: string }> {
     const response = await api.post<{ 
       token: string; 
-      user_id: number; 
+      userId: number; 
       name: string; 
       email: string 
     }>('/api/completeRegistration', data);
     
     const user: User = {
-      id: String(response.user_id),
+      id: String(response.userId),
       name: response.name,
       phone: response.email,
     };

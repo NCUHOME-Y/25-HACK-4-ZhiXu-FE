@@ -3,29 +3,29 @@ import { api, makeWsUrl } from './apiClient';
 // 聊天消息接口
 export interface ChatMessage {
   id: string;
-  user_id: string;
+  userId: string;
   username: string;
   content: string;
-  created_at: string;
-  is_deleted?: boolean;
-  deleted_at?: string;
-  deleted_by?: string;
+  createdAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
   // 谈玄斋消息特有字段
-  room_id?: string;
+  roomId?: string;
   // 私聊消息特有字段
-  sender_id?: string;
-  receiver_id?: string;
+  senderId?: string;
+  receiverId?: string;
 }
 
 // 私聊会话接口
 export interface Conversation {
   id: string;
-  target_user_id: string;
-  target_username: string;
-  last_message: string;
-  last_message_time: string;
-  unread_count: number;
-  last_message_at: string; // 补充 last_message_at 字段，兼容 contact.tsx 的类型检查
+  targetUserId: string;
+  targetUsername: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  lastMessageAt: string; // 补充 lastMessageAt 字段，兼容 contact.tsx 的类型检查
 }
 
 // 谈玄斋接口
@@ -33,8 +33,8 @@ export interface ChatRoom {
   id: string;
   name: string;
   description: string;
-  created_at: string;
-  member_count: number;
+  createdAt: string;
+  memberCount: number;
 }
 
 /**
@@ -54,8 +54,8 @@ class PrivateChatService {
     this.disconnect();
 
     this.currentTargetUserId = targetUserId;
-    // 修复：后端统一使用 /ws/chat 路由，通过 target_user_id 参数区分私聊
-    const wsUrl = makeWsUrl(`/ws/chat?target_user_id=${targetUserId}&token=${token}`);
+    // 修复：后端统一使用 /ws/chat 路由，通过 targetUserId 参数区分私聊
+    const wsUrl = makeWsUrl(`/ws/chat?targetUserId=${targetUserId}&token=${token}`);
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
@@ -119,7 +119,7 @@ class PrivateChatService {
    */
   getHistory = (targetUserId: string, page: number = 1, limit: number = 50) =>
     api.get<ChatMessage[]>('/api/private-chat/history', {
-      params: { target_user_id: targetUserId, page, limit }
+      params: { targetUserId, page, limit }
     });
 
   /**

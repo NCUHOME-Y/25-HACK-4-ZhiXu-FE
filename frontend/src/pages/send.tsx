@@ -76,7 +76,7 @@ export default function SendPage() {
       }
       
       const response = await fetch(
-        `${API_BASE}/api/private-chat/history?target_user_id=${user.id}&limit=50`,
+        `${API_BASE}/api/private-chat/history?targetUserId=${user.id}&limit=50`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -90,15 +90,15 @@ export default function SendPage() {
         
         if (data.messages && Array.isArray(data.messages)) {
             const historyMessages: PrivateMessage[] = data.messages.map((msg: Record<string, unknown>) => {
-            const fromUserId = msg.from || msg.from_user_id;
+            const fromUserId = msg.from || msg.fromUserId;
             const isMine = String(fromUserId) === String(currentUserId);
             return {
               id: String(msg.id || msg.ID),
               message: msg.content as string,
-              time: formatMessageTime(new Date(msg.created_at as string)),
+              time: formatMessageTime(new Date(msg.createdAt as string)),
               isMe: isMine,
-              avatar: isMine ? (currentUserCtx?.avatar || '') : (msg.user_avatar as string) || user.avatar,
-              userName: isMine ? (currentUserCtx?.name || '我') : (msg.user_name as string) || user.name,
+              avatar: isMine ? (currentUserCtx?.avatar || '') : (msg.userAvatar as string) || user.avatar,
+              userName: isMine ? (currentUserCtx?.name || '我') : (msg.userName as string) || user.name,
             };
           });
           
@@ -154,10 +154,10 @@ export default function SendPage() {
               const newMessage: PrivateMessage = {
                 id: `${data.from}-${Date.now()}`,
                 message: data.content,
-                time: formatMessageTime(new Date(data.created_at)),
+                time: formatMessageTime(new Date(data.createdAt)),
                 isMe: false,
-                avatar: data.user_avatar || user.avatar,
-                userName: data.user_name || user.name,
+                avatar: data.userAvatar || user.avatar,
+                userName: data.userName || user.name,
               };
               setMessages((prev) => [...prev, newMessage]);
             }

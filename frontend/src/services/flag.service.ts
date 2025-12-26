@@ -5,8 +5,8 @@ import type { Task, StudyRecord } from "../lib/types/types";
 
 // 后端返回的flag 扩展字段
 export interface BackendFlag extends Task {
-  start_time?: string;
-  end_time?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface CreateTaskPayload {
@@ -38,15 +38,15 @@ export async function fetchTasks(): Promise<Task[]> {
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
   
   const flags = (response.flags || []).map(flag => {
-    const backendFlag = flag as BackendFlag & { enable_notification?: boolean; reminder_time?: string; post_id?: number };
-    const rawPostId = (backendFlag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (backendFlag as unknown as { postId?: number | string }).postId;
+    const backendFlag = flag as BackendFlag & { enableNotification?: boolean; reminderTime?: string; postId?: number };
+    const rawPostId = (backendFlag as unknown as { postId?: number | string }).postId;
     const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
     const mapped = {
       ...flag,
-      startDate: backendFlag.start_time && backendFlag.start_time !== '0001-01-01T00:00:00Z' ? backendFlag.start_time : '',
-      endDate: backendFlag.end_time && backendFlag.end_time !== '0001-01-01T00:00:00Z' ? backendFlag.end_time : '',
-      enableNotification: backendFlag.enable_notification ?? flag.enableNotification ?? false,
-      reminderTime: backendFlag.reminder_time ?? flag.reminderTime ?? '12:00',
+      startDate: backendFlag.startTime && backendFlag.startTime !== '0001-01-01T00:00:00Z' ? backendFlag.startTime : '',
+      endDate: backendFlag.endTime && backendFlag.endTime !== '0001-01-01T00:00:00Z' ? backendFlag.endTime : '',
+      enableNotification: backendFlag.enableNotification ?? flag.enableNotification ?? false,
+      reminderTime: backendFlag.reminderTime ?? flag.reminderTime ?? '12:00',
       postId
     };
     
@@ -105,12 +105,12 @@ export async function createTask(payload: CreateTaskPayload & {
     priority: priorityNum,
     total: payload.total && payload.total > 0 ? payload.total : 1, // 每日所需完成次数
     points: payload.points || 0,
-    daily_limit: payload.dailyLimit || 1,
-    is_recurring: payload.isRecurring || false,
-    start_time: startTimeISO,
-    end_time: endTimeISO,
-    reminder_time: payload.reminderTime || '12:00',
-    enable_notification: payload.enableNotification || false,
+    dailyLimit: payload.dailyLimit || 1,
+    isRecurring: payload.isRecurring || false,
+    startTime: startTimeISO,
+    endTime: endTimeISO,
+    reminderTime: payload.reminderTime || '12:00',
+    enableNotification: payload.enableNotification || false,
   };
   
   try {
@@ -144,10 +144,10 @@ export async function updateTask(id: number, taskData: {
     label: taskData.label || 2,
     priority: taskData.priority || 3,
     total: taskData.total || 1,
-    start_date: taskData.startDate || '',
-    end_date: taskData.endDate || '',
-    reminder_time: taskData.reminderTime || '12:00',
-    enable_notification: taskData.enableNotification || false
+    startDate: taskData.startDate || '',
+    endDate: taskData.endDate || '',
+    reminderTime: taskData.reminderTime || '12:00',
+    enableNotification: taskData.enableNotification || false
   };
   
   // 直接使用number类型，不需要转换
@@ -207,7 +207,7 @@ export async function stopStudySession(_sessionId: string, duration: number): Pr
   try {
     const { useTaskStore } = await import('../lib/stores/stores');
     const [, todayData] = await Promise.all([
-      api.get<{ month_learn_time: number; count: number }>('/api/getUser'),
+      api.get<{ monthLearnTime: number; count: number }>('/api/getUser'),
       api.get<{ today_learn_time: number }>('/api/getTodayLearnTime')
     ]);
     
@@ -332,12 +332,12 @@ export async function fetchFlagsWithDates(): Promise<Task[]> {
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/with-dates');
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
-    const rawPostId = (flag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (flag as unknown as { postId?: number | string }).postId;
+    const rawPostId = (flag as unknown as { postId?: number | string }).postId;
     const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
     return {
       ...flag,
-      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
+      startDate: (flag as BackendFlag).startTime && (flag as BackendFlag).startTime !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).startTime : '',
+      endDate: (flag as BackendFlag).endTime && (flag as BackendFlag).endTime !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).endTime : '',
       postId,
     };
   });
@@ -350,12 +350,12 @@ export async function fetchPresetFlags(): Promise<Task[]> {
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/preset');
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
-    const rawPostId = (flag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (flag as unknown as { postId?: number | string }).postId;
+    const rawPostId = (flag as unknown as { postId?: number | string }).postId;
     const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
     return {
       ...flag,
-      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
+      startDate: (flag as BackendFlag).startTime && (flag as BackendFlag).startTime !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).startTime : '',
+      endDate: (flag as BackendFlag).endTime && (flag as BackendFlag).endTime !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).endTime : '',
       postId,
     };
   });
@@ -368,12 +368,12 @@ export async function fetchExpiredFlags(): Promise<Task[]> {
   const response = await api.get<{ flags: BackendFlag[] }>('/api/flags/expired');
   // 映射后端字段到前端字段
   const flags = (response.flags || []).map(flag => {
-    const rawPostId = (flag as unknown as { post_id?: number; postId?: number | string }).post_id ?? (flag as unknown as { postId?: number | string }).postId;
+    const rawPostId = (flag as unknown as { postId?: number | string }).postId;
     const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
     return {
       ...flag,
-      startDate: (flag as BackendFlag).start_time && (flag as BackendFlag).start_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).start_time : '',
-      endDate: (flag as BackendFlag).end_time && (flag as BackendFlag).end_time !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).end_time : '',
+      startDate: (flag as BackendFlag).startTime && (flag as BackendFlag).startTime !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).startTime : '',
+      endDate: (flag as BackendFlag).endTime && (flag as BackendFlag).endTime !== '0001-01-01T00:00:00Z' ? (flag as BackendFlag).endTime : '',
       postId,
     };
   });

@@ -18,18 +18,18 @@ export interface User {
  * 后端 /api/getUser 返回的用户完整信息
  */
 export interface UserInfoResponse {
-  user_id: number;
+  userId: number;
   name: string;
   email: string;
-  head_show: number;
+  headShow: number;
   daka: number;
-  flag_number: number;
+  flagNumber: number;
   count: number;
-  month_learn_time: number;
-  is_remind?: boolean;
-  is_flag_remind?: boolean;
-  time_remind?: number;
-  min_remind?: number;
+  monthLearnTime: number;
+  isRemind?: boolean;
+  isFlagRemind?: boolean;
+  timeRemind?: number;
+  minRemind?: number;
 }
 
 /**
@@ -38,7 +38,7 @@ export interface UserInfoResponse {
 export interface GetUserResponse {
   user: UserInfoResponse;
   id?: number;
-  user_id?: number;
+  userId?: number;
   username?: string;
   phone?: string;
 }

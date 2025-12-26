@@ -36,14 +36,14 @@ const PRESET_AVATARS = [
 ];
 
 export interface RankUser {
-  user_id: number;
+  userId: number;
   rank: number;
   name: string;
-  head_show?: number;
+  headShow?: number;
   daka?: number;           // 总打卡数
-  flag_number?: number;    // 完成flag数量
+  flagNumber?: number;    // 完成flag数量
   count?: number;          // 积分
-  month_learn_time?: number;
+  monthLearnTime?: number;
 }
 
 interface FrontendRankUser {
@@ -81,12 +81,12 @@ const rankService = {
       }
       
       return response.data.map((user, index) => ({
-        id: user.user_id.toString(),
+        id: user.userId.toString(),
         rank: index + 1,
         name: user.name,
-        avatar: user.head_show ? `/api/avatar/${user.head_show}` : undefined,
+        avatar: user.headShow ? `/api/avatar/${user.headShow}` : undefined,
         totalDays: user.daka || 0,
-        completedFlags: user.flag_number || 0,
+        completedFlags: user.flagNumber || 0,
         totalPoints: user.count || 0
       }));
     } catch (error) {
@@ -102,18 +102,18 @@ const rankService = {
   getCurrentUserRank: async (type: 'days' | 'flags' | 'points'): Promise<FrontendRankUser | null> => {
     try {
       // 获取当前用户信息
-      const userResponse = await api.get<{ user: { user_id: number; name: string; email: string; head_show: number; daka: number; flag_number: number; count: number; month_learn_time: number } }>('/api/getUser');
+      const userResponse = await api.get<{ user: { userId: number; name: string; email: string; headShow: number; daka: number; flagNumber: number; count: number; monthLearnTime: number } }>('/api/getUser');
       
       // 后端返回的数据结构是 { user: {...} }
       const user = userResponse.user;
-      if (!user || !user.user_id) {
+      if (!user || !user.userId) {
         console.error('用户信息无效', userResponse);
         return null;
       }
       
       // 获取封神榜列表来计算排名
       const rankList = await rankService.getRankList(type);
-      const currentUserRank = rankList.find(u => u.id === user.user_id.toString());
+      const currentUserRank = rankList.find(u => u.id === user.userId.toString());
       
       if (currentUserRank) {
         return currentUserRank;
@@ -121,12 +121,12 @@ const rankService = {
       
       // 如果不在前 20 名，手动构造数据
       return {
-        id: user.user_id.toString(),
+        id: user.userId.toString(),
         rank: rankList.length + 1,
         name: user.name,
-        avatar: user.head_show && user.head_show >= 1 && user.head_show <= PRESET_AVATARS.length ? PRESET_AVATARS[user.head_show - 1] : undefined,
+        avatar: user.headShow && user.headShow >= 1 && user.headShow <= PRESET_AVATARS.length ? PRESET_AVATARS[user.headShow - 1] : undefined,
         totalDays: user.daka || 0,
-        completedFlags: user.flag_number || 0,
+        completedFlags: user.flagNumber || 0,
         totalPoints: user.count || 0
       };
     } catch (error) {

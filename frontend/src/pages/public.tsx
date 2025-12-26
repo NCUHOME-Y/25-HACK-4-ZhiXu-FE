@@ -72,10 +72,10 @@ export default function PublicPage() {
         interface HistoryMessage {
           id?: number;
           from: number;
-          user_name?: string;
-          user_avatar?: string;
+          userName?: string;
+          userAvatar?: string;
           content: string;
-          created_at: string;
+          createdAt: string;
         }
         const response = await api.get<{ messages: HistoryMessage[] }>(`/api/chat/history/${roomId}?limit=30`);
         
@@ -83,12 +83,12 @@ export default function PublicPage() {
         
         if (response.messages && response.messages.length > 0) {
           const historyMessages: ChatMessage[] = response.messages.map((msg: HistoryMessage) => ({
-            id: `${msg.id || msg.from}-${msg.created_at}`,
+            id: `${msg.id || msg.from}-${msg.createdAt}`,
             userId: String(msg.from),
-            userName: msg.user_name || `用户${msg.from}`,
-            avatar: msg.user_avatar || '',
+            userName: msg.userName || `用户${msg.from}`,
+            avatar: msg.userAvatar || '',
             message: msg.content,
-            time: formatChatTime(msg.created_at),
+            time: formatChatTime(msg.createdAt),
             isMe: String(msg.from) === currentUserCtx.id,
           }));
           setMessages(historyMessages);
@@ -145,10 +145,10 @@ export default function PublicPage() {
             const newMessage: ChatMessage = {
               id: `${data.from}-${Date.now()}`,
               userId: String(data.from),
-              userName: data.user_name || `用户${data.from}`,
-              avatar: data.user_avatar || '',
+              userName: data.userName || `用户${data.from}`,
+              avatar: data.userAvatar || '',
               message: data.content,
-              time: formatChatTime(data.created_at || new Date()),
+              time: formatChatTime(data.createdAt || new Date()),
               isMe: false,
             };
             setMessages((prev) => [...prev, newMessage]);

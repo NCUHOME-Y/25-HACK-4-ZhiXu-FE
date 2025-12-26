@@ -110,10 +110,10 @@ export default function MinePage() {
         user: {
           count: number; 
           daka: number; 
-          month_learn_time: number;
+          monthLearnTime: number;
           name: string;
           email: string;
-          head_show: number;
+          headShow: number;
             is_remind: boolean;
             is_flag_remind?: boolean;
           time_remind: number;
@@ -124,8 +124,8 @@ export default function MinePage() {
       const user = userData.user;
       setPoints(user.count || 0);
       setCompletedCount(user.flag_number || 0);
-      // 使用后端head_show生成头像URL（后端提供/api/avatar/:id接口）
-      const avatarPath = user.head_show ? `/api/avatar/${user.head_show}` : '';
+      // 使用后端headShow生成头像URL（后端提供/api/avatar/:id接口）
+      const avatarPath = user.headShow ? `/api/avatar/${user.headShow}` : '';
       setProfile(prev => ({
         ...prev,
         nickname: user.name || prev.nickname,
@@ -137,7 +137,7 @@ export default function MinePage() {
       setFlagNotificationEnabled(user.is_flag_remind ?? false);
       setHasUnsavedChanges(false);
       useTaskStore.setState({
-        dailyElapsed: user.month_learn_time || 0 // 本月学习时长（秒）
+        dailyElapsed: user.monthLearnTime || 0 // 本月学习时长（秒）
       });
       
       // 获取点赞总数（静默失败）
@@ -167,9 +167,9 @@ export default function MinePage() {
       setTempNotificationHour(hour);
       setTempNotificationMinute(minute);
       setHasUnsavedChanges(false);
-      // 🐛 修复：后端返回的 month_learn_time 已经是秒，不需要乘 60
+      // 🐛 修复：后端返回的 monthLearnTime 已经是秒，不需要乘 60
       useTaskStore.setState({
-        dailyElapsed: user.month_learn_time || 0 // 本月学习时长（秒）
+        dailyElapsed: user.monthLearnTime || 0 // 本月学习时长（秒）
       });
       
       // 获取点赞总数（静默失败）

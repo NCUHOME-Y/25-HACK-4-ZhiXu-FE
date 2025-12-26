@@ -9,7 +9,7 @@ interface ChatRoom {
   name: string;
   user_count: number;
   max_users: number;
-  created_at: string;
+  createdAt: string;
   creator_id: number;
 }
 
@@ -46,7 +46,7 @@ export default function ChatRoomsPage() {
         if (!isDefaultA && isDefaultB) return 1;
         
         // 同为默认或非默认聊天室，按创建时间倒序（最新的在前）
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
       setRooms(sortedRooms);
       setError(null);
