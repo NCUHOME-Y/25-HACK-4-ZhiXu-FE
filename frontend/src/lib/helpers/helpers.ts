@@ -95,6 +95,7 @@ export const formatDate = (date: Date | string, format = 'YYYY-MM-DD HH:mm:ss'):
 };
 
 export const formatDateYMD = (date: Date): string => { 
+  // 使用本地时区的年月日，避免UTC时区导致日期偏移
   const y = date.getFullYear(); 
   const m = String(date.getMonth() + 1).padStart(2, "0"); 
   const d = String(date.getDate()).padStart(2, "0"); 
@@ -103,11 +104,14 @@ export const formatDateYMD = (date: Date): string => {
 
 export const calculateMonthlyPunches = (punchedDates: string[]): number => { 
   const now = new Date(); 
-  const currentMonth = now.getMonth(); 
-  const currentYear = now.getFullYear(); 
+  const currentMonth = String(now.getMonth() + 1).padStart(2, "0"); 
+  const currentYear = String(now.getFullYear()); 
+  // 直接使用字符串比较，避免时区问题
   return punchedDates.filter(dateStr => { 
-    const date = new Date(dateStr); 
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear; 
+    // dateStr格式应为 "YYYY-MM-DD"
+    if (!dateStr || dateStr.length < 7) return false;
+    const yearMonth = dateStr.substring(0, 7); // "YYYY-MM"
+    return yearMonth === `${currentYear}-${currentMonth}`;
   }).length; 
 };
 
@@ -319,14 +323,15 @@ export function calculateStreakDays(punchDates: string[]): number {
   const sorted = [...punchDates].sort().reverse(); 
   let streak = 0; 
   const today = new Date(); 
-  today.setHours(0, 0, 0, 0); 
+  
   for (let i = 0; i < sorted.length; i++) { 
-    const checkDate = new Date(sorted[i]); 
-    checkDate.setHours(0, 0, 0, 0); 
+    // 计算期望的日期字符串（今天往前数i天）
     const expectedDate = new Date(today); 
     expectedDate.setDate(today.getDate() - i); 
-    expectedDate.setHours(0, 0, 0, 0); 
-    if (checkDate.getTime() === expectedDate.getTime()) { 
+    const expectedStr = formatDateYMD(expectedDate);
+    
+    // 直接比较日期字符串，避免时区问题
+    if (sorted[i] === expectedStr) { 
       streak++; 
     } else { 
       break; 
