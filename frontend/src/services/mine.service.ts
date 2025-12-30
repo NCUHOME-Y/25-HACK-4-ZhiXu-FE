@@ -18,8 +18,8 @@ export const updateFlagNotificationEnabled = async (enabled: boolean): Promise<v
 /** 更新通知时间 */
 export const updateNotificationTime = async (hour: string, minute: string): Promise<void> => {
   await api.put('/api/updateRemindTime', { 
-    timeRemind: parseInt(hour), 
-    minRemind: parseInt(minute) 
+    studyRemindHour: parseInt(hour), 
+    studyRemindMin: parseInt(minute) 
   });
 };
 

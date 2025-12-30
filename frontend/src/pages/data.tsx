@@ -237,8 +237,8 @@ export default function DataPage() {
     // 本月缺卡天数
     const missedDays = Math.max(0, now.getDate() - monthlyPunches);
     
-    // 累计打卡天数（所有打卡记录）
-    const totalPunchedDays = punchedDates.length;
+    // 累计打卡天数（按日期去重，避免同一天多次操作导致重复计数）
+    const totalPunchedDays = new Set(punchedDates.map(d => d.substring(0, 10))).size;
     
     return {
       punchedDays: totalPunchedDays, // 累计打卡天数
@@ -345,11 +345,11 @@ export default function DataPage() {
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200/50 hover:shadow-md transition-all duration-200">
                 <Clock className="h-6 w-6 text-green-600 mb-2" />
                 <div className="text-2xl font-bold text-green-600">{formatDurationShort(calculatedMonthlyStats.totalStudyTime)}</div>
-                <div className="text-xs text-green-700 mt-1 whitespace-nowrap">累计时长({Math.floor(calculatedMonthlyStats.totalStudyTime / 3600) > 0 ? 'h' : 'm'})</div>
+                <div className="text-xs text-green-700 mt-1 whitespace-nowrap">本月时长({Math.floor(calculatedMonthlyStats.totalStudyTime / 3600) > 0 ? 'h' : 'm'})</div>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200/50 text-center text-sm text-gray-600 bg-gray-50/50 rounded-lg p-3">
-              本月共 {calculatedMonthlyStats.monthlyPunches} 天打卡，累计学习 {(() => {
+              本月共 {calculatedMonthlyStats.monthlyPunches} 天打卡，本月累计学习 {(() => {
                 const hours = Math.floor(calculatedMonthlyStats.totalStudyTime / 3600);
                 const mins = Math.floor((calculatedMonthlyStats.totalStudyTime % 3600) / 60);
                 return `${hours}小时${mins}分钟`;

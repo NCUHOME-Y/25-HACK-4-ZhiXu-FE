@@ -114,10 +114,10 @@ export default function MinePage() {
           name: string;
           email: string;
           headShow: number;
-          isRemind: boolean;
+          isStudyRemind?: boolean;
           isFlagRemind?: boolean;
-          timeRemind: number;
-          minRemind: number;
+          studyRemindHour?: number;
+          studyRemindMin?: number;
           flagNumber: number;
         }
       }>('/api/getUser');
@@ -133,44 +133,15 @@ export default function MinePage() {
       }));
       setNickname(user.name || '');
       setAvatar(avatarPath);
-      setNotificationEnabled(user.isRemind ?? false);
-      setFlagNotificationEnabled(user.isFlagRemind ?? false);
-      setHasUnsavedChanges(false);
-      useTaskStore.setState({
-        dailyElapsed: user.monthLearnTime || 0 // 本月学习时长（秒）
-      });
-      
-      // 获取点赞总数（静默失败）
-      try {
-        const likedPostIds = await contactService.getUserLikedPosts();
-        setTotalLikes(likedPostIds.length);
-      } catch (err) {
-        console.warn('获取点赞数据失败:', err);
-        setTotalLikes(0);
-      }
-      
-      // 加载打卡数据（静默失败）
-      try {
-        const punchData = await fetchPunchDates();
-        console.log('我的页面-打卡数据:', punchData);
-        useTaskStore.setState({ punchedDates: punchData });
-      } catch (err) {
-        console.warn('获取打卡数据失败:', err);
-      }
-      
-      // 设置消息提醒状态（向后兼容旧字段）
-      setNotificationEnabled(user.isRemind ?? false);
+      // 学习提醒总开关
+      setNotificationEnabled(user.isStudyRemind ?? false);
       // Flag 提醒状态（后端可能返回 isFlagRemind）
       setFlagNotificationEnabled(user.isFlagRemind ?? false);
-      const hour = (user.timeRemind ?? 12).toString().padStart(2, '0');
-      const minute = (user.minRemind ?? 0).toString().padStart(2, '0');
+      const hour = (user.studyRemindHour ?? 12).toString().padStart(2, '0');
+      const minute = (user.studyRemindMin ?? 0).toString().padStart(2, '0');
       setTempNotificationHour(hour);
       setTempNotificationMinute(minute);
       setHasUnsavedChanges(false);
-      // 🐛 修复：后端返回的 monthLearnTime 已经是秒，不需要乘 60
-      useTaskStore.setState({
-        dailyElapsed: user.monthLearnTime || 0 // 本月学习时长（秒）
-      });
       
       // 获取点赞总数（静默失败）
       try {
@@ -208,21 +179,10 @@ export default function MinePage() {
       const { fetchTasks } = await import('../services/flag.service');
       const tasksData = await fetchTasks();
       useTaskStore.setState({ tasks: tasksData });
-
-      // 同步Flag提醒总开关状态：如果有flag开启了提醒，但用户级总开关为false，则自动开启
-      const hasEnabledNotifications = tasksData.some(task => task.enableNotification && !task.completed);
-      if (hasEnabledNotifications && !flagNotificationEnabled) {
-        try {
-          await updateFlagNotificationEnabled(true);
-          setFlagNotificationEnabled(true);
-        } catch (err) {
-          console.warn('自动同步Flag提醒总开关失败:', err);
-        }
-      }
     } catch (error) {
       console.error('加载任务数据失败:', error);
     }
-  }, [flagNotificationEnabled, setFlagNotificationEnabled]);
+  }, []);
   
   useEffect(() => {
     loadUserStats();
@@ -842,7 +802,7 @@ export default function MinePage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <Label className="text-sm font-medium">学习提醒</Label>
-                        <p className="text-xs text-muted-foreground">收到每日学习汇总的邮件提醒</p>
+                        <p className="text-xs text-muted-foreground">接收每日学习的邮件提醒</p>
                       </div>
                       <Switch
                         checked={notificationEnabled}
@@ -1098,7 +1058,7 @@ export default function MinePage() {
                           <div className="space-y-2 text-sm">
                             <div>
                               <p className="font-medium text-slate-900">研发</p>
-                              <p className="text-slate-600">林方魁、吕宇轩、喻鸿杰</p>
+                              <p className="text-slate-600">林方魁、吕宇轩</p>
                             </div>
                             <div>
                               <p className="font-medium text-slate-900">运营</p>
