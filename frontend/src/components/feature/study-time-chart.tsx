@@ -102,25 +102,25 @@ export function StudyTimeChart({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="h-4 w-4 text-blue-500" />
           {description}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-2">
+      <CardContent className="px-2 pb-2">
         <ChartContainer config={chartConfig}>
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
               dataKey="label"
               tickLine={false}
-              tickMargin={8}
+              tickMargin={4}
               axisLine={false}
               fontSize={10}
               interval={0}
               textAnchor="end"
-              height={60}
+              height={40}
             />
             <YAxis
               tickLine={false}
@@ -152,7 +152,7 @@ export function StudyTimeChart({
         </ChartContainer>
       </CardContent>
       {showFooter && (
-        <CardFooter className="flex-col items-start gap-1.5 text-xs border-t border-gray-200 pt-3 px-4">
+        <CardFooter className="flex-col items-start gap-1.5 text-xs border-t border-gray-200 pt-2 px-4">
           <div className="flex items-center gap-1.5 font-medium leading-none">
             <TrendingUp className="h-3.5 w-3.5 text-green-600" />
             <span>{getPeriodDescription()}累计 {formatTime(totalMinutes)}</span>
