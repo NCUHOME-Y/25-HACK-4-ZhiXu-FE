@@ -109,15 +109,6 @@ export default function DataPage() {
           return;
         }
         
-        // 移除 getFlagLabels 调用，该 API 一直返回 500 错误且前端没有实际使用
-        // try {
-        //   const labelData = await getFlagLabels();
-        //   console.log('标签系统统计:', labelData);
-        // } catch (err) {
-        //   console.warn('加载标签统计失败，继续加载其他数据:', err);
-        // }
-        
-        // 加载任务和打卡数据（静默失败）
         try {
           const [tasksData, punchData] = await Promise.all([
             fetchTasks().catch(() => []),
