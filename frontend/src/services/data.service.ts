@@ -116,10 +116,7 @@ export async function getStudyTimeTrend(period: 'week' | 'month' | 'year'): Prom
     
     const response = await api.get<{ learnTimes: Array<{ id: number; userId: number; duration: number; createdAt: string }> }>(endpoint);
     
-    console.log(`${period}周期原始数据:`, response);
-    
     if (!response.learnTimes || response.learnTimes.length === 0) {
-      console.log(`${period}周期无数据`);
       return [];
     }
     

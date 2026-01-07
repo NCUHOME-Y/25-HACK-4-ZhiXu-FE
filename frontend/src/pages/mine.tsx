@@ -155,7 +155,6 @@ export default function MinePage() {
       // 加载打卡数据（静默失败）
       try {
         const punchData = await fetchPunchDates();
-        console.log('我的页面-打卡数据:', punchData);
         useTaskStore.setState({ punchedDates: punchData });
       } catch (err) {
         console.warn('获取打卡数据失败:', err);
