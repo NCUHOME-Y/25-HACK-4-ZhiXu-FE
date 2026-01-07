@@ -18,7 +18,7 @@ import { formatDurationShort, calculateStreak } from '../lib/helpers/helpers';
 import { authService } from '../services';
 import { useTaskStore } from '../lib/stores/stores';
 import { FLAG_LABELS } from '../lib/constants/constants';
-import type { FlagLabel, StudyTimeTrend, GetUserResponse } from '../lib/types/types';
+import type { FlagLabel, StudyTimeTrend } from '../lib/types/types';
 import { BirdMascot } from '../components';
 import { fetchTasks, fetchPunchDates } from '../services/flag.service';
 import { api } from '../services/apiClient';
@@ -36,8 +36,6 @@ export default function DataPage() {
   const [studyPeriod, setStudyPeriod] = useState<'week' | 'month' | 'year'>('week'); // 学习趋势周期：周(最近7天)/月(当前月份)/年(最近6个月)
   // 新增：本月累计学习时长（秒）
   const [monthLearnTime, setMonthLearnTime] = useState(0);
-  // 累计完成Flag总数（从后端 flagNumber 字段获取）
-  const [completedFlagsCount, setCompletedFlagsCount] = useState(0);
   const [studyData, setStudyData] = useState<StudyTimeTrend[]>([]); // 学习趋势数据
   
   // 鸟消息
@@ -142,15 +140,13 @@ export default function DataPage() {
   /** 刷新用户数据 */
   const refreshUserData = async () => {
     try {
-      const [todayData, todayPointsResp, currentMonthData, userData] = await Promise.all([
+      const [todayData, todayPointsResp, currentMonthData] = await Promise.all([
         api.get<{ todayLearnTime: number }>('/api/getTodayLearnTime').catch(() => ({ todayLearnTime: 0 })),
         api.get<{ todayPoints: number }>('/api/getTodayPoints').catch(() => ({ todayPoints: 0 })),
-        api.get<{ learnTimes: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learnTimes: [] })),
-        api.get<GetUserResponse>('/api/getUser').catch(() => ({ user: { userId: 0, name: '', email: '', headShow: 1, daka: 0, flagNumber: 0, count: 0, monthLearnTime: 0 } }))
+        api.get<{ learnTimes: Array<{ duration: number }> }>('/api/getCurrentMonthLearnTime').catch(() => ({ learnTimes: [] }))
       ]);
 
       setTodayPoints(todayPointsResp?.todayPoints || 0);
-      setCompletedFlagsCount(userData?.user?.flagNumber || 0);
 
       // 分别设置今日和月累计学习时长（后端返回的都是秒）
       const todayTime = todayData.todayLearnTime || 0; // 今日学习时长（秒）
@@ -241,8 +237,8 @@ export default function DataPage() {
 
   /** 计算Flag统计数据 */
   const flagStats = useMemo(() => {
-    // 使用后端累计完成Flag总数（历史统计）
-    const completedCount = completedFlagsCount;
+    // 🔧 改为本月数据：从当前tasks统计已完成的（task.completed 每日重置，反映本月情况）
+    const completedCount = tasks.filter(t => t.completed).length;
     const uncompletedCount = tasks.filter(t => !t.completed).length;
     const totalCount = tasks.length;
     
@@ -268,7 +264,7 @@ export default function DataPage() {
     // 更新图表数据
     setChartData(completedCount, uncompletedCount);
     return { completedCount, uncompletedCount, totalCount, labelStats };
-  }, [tasks, completedFlagsCount]);
+  }, [tasks]);
 
   /** 饼图数据转换 */
   const pieChartData = useMemo(() => {
@@ -396,7 +392,7 @@ export default function DataPage() {
           <section className="px-4">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Flag className="h-5 w-5 text-blue-500" />
-              Flag完成
+              本月Flag完成
             </h2>
             <Card className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200">
               <div className="space-y-4">
@@ -405,14 +401,14 @@ export default function DataPage() {
                   <Flag className="h-5 w-5 text-blue-600" />
                   <div>
                     <div className="text-xl font-bold text-blue-600">{flagStats.completedCount}</div>
-                    <div className="text-xs text-blue-700">已完成</div>
+                    <div className="text-xs text-blue-700">本月已完成</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200/50 hover:shadow-md transition-all duration-200">
                   <Flag className="h-5 w-5 text-orange-600" />
                   <div>
                     <div className="text-xl font-bold text-orange-600">{flagStats.uncompletedCount}</div>
-                    <div className="text-xs text-orange-700">未完成</div>
+                    <div className="text-xs text-orange-700">本月未完成</div>
                   </div>
                 </div>
               </div>

@@ -111,7 +111,7 @@ export function ChartRadialStacked() {
             持续进步中 <TrendingUp className="h-4 w-4" />
           </div>
           <div className="text-muted-foreground leading-none text-base mt-1">
-            已完成 {chartData[0].completed} 个,未完成 {chartData[0].uncompleted} 个
+            本月已完成 {chartData[0].completed} 个,未完成 {chartData[0].uncompleted} 个
           </div>
         </div>
       </div>
