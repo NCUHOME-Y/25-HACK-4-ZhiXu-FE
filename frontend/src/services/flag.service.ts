@@ -13,7 +13,7 @@ export interface CreateTaskPayload {
   title: string;
   detail?: string;
   total?: number;
-  dateRange?: unknown;
+  dateRange?: { start: string; end: string } | null;
   reminderTime?: string;
   enableNotification?: boolean;
 }
@@ -38,8 +38,8 @@ export async function fetchTasks(): Promise<Task[]> {
   const response = await api.get<{ flags: Task[] }>('/api/getUserFlags');
   
   const flags = (response.flags || []).map(flag => {
-    const backendFlag = flag as BackendFlag & { enableNotification?: boolean; reminderTime?: string; postId?: number };
-    const rawPostId = (backendFlag as unknown as { postId?: number | string }).postId;
+    const backendFlag = flag as BackendFlag & { enableNotification?: boolean; reminderTime?: string; postId?: number | string };
+    const rawPostId = backendFlag.postId;
     const postId = typeof rawPostId === 'number' ? rawPostId : (typeof rawPostId === 'string' ? parseInt(rawPostId, 10) || undefined : undefined);
     const mapped = {
       ...flag,
@@ -137,7 +137,21 @@ export async function updateTask(id: number, taskData: {
 }): Promise<boolean> {
   const { api } = await import('./apiClient');
   
-  const updatePayload: Record<string, unknown> = { 
+  interface UpdateFlagPayload {
+    id: number;
+    title: string;
+    detail: string;
+    label: number;
+    priority: number;
+    total: number;
+    startDate: string;
+    endDate: string;
+    reminderTime: string;
+    enableNotification: boolean;
+    postId?: number;
+  }
+
+  const updatePayload: UpdateFlagPayload = { 
     id: id,
     title: taskData.title,
     detail: taskData.detail || '',

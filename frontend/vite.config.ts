@@ -6,8 +6,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   // 使用 .env 文件中的 VITE_API_BASE_URL
   const env = loadEnv(mode, process.cwd(), '');
-  // 开发环境默认使用腾讯云服务器
-  const apiBase = env.VITE_API_BASE_URL || 'http://139.199.157.76:8080';
+  // 开发环境默认使用本地后端（如需远程后端，请在 .env.* 中设置 VITE_API_BASE_URL）
+  const apiBase = env.VITE_API_BASE_URL || 'http://localhost:8080';
   const wsBase = apiBase.replace(/^http/, 'ws');
 
   return {

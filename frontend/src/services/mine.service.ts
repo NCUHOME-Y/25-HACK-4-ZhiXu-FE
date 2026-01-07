@@ -25,13 +25,13 @@ export const updateNotificationTime = async (hour: string, minute: string): Prom
 
 /** 修改密码 */
 export const changePassword = async (oldPassword: string, newPassword: string): Promise<void> => {
-  await api.put('/updatePassword', { oldPassword, newPassword });
+  await api.put('/api/updatePassword', { oldPassword, newPassword });
 };
 
 /** 切换头像 */
 export const switchAvatar = async (avatarIndex: number): Promise<void> => {
   try {
-    await api.post('/api/swithhead', { number: avatarIndex });
+    await api.post('/api/switchhead', { number: avatarIndex });
   } catch (error: unknown) {
     console.error('❌ 头像切换失败:', {
       status: (error as { response?: { status?: number } })?.response?.status,
@@ -138,13 +138,23 @@ export async function logout() {
 }
 
 // 获取用户成就/徽章系统
-// 后端返回格式: { message: string, achievements: Array<{id, name, description, isUnlocked}> }
-export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }> => {
+// 后端返回格式: { message: string, achievements: Array<{id, name, description, isUnlocked, hadDone}> }
+export const getUserAchievements = async (): Promise<{ achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean; hadDone: boolean }> }> => {
   try {
-    const response = await api.get<{ message: string; achievements: Array<{ id: number; name: string; description: string; isUnlocked: boolean }> }>('/api/getUserAchievement');
+    // 定义后端实际返回的接口结构
+    const response = await api.get<{ 
+      message: string; 
+      achievements: Array<{ 
+        id: number; 
+        name: string; 
+        description: string; 
+        hadDone: boolean;
+        isUnlocked: boolean; // 后端已返回此字段
+      }> 
+    }>('/api/getUserAchievement');
     
-    // 后端返回的就是正确格式的数组
     if (response.achievements && Array.isArray(response.achievements)) {
+      // 后端已返回 isUnlocked 和 hadDone 字段，直接返回
       return { achievements: response.achievements };
     }
     

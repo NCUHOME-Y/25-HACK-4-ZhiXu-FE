@@ -61,18 +61,18 @@ export default function MinePage() {
   
   const tasks = useTaskStore((s) => s.tasks);
   
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const [profile, setProfile] = useState({
     nickname: '知序学习者',
     bio: '每天进步一点点,成为更好的自己',
     avatar: '/api/avatar/1' // 使用后端头像API
   });
-  const [nickname, setNickname] = useState(profile.nickname);
-  const [bio, setBio] = useState(profile.bio);
-  const [avatar, setAvatar] = useState(profile.avatar);
-  const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
+  const [nickname, setNickname] = useState<string>(profile.nickname);
+  const [bio, setBio] = useState<string>(profile.bio);
+  const [avatar, setAvatar] = useState<string>(profile.avatar);
+  const [avatarPopoverOpen, setAvatarPopoverOpen] = useState<boolean>(false);
 
-  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState<boolean>(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -96,7 +96,7 @@ export default function MinePage() {
   const [completedCount, setCompletedCount] = useState(0);
   
   const [points, setPoints] = useState(0);
-  const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean}>>([]);
+  const [badges, setBadges] = useState<Array<{id: number; name: string; description: string; isUnlocked: boolean; hadDone?: boolean}>>([]);
   const [totalLikes, setTotalLikes] = useState(0);
   
   /** 加载用户统计数据 */
@@ -233,8 +233,11 @@ export default function MinePage() {
           isUnlocked: false
         })));
       } else {
-        // 后端返回了16个成就数据
-        setBadges(data.achievements);
+        // 后端返回了16个成就数据（部分功能开发中）
+        setBadges(data.achievements.map(ach => ({
+          ...ach,
+          description: ach.hadDone ? ach.description : (ach.description || '功能开发中，敬请期待')
+        })));
       }
     } catch (error) {
       console.error('❌ 获取成就失败:', error);
