@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { getDeferredPrompt, clearDeferredPrompt } from '../lib/pwa/pwa';
 import { useNavigate } from 'react-router-dom';
 import { UserPen, Trophy, Flame, Target, Star, MessageSquare, User, Bell, Lock, Info, LogOut, Heart, CheckCircle, Award, BookOpen } from 'lucide-react'; // 移除未使用的 ChevronRight
 import { 
@@ -45,12 +46,6 @@ import { fetchPunchDates } from '../services/flag.service';
 import { switchAvatar, updateNotificationEnabled, updateNotificationTime, updateFlagNotificationEnabled, changePassword } from '../services/mine.service';
 import { authService } from '../services/auth.service';
 
-// PWA BeforeInstallPromptEvent 类型定义
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-}
-
 /**
  * 我的页面
  * 展示用户信息、成就、数据统计等
@@ -84,7 +79,6 @@ export default function MinePage() {
   const [aboutPopoverOpen, setAboutPopoverOpen] = useState(false);
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
 
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [tempNotificationHour, setTempNotificationHour] = useState('12');
@@ -255,35 +249,6 @@ export default function MinePage() {
     loadAchievementsData();
   }, [loadAchievementsData]);
   
-  // PWA 安装事件监听
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      const installEvent = e as BeforeInstallPromptEvent;
-      // 阻止默认的安装提示
-      installEvent.preventDefault();
-      // 保存事件，以便稍后触发
-      setDeferredPrompt(installEvent);
-    };
-
-    const handleAppInstalled = () => {
-      // 安装成功后隐藏按钮
-      setDeferredPrompt(null);
-      toast.success('知序已成功安装到您的设备！');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // 检查是否已经安装
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      // setShowInstallButton(false);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
   
   // 监听页面可见性，实时更新数据
   useEffect(() => {
@@ -598,51 +563,72 @@ export default function MinePage() {
     }
   };
 
-  /** 安装 PWA 应用 */
+  // 安装按钮可用性状态
+  const [canInstall, setCanInstall] = useState(!!getDeferredPrompt());
+  useEffect(() => {
+    const update = () => setCanInstall(!!getDeferredPrompt());
+    window.addEventListener('pwa:deferred-available', update);
+    window.addEventListener('pwa:appinstalled', update);
+    return () => {
+      window.removeEventListener('pwa:deferred-available', update);
+      window.removeEventListener('pwa:appinstalled', update);
+    };
+  }, []);
+
+  /** 安装 PWA 应用（全局 deferredPrompt 方案） */
   const handleInstallPWA = async () => {
+    const deferredPrompt = getDeferredPrompt();
     if (deferredPrompt) {
       try {
-        // 自动显示安装提示
+        console.info('[pwa] prompting deferredPrompt', deferredPrompt);
         await deferredPrompt.prompt();
-        
-        // 等待用户响应
         const { outcome } = await deferredPrompt.userChoice;
-        
+        console.info('[pwa] deferredPrompt.userChoice', outcome);
         if (outcome === 'accepted') {
           toast.success('正在安装知序应用...');
         }
-        
-        // 清除 prompt，因为它只能使用一次
-        setDeferredPrompt(null);
+        clearDeferredPrompt();
+        setCanInstall(false);
       } catch (error) {
         console.error('安装失败:', error);
         toast.error('安装失败，请稍后重试');
       }
     } else {
-      // 检测浏览器类型并给出具体指引
+      console.info('[pwa] no deferredPrompt available, show manual guide');
+      // 检测浏览器类型并给出详细分步指引
       const userAgent = navigator.userAgent.toLowerCase();
       let installGuide = '';
-      
       if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
-        // Chrome 浏览器
-        installGuide = '点击地址栏右侧的 ⊕ 图标或点击右上角 ⋮ 或浏览器菜单→ 安装知序或添加到主页';
+        installGuide = [
+          '1. 请点击浏览器地址栏右侧的 ⊕ 安装图标，或',
+          '2. 点击右上角 ⋮ 菜单，选择“安装知序”或“添加到主屏幕”',
+          '3. 按提示完成安装即可',
+        ].join('\n');
       } else if (userAgent.includes('edg')) {
-        // Edge 浏览器
-        installGuide = '点击地址栏右侧的 ⊕ 图标或点击右上角 ⋯ 或浏览器菜单 → 应用 → 将此站点作为应用安装或添加到主页';
+        installGuide = [
+          '1. 请点击浏览器地址栏右侧的 ⊕ 安装图标，或',
+          '2. 点击右上角 ⋯ 菜单，依次选择“应用” → “将此站点作为应用安装”',
+          '3. 按提示完成安装即可',
+        ].join('\n');
       } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
-        // Safari 浏览器
-        installGuide = '点击底部分享按钮或浏览器菜单→ 添加到主屏幕或安装应用';
+        installGuide = [
+          '1. 请点击底部中间的分享按钮（方框加上箭头图标）',
+          '2. 在弹出的菜单中选择“添加到主屏幕”',
+          '3. 按提示完成安装即可',
+        ].join('\n');
       } else if (userAgent.includes('firefox')) {
-        // Firefox 浏览器
-        installGuide = '点击地址栏的 ⊕ 图标或点击右上角 ≡ 或浏览器菜单→ 安装或添加到主页';
+        installGuide = [
+          '1. 请点击地址栏右侧的 ⊕ 安装图标，或',
+          '2. 点击右上角 ≡ 菜单，选择“安装”或“添加到主屏幕”',
+          '3. 按提示完成安装即可',
+        ].join('\n');
       } else {
-        // 其他浏览器
-        installGuide = '请使用浏览器菜单中的"安装应用"或"添加到主屏幕"功能';
+        installGuide = [
+          '1. 请打开浏览器菜单，查找“安装应用”或“添加到主屏幕”选项',
+          '2. 按提示完成安装即可',
+        ].join('\n');
       }
-      
-      toast.info(installGuide, {
-        duration: 5000,
-      });
+      toast.info(installGuide, { duration: 8000 });
     }
   };
 
@@ -999,8 +985,9 @@ export default function MinePage() {
         {/* 安装应用 */}
         <section className="px-4">
           <Card 
-            className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98]"
+            className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98] ${!canInstall ? 'opacity-60' : ''}`}
             onClick={handleInstallPWA}
+            aria-disabled={!canInstall}
           >
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-50">
@@ -1035,7 +1022,7 @@ export default function MinePage() {
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-medium mb-2">版本信息</h4>
-                    <p className="text-xs text-muted-foreground">知序 v1.2.2</p>
+                    <p className="text-xs text-muted-foreground">知序 v1.3.0</p>
                   </div>
                   <Separator />
                   <div className="space-y-2">

@@ -1,4 +1,7 @@
 import { StrictMode } from 'react'
+import { initPWAListener } from './lib/pwa/pwa';
+// 初始化全局 PWA 安装事件监听（必须尽早注册）
+initPWAListener();
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useRoutes, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
