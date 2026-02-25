@@ -1,6 +1,7 @@
 /** Flag 相关服务 */
 
 import { api } from './apiClient';
+import { formatDateYMD } from '../lib/helpers/helpers';
 import type { Task, StudyRecord, GetUserResponse } from "../lib/types/types";
 
 // 后端返回的flag 扩展字段
@@ -24,7 +25,35 @@ export async function fetchPunchDates(): Promise<string[]> {
   if (!response || !Array.isArray(response)) {
     return [];
   }
-  return response.map(record => record.date);
+  // 统一将后端返回的日期转换为本地 "YYYY-MM-DD" 格式。
+  // 注意：后端返回的日期可能有两种形式：
+  // 1) 纯 YYYY-MM-DD（后端使用 Go 的 Format("2006-01-02")），这种字符串直接通过 `new Date("YYYY-MM-DD")` 解析会被当作 UTC，
+  //    在东八区可能会导致向前一天偏移。为避免时区问题，需要手动按本地构造日期。
+  // 2) 含时区或 ISO 格式（如 2026-02-24T00:00:00Z），可以直接用 `new Date(...)` 解析。
+  return response
+    .map(record => {
+      try {
+        const s = (record.date || '').trim();
+        if (!s) return '';
+        // 如果是纯日期格式 YYYY-MM-DD，按本地时区构造日期
+        const simpleDateMatch = /^\d{4}-\d{2}-\d{2}$/.test(s);
+        let d: Date;
+        if (simpleDateMatch) {
+          const parts = s.split('-');
+          const y = Number(parts[0]);
+          const m = Number(parts[1]) - 1;
+          const day = Number(parts[2]);
+          d = new Date(y, m, day);
+        } else {
+          d = new Date(s);
+        }
+        if (isNaN(d.getTime())) return '';
+        return formatDateYMD(d);
+      } catch {
+        return '';
+      }
+    })
+    .filter(Boolean) as string[];
 }
 
 /** 切换今日打卡状态 */
