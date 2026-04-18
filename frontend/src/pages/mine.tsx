@@ -569,9 +569,13 @@ export default function MinePage() {
   // 安装按钮可用性状态
   const [canInstall, setCanInstall] = useState(!!getDeferredPrompt());
   const [isHuaweiBrowser, setIsHuaweiBrowser] = useState(false);
+  const [isEdgeBrowser, setIsEdgeBrowser] = useState(false);
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
-    setIsHuaweiBrowser(userAgent.includes('huaweibrowser') || userAgent.includes('huawei'));
+    const edgeDetected = /edg(e|a|ios)?\//.test(userAgent);
+    const huaweiBrowserDetected = /huaweibrowser/.test(userAgent);
+    setIsEdgeBrowser(edgeDetected);
+    setIsHuaweiBrowser(huaweiBrowserDetected);
 
     const checkInstalled = () => {
       const standaloneMode = window.matchMedia('(display-mode: standalone)').matches;
@@ -579,22 +583,81 @@ export default function MinePage() {
       setIsAppInstalled(standaloneMode || iosStandalone);
     };
 
-    const update = () => setCanInstall(!!getDeferredPrompt());
+    const updateCanInstall = () => setCanInstall(!!getDeferredPrompt());
+    const refreshInstallState = () => {
+      updateCanInstall();
+      checkInstalled();
+    };
     const handleAppInstalled = () => {
-      update();
       setIsAppInstalled(true);
+      setCanInstall(false);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshInstallState();
+      }
     };
 
-    window.addEventListener('pwa:deferred-available', update);
+    window.addEventListener('pwa:deferred-available', updateCanInstall);
     window.addEventListener('pwa:appinstalled', handleAppInstalled);
-    window.addEventListener('focus', checkInstalled);
-    checkInstalled();
+    window.addEventListener('focus', refreshInstallState);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    refreshInstallState();
+
     return () => {
-      window.removeEventListener('pwa:deferred-available', update);
+      window.removeEventListener('pwa:deferred-available', updateCanInstall);
       window.removeEventListener('pwa:appinstalled', handleAppInstalled);
-      window.removeEventListener('focus', checkInstalled);
+      window.removeEventListener('focus', refreshInstallState);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  const showManualInstallGuide = useCallback(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    let installGuide = '';
+
+    if (isHuaweiBrowser) {
+      installGuide = [
+        '当前华为浏览器通常不会触发系统安装弹窗，请手动添加：',
+        '1. 点击右下角或右上角“菜单”',
+        '2. 选择“添加到桌面”或“安装应用”',
+        '3. 按提示完成安装',
+      ].join('\n');
+    } else if (isEdgeBrowser) {
+      installGuide = [
+        'Edge 浏览器可手动安装：',
+        '1. 点击地址栏右侧的安装图标（若有）',
+        '2. 或点击右上角 ⋯ 菜单，依次选择“应用” → “将此站点作为应用安装”',
+        '3. 按提示完成安装',
+      ].join('\n');
+    } else if (userAgent.includes('chrome') || userAgent.includes('crios')) {
+      installGuide = [
+        '1. 请点击浏览器地址栏右侧的 ⊕ 安装图标，或',
+        '2. 点击右上角 ⋮ 菜单，选择“安装知序”或“添加到主屏幕”',
+        '3. 按提示完成安装即可',
+      ].join('\n');
+    } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+      installGuide = [
+        '1. 请点击底部中间的分享按钮（方框加上箭头图标）',
+        '2. 在弹出的菜单中选择“添加到主屏幕”',
+        '3. 按提示完成安装即可',
+      ].join('\n');
+    } else if (userAgent.includes('firefox')) {
+      installGuide = [
+        '1. 请点击地址栏右侧的 ⊕ 安装图标，或',
+        '2. 点击右上角 ≡ 菜单，选择“安装”或“添加到主屏幕”',
+        '3. 按提示完成安装即可',
+      ].join('\n');
+    } else {
+      installGuide = [
+        '1. 请打开浏览器菜单，查找“安装应用”或“添加到主屏幕”选项',
+        '2. 按提示完成安装即可',
+      ].join('\n');
+    }
+
+    setInstallGuideText(installGuide);
+    setInstallGuideDialogOpen(true);
+  }, [isEdgeBrowser, isHuaweiBrowser]);
 
   /** 安装 PWA 应用（全局 deferredPrompt 方案） */
   const handleInstallPWA = async () => {
@@ -603,84 +666,32 @@ export default function MinePage() {
       return;
     }
 
-    const showManualGuide = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
-      let installGuide = '';
-
-      if (userAgent.includes('huaweibrowser') || userAgent.includes('huawei')) {
-        installGuide = [
-          '当前华为浏览器通常不会触发系统安装弹窗，请手动添加：',
-          '1. 点击右下角或右上角“菜单”',
-          '2. 选择“添加到桌面”或“安装应用”',
-          '3. 按提示完成安装',
-        ].join('\n');
-      } else if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
-        installGuide = [
-          '1. 请点击浏览器地址栏右侧的 ⊕ 安装图标，或',
-          '2. 点击右上角 ⋮ 菜单，选择“安装知序”或“添加到主屏幕”',
-          '3. 按提示完成安装即可',
-        ].join('\n');
-      } else if (userAgent.includes('edg')) {
-        installGuide = [
-          '1. 请点击浏览器地址栏右侧的 ⊕ 安装图标，或',
-          '2. 点击右上角 ⋯ 菜单，依次选择“应用” → “将此站点作为应用安装”',
-          '3. 按提示完成安装即可',
-        ].join('\n');
-      } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
-        installGuide = [
-          '1. 请点击底部中间的分享按钮（方框加上箭头图标）',
-          '2. 在弹出的菜单中选择“添加到主屏幕”',
-          '3. 按提示完成安装即可',
-        ].join('\n');
-      } else if (userAgent.includes('firefox')) {
-        installGuide = [
-          '1. 请点击地址栏右侧的 ⊕ 安装图标，或',
-          '2. 点击右上角 ≡ 菜单，选择“安装”或“添加到主屏幕”',
-          '3. 按提示完成安装即可',
-        ].join('\n');
-      } else {
-        installGuide = [
-          '1. 请打开浏览器菜单，查找“安装应用”或“添加到主屏幕”选项',
-          '2. 按提示完成安装即可',
-        ].join('\n');
-      }
-
-      setInstallGuideText(installGuide);
-      setInstallGuideDialogOpen(true);
-      toast.info('当前浏览器未触发系统安装弹窗，已为你打开手动安装指引', { duration: 4000 });
-    };
-
     const deferredPrompt = getDeferredPrompt();
-    if (deferredPrompt) {
-      try {
-        console.info('[pwa] prompting deferredPrompt', deferredPrompt);
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.info('[pwa] deferredPrompt.userChoice', outcome);
-        if (outcome === 'accepted') {
-          toast.success('正在安装知序应用...');
-        }
-        clearDeferredPrompt();
-        setCanInstall(false);
-        setIsAppInstalled(outcome === 'accepted');
-      } catch (error) {
-        console.error('安装失败:', error);
-        if (isHuaweiBrowser) {
-          toast.error('当前浏览器不支持系统安装弹窗，已打开手动安装指引');
-          showManualGuide();
-        } else {
-          toast.error('安装弹窗调用失败，请稍后重试');
-        }
-      }
-    } else {
-      console.info('[pwa] no deferredPrompt available, show manual guide');
-      if (isHuaweiBrowser) {
-        showManualGuide();
-      } else if (canInstall) {
-        toast.info('系统安装弹窗尚未就绪，请稍后再试');
+    if (!deferredPrompt) {
+      console.info('[pwa] no deferredPrompt available, open manual install guide');
+      showManualInstallGuide();
+      toast.info('未获取到系统安装弹窗，已为你打开手动安装步骤', { duration: 4000 });
+      return;
+    }
+
+    try {
+      console.info('[pwa] prompting deferredPrompt', deferredPrompt);
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.info('[pwa] deferredPrompt.userChoice', outcome);
+      clearDeferredPrompt();
+      setCanInstall(false);
+
+      if (outcome === 'accepted') {
+        toast.success('正在安装知序应用...');
+        setIsAppInstalled(true);
       } else {
-        toast.info('当前浏览器暂未就绪安装能力，请稍后重试');
+        toast.info('你已取消本次安装，可再次点击“安装知序应用”重试');
       }
+    } catch (error) {
+      console.error('安装失败:', error);
+      toast.error('安装弹窗调用失败，已为你打开手动安装步骤');
+      showManualInstallGuide();
     }
   };
 
@@ -1059,9 +1070,13 @@ export default function MinePage() {
                 <p className="text-xs text-muted-foreground">
                   {isAppInstalled
                     ? '已添加到桌面，可直接从主屏幕启动'
+                    : canInstall
+                      ? '当前浏览器支持一键安装，点击即可安装'
                     : isHuaweiBrowser
                       ? '华为浏览器请手动添加到桌面'
-                      : '添加到主屏幕，快速启动'}
+                      : isEdgeBrowser
+                        ? 'Edge 未弹窗时可通过菜单手动安装'
+                        : '添加到主屏幕，快速启动'}
                 </p>
               </div>
             </div>
