@@ -126,7 +126,7 @@ const tutorialSteps: TutorialStep[] = [
     position: 'bottom-right'
   },
   {
-    page: '/start',
+    page: '/data',
     section: '璇历',
     title: '学习计时 - 开始与提交',
     subtitle: '记录专注时长并计入统计',
