@@ -567,7 +567,11 @@ export default function MinePage() {
 
   // 安装按钮可用性状态
   const [canInstall, setCanInstall] = useState(!!getDeferredPrompt());
+  const [isHuaweiBrowser, setIsHuaweiBrowser] = useState(false);
   useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    setIsHuaweiBrowser(userAgent.includes('huaweibrowser') || userAgent.includes('huawei'));
+
     const update = () => setCanInstall(!!getDeferredPrompt());
     window.addEventListener('pwa:deferred-available', update);
     window.addEventListener('pwa:appinstalled', update);
@@ -640,12 +644,20 @@ export default function MinePage() {
         setCanInstall(false);
       } catch (error) {
         console.error('安装失败:', error);
-        toast.error('安装弹窗调用失败，已切换到手动安装指引');
-        showManualGuide();
+        if (isHuaweiBrowser) {
+          toast.error('当前浏览器不支持系统安装弹窗，已打开手动安装指引');
+          showManualGuide();
+        } else {
+          toast.error('安装弹窗调用失败，请稍后重试');
+        }
       }
     } else {
       console.info('[pwa] no deferredPrompt available, show manual guide');
-      showManualGuide();
+      if (isHuaweiBrowser) {
+        showManualGuide();
+      } else {
+        toast.info('系统安装弹窗尚未就绪，请稍后再试，或刷新页面后重新点击');
+      }
     }
   };
 
@@ -1001,7 +1013,7 @@ export default function MinePage() {
         {/* 安装应用 */}
         <section className="px-4">
           <Card 
-            className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98] ${!canInstall ? 'opacity-60' : ''}`}
+            className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98] ${isHuaweiBrowser ? 'opacity-60' : ''}`}
             onClick={handleInstallPWA}
             role="button"
             tabIndex={0}
@@ -1020,8 +1032,10 @@ export default function MinePage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold">{canInstall ? '安装知序应用' : '手动安装知序应用'}</h3>
-                <p className="text-xs text-muted-foreground">{canInstall ? '添加到主屏幕，快速启动' : '当前浏览器未提供弹窗，点击查看手动步骤'}</p>
+                <h3 className="font-semibold">安装知序应用</h3>
+                <p className="text-xs text-muted-foreground">
+                  {isHuaweiBrowser ? '华为浏览器请手动添加到桌面' : '添加到主屏幕，快速启动'}
+                </p>
               </div>
             </div>
           </Card>
