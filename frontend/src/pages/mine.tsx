@@ -80,6 +80,7 @@ export default function MinePage() {
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
   const [installGuideDialogOpen, setInstallGuideDialogOpen] = useState(false);
   const [installGuideText, setInstallGuideText] = useState('');
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
 
 
   const [notificationEnabled, setNotificationEnabled] = useState(false);
@@ -572,17 +573,36 @@ export default function MinePage() {
     const userAgent = navigator.userAgent.toLowerCase();
     setIsHuaweiBrowser(userAgent.includes('huaweibrowser') || userAgent.includes('huawei'));
 
+    const checkInstalled = () => {
+      const standaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsAppInstalled(standaloneMode || iosStandalone);
+    };
+
     const update = () => setCanInstall(!!getDeferredPrompt());
+    const handleAppInstalled = () => {
+      update();
+      setIsAppInstalled(true);
+    };
+
     window.addEventListener('pwa:deferred-available', update);
-    window.addEventListener('pwa:appinstalled', update);
+    window.addEventListener('pwa:appinstalled', handleAppInstalled);
+    window.addEventListener('focus', checkInstalled);
+    checkInstalled();
     return () => {
       window.removeEventListener('pwa:deferred-available', update);
-      window.removeEventListener('pwa:appinstalled', update);
+      window.removeEventListener('pwa:appinstalled', handleAppInstalled);
+      window.removeEventListener('focus', checkInstalled);
     };
   }, []);
 
   /** 安装 PWA 应用（全局 deferredPrompt 方案） */
   const handleInstallPWA = async () => {
+    if (isAppInstalled) {
+      toast.info('应用已经安装在桌面上了');
+      return;
+    }
+
     const showManualGuide = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       let installGuide = '';
@@ -642,6 +662,7 @@ export default function MinePage() {
         }
         clearDeferredPrompt();
         setCanInstall(false);
+        setIsAppInstalled(outcome === 'accepted');
       } catch (error) {
         console.error('安装失败:', error);
         if (isHuaweiBrowser) {
@@ -655,8 +676,10 @@ export default function MinePage() {
       console.info('[pwa] no deferredPrompt available, show manual guide');
       if (isHuaweiBrowser) {
         showManualGuide();
+      } else if (canInstall) {
+        toast.info('系统安装弹窗尚未就绪，请稍后再试');
       } else {
-        toast.info('系统安装弹窗尚未就绪，请稍后再试，或刷新页面后重新点击');
+        toast.info('当前浏览器暂未就绪安装能力，请稍后重试');
       }
     }
   };
@@ -1013,17 +1036,17 @@ export default function MinePage() {
         {/* 安装应用 */}
         <section className="px-4">
           <Card 
-            className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98] ${isHuaweiBrowser ? 'opacity-60' : ''}`}
-            onClick={handleInstallPWA}
+            className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm transition-all duration-200 ${isAppInstalled ? 'opacity-70' : 'hover:shadow-lg hover:scale-[1.02] cursor-pointer active:scale-[0.98]'}`}
+            onClick={isAppInstalled ? undefined : handleInstallPWA}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (!isAppInstalled && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
                 handleInstallPWA();
               }
             }}
-            aria-disabled={!canInstall}
+            aria-disabled={isAppInstalled}
           >
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-50">
@@ -1032,9 +1055,13 @@ export default function MinePage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold">安装知序应用</h3>
+                <h3 className="font-semibold">{isAppInstalled ? '知序已安装' : '安装知序应用'}</h3>
                 <p className="text-xs text-muted-foreground">
-                  {isHuaweiBrowser ? '华为浏览器请手动添加到桌面' : '添加到主屏幕，快速启动'}
+                  {isAppInstalled
+                    ? '已添加到桌面，可直接从主屏幕启动'
+                    : isHuaweiBrowser
+                      ? '华为浏览器请手动添加到桌面'
+                      : '添加到主屏幕，快速启动'}
                 </p>
               </div>
             </div>
