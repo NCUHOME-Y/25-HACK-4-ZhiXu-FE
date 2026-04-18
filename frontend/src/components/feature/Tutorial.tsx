@@ -456,7 +456,10 @@ export function Tutorial() {
                 <p className="text-xs text-blue-700 mt-1.5 opacity-90">{currentStep.title}</p>
               </div>
               <button
+                type="button"
                 onClick={handleSkip}
+                aria-label="关闭功能简介教程"
+                title="关闭功能简介教程"
                 className="ml-2 text-blue-700/70 hover:text-blue-900 hover:bg-blue-200/70 transition-all rounded-full p-1 flex-shrink-0"
               >
                 <X className="h-4 w-4" />

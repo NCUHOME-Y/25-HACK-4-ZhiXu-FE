@@ -78,6 +78,8 @@ export default function MinePage() {
 
   const [aboutPopoverOpen, setAboutPopoverOpen] = useState(false);
   const [teamPopoverOpen, setTeamPopoverOpen] = useState(false);
+  const [installGuideDialogOpen, setInstallGuideDialogOpen] = useState(false);
+  const [installGuideText, setInstallGuideText] = useState('');
 
 
   const [notificationEnabled, setNotificationEnabled] = useState(false);
@@ -577,28 +579,18 @@ export default function MinePage() {
 
   /** 安装 PWA 应用（全局 deferredPrompt 方案） */
   const handleInstallPWA = async () => {
-    const deferredPrompt = getDeferredPrompt();
-    if (deferredPrompt) {
-      try {
-        console.info('[pwa] prompting deferredPrompt', deferredPrompt);
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.info('[pwa] deferredPrompt.userChoice', outcome);
-        if (outcome === 'accepted') {
-          toast.success('正在安装知序应用...');
-        }
-        clearDeferredPrompt();
-        setCanInstall(false);
-      } catch (error) {
-        console.error('安装失败:', error);
-        toast.error('安装失败，请稍后重试');
-      }
-    } else {
-      console.info('[pwa] no deferredPrompt available, show manual guide');
-      // 检测浏览器类型并给出详细分步指引
+    const showManualGuide = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       let installGuide = '';
-      if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+
+      if (userAgent.includes('huaweibrowser') || userAgent.includes('huawei')) {
+        installGuide = [
+          '当前华为浏览器通常不会触发系统安装弹窗，请手动添加：',
+          '1. 点击右下角或右上角“菜单”',
+          '2. 选择“添加到桌面”或“安装应用”',
+          '3. 按提示完成安装',
+        ].join('\n');
+      } else if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
         installGuide = [
           '1. 请点击浏览器地址栏右侧的 ⊕ 安装图标，或',
           '2. 点击右上角 ⋮ 菜单，选择“安装知序”或“添加到主屏幕”',
@@ -628,11 +620,35 @@ export default function MinePage() {
           '2. 按提示完成安装即可',
         ].join('\n');
       }
-      toast.info(installGuide, { duration: 8000 });
+
+      setInstallGuideText(installGuide);
+      setInstallGuideDialogOpen(true);
+      toast.info('当前浏览器未触发系统安装弹窗，已为你打开手动安装指引', { duration: 4000 });
+    };
+
+    const deferredPrompt = getDeferredPrompt();
+    if (deferredPrompt) {
+      try {
+        console.info('[pwa] prompting deferredPrompt', deferredPrompt);
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.info('[pwa] deferredPrompt.userChoice', outcome);
+        if (outcome === 'accepted') {
+          toast.success('正在安装知序应用...');
+        }
+        clearDeferredPrompt();
+        setCanInstall(false);
+      } catch (error) {
+        console.error('安装失败:', error);
+        toast.error('安装弹窗调用失败，已切换到手动安装指引');
+        showManualGuide();
+      }
+    } else {
+      console.info('[pwa] no deferredPrompt available, show manual guide');
+      showManualGuide();
     }
   };
 
-  // ========== 渲染 ========== 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="flex-1 pb-24 space-y-3 max-w-2xl mx-auto w-full">
@@ -987,6 +1003,14 @@ export default function MinePage() {
           <Card 
             className={`p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer active:scale-[0.98] ${!canInstall ? 'opacity-60' : ''}`}
             onClick={handleInstallPWA}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleInstallPWA();
+              }
+            }}
             aria-disabled={!canInstall}
           >
             <div className="flex items-center gap-3">
@@ -996,8 +1020,8 @@ export default function MinePage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold">安装知序应用</h3>
-                <p className="text-xs text-muted-foreground">添加到主屏幕，快速启动</p>
+                <h3 className="font-semibold">{canInstall ? '安装知序应用' : '手动安装知序应用'}</h3>
+                <p className="text-xs text-muted-foreground">{canInstall ? '添加到主屏幕，快速启动' : '当前浏览器未提供弹窗，点击查看手动步骤'}</p>
               </div>
             </div>
           </Card>
@@ -1179,6 +1203,22 @@ export default function MinePage() {
             >
               {isSaving ? '保存中...' : '保存'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PWA 手动安装指引 */}
+      <Dialog open={installGuideDialogOpen} onOpenChange={setInstallGuideDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] max-w-[calc(100vw-2rem)] rounded-3xl bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>安装知序应用</DialogTitle>
+            <DialogDescription>当前浏览器未提供系统安装弹窗，请按以下步骤手动安装：</DialogDescription>
+          </DialogHeader>
+          <div className="whitespace-pre-line text-sm text-slate-700 leading-6 bg-blue-50/60 border border-blue-100 rounded-xl p-3">
+            {installGuideText}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setInstallGuideDialogOpen(false)}>我知道了</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
